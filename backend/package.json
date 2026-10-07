@@ -7,9 +7,10 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "node test-auth.js && node test-reports.js",
-    "test:auth": "node test-auth.js",
-    "test:reports": "node test-reports.js"
+    "test": "node tests/test-auth.js && node tests/test-reports.js && node tests/test-categories.js",
+    "test:auth": "node tests/test-auth.js",
+    "test:reports": "node tests/test-reports.js",
+    "test:categories": "node tests/test-categories.js"
   },
   "keywords": [],
   "author": "",

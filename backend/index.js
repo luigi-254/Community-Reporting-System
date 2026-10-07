@@ -9,6 +9,8 @@ import path from 'path';
 
 import authRoutes from './routes/authroutes.js';
 import reportRoutes from './routes/reportroutes.js';
+import categoryRoutes from './routes/categoryroutes.js';
+import subcategoryRoutes from './routes/subcategoryroutes.js';
 import {
   notFoundHandler,
   errorHandler,
@@ -43,6 +45,7 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Root API index
 app.get('/', (req, res) => {
   res.status(200).json({
     status: 'success',
@@ -51,14 +54,18 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       reports: '/api/reports',
+      categories: '/api/categories',
+      subcategories: '/api/subcategories',
       health: '/health',
     },
   });
 });
 
+// Mount Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
-
+app.use('/api/categories', categoryRoutes);
+app.use('/api/subcategories', subcategoryRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
@@ -69,6 +76,8 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
     console.log(`Auth endpoints available at http://localhost:${PORT}/api/auth`);
     console.log(`Report endpoints available at http://localhost:${PORT}/api/reports`);
+    console.log(`Category endpoints available at http://localhost:${PORT}/api/categories`);
+    console.log(`Subcategory endpoints available at http://localhost:${PORT}/api/subcategories`);
   });
 }
 
