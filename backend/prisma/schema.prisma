@@ -242,3 +242,81 @@ model Report {
   @@index([ward])
   @@map("reports")
 }
+
+model Assignment {
+  id           String   @id @default(uuid())
+  reportId     String
+  officerId    String
+  assignedById String?
+  reason       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([reportId])
+  @@index([officerId])
+  @@map("assignments")
+}
+
+model RoutingRule {
+  id           String         @id @default(uuid())
+  name         String
+  category     String?
+  subCategory  String?
+  county       String?
+  departmentId String?
+  officerId    String?
+  priority     ReportPriority?
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([category])
+  @@index([departmentId])
+  @@map("routing_rules")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model Escalation {
+  id              String   @id @default(uuid())
+  reportId        String
+  reason          String
+  priority        ReportPriority @default(HIGH)
+  status          String   @default("OPEN")
+  escalatedById   String?
+  resolvedById    String?
+  resolutionNotes String?
+  resolvedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([reportId, status])
+  @@map("escalations")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  actorId       String?
+  action        String
+  entityType    String
+  entityId      String
+  previousValue Json?
+  newValue      Json?
+  createdAt     DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@map("audit_logs")
+}
