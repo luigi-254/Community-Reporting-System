@@ -7,13 +7,15 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "node tests/test-auth.js && node tests/test-reports.js && node tests/test-categories.js && node tests/test-locations.js && node tests/test-departments.js && node tests/test-officers.js",
+    "test": "node tests/test-auth.js && node tests/test-reports.js && node tests/test-categories.js && node tests/test-locations.js && node tests/test-departments.js && node tests/test-officers.js && node tests/test-operations.js && node tests/test-escalation-dashboard-audit.js",
     "test:auth": "node tests/test-auth.js",
     "test:reports": "node tests/test-reports.js",
     "test:categories": "node tests/test-categories.js",
     "test:locations": "node tests/test-locations.js",
     "test:departments": "node tests/test-departments.js",
     "test:officers": "node tests/test-officers.js",
+    "test:operations": "node tests/test-operations.js",
+    "test:monitoring": "node tests/test-escalation-dashboard-audit.js",
     "db:seed": "node prisma/seed.js"
   },
   "keywords": [],

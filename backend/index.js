@@ -14,6 +14,12 @@ import subcategoryRoutes from './routes/subcategoryroutes.js';
 import locationRoutes from './routes/locationroutes.js';
 import departmentRoutes from './routes/departmentroutes.js';
 import officerRoutes from './routes/officerroutes.js';
+import assignmentRoutes from './routes/assignmentroutes.js';
+import routingRuleRoutes from './routes/routingruleRoutes.js';
+import notificationRoutes from './routes/notificationroutes.js';
+import escalationRoutes from './routes/escalationroutes.js';
+import dashboardRoutes from './routes/dashboardroutes.js';
+import auditLogRoutes from './routes/auditlogroutes.js';
 import {
   notFoundHandler,
   errorHandler,
@@ -62,6 +68,12 @@ app.get('/', (req, res) => {
       locations: '/api/locations',
       departments: '/api/departments',
       officers: '/api/officers',
+      assignments: '/api/assignments',
+      routingRules: '/api/routing-rules',
+      notifications: '/api/notifications',
+      escalations: '/api/escalations',
+      dashboard: '/api/dashboard',
+      auditLogs: '/api/audit-logs',
       health: '/health',
     },
   });
@@ -75,6 +87,12 @@ app.use('/api/subcategories', subcategoryRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/officers', officerRoutes);
+app.use('/api/assignments', assignmentRoutes);
+app.use('/api/routing-rules', routingRuleRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/escalations', escalationRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
