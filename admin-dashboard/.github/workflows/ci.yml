@@ -1,0 +1,41 @@
+name: Admin Dashboard CI
+
+on:
+  push:
+    paths:
+      - "admin-dashboard/**"
+      - "admin-dashboard/.github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "admin-dashboard/**"
+      - "admin-dashboard/.github/workflows/ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin-dashboard
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: admin-dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Build application
+        run: npm run build

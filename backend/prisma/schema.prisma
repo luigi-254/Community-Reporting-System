@@ -110,6 +110,39 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
+model Category {
+  id            String        @id @default(uuid())
+  name          String        @unique
+  code          String        @unique
+  description   String?
+  icon          String?
+  isActive      Boolean       @default(true)
+  departmentId  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  subcategories Subcategory[]
+
+  @@map("categories")
+}
+
+model Subcategory {
+  id              String         @id @default(uuid())
+  categoryId      String
+  category        Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name            String
+  code            String?
+  description     String?
+  defaultPriority ReportPriority @default(MEDIUM)
+  slaHours        Int            @default(48)
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([categoryId])
+  @@map("subcategories")
+}
+
 model Report {
   id                  String            @id @default(uuid())
   title               String
