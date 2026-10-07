@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "NODE_ENV=test node test-auth.js"
+    "test": "node test-auth.js && node test-reports.js",
+    "test:auth": "node test-auth.js",
+    "test:reports": "node test-reports.js"
   },
   "keywords": [],
   "author": "",

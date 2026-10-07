@@ -35,6 +35,12 @@ enum ReportPriority {
   URGENT
 }
 
+enum ResolutionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 model User {
   id                  String               @id @default(uuid())
   name                String
@@ -58,6 +64,8 @@ model User {
   refreshTokens       RefreshToken[]
   verificationTokens  VerificationToken[]
   passwordResetTokens PasswordResetToken[]
+  submittedReports    Report[]             @relation("UserSubmittedReports")
+  assignedReports     Report[]             @relation("OfficerAssignedReports")
 
   @@map("users")
 }
@@ -100,4 +108,46 @@ model PasswordResetToken {
 
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+model Report {
+  id                  String            @id @default(uuid())
+  title               String
+  description         String
+  category            String
+  subCategory         String?
+  priority            ReportPriority    @default(MEDIUM)
+  status              ReportStatus      @default(SUBMITTED)
+  location            String?
+  county              String?
+  subCounty           String?
+  ward                String?
+  latitude            Float?
+  longitude           Float?
+  mediaUrls           String[]          @default([])
+  isAnonymous         Boolean           @default(false)
+
+  reporterId          String
+  reporter            User              @relation("UserSubmittedReports", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  assignedOfficerId   String?
+  assignedOfficer     User?             @relation("OfficerAssignedReports", fields: [assignedOfficerId], references: [id], onDelete: SetNull)
+
+  departmentId        String?
+  resolutionNotes     String?
+  resolutionMediaUrls String[]          @default([])
+  resolvedAt          DateTime?
+  resolutionStatus    ResolutionStatus?
+  citizenFeedback     String?
+  rejectionReason     String?
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([status])
+  @@index([category])
+  @@index([reporterId])
+  @@index([assignedOfficerId])
+  @@index([ward])
+  @@map("reports")
 }
