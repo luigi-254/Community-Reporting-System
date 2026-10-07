@@ -4,11 +4,11 @@ on:
   push:
     paths:
       - "backend/**"
-      - "backend/.github/workflows/ci.yml"
+      - ".github/workflows/backend-ci.yml"
   pull_request:
     paths:
       - "backend/**"
-      - "backend/.github/workflows/ci.yml"
+      - ".github/workflows/backend-ci.yml"
 
 permissions:
   contents: read

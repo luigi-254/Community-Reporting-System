@@ -1,14 +1,14 @@
-name: Government Frontend CI
+name: Admin Dashboard CI
 
 on:
   push:
     paths:
-      - "government-frontend/**"
-      - "government-frontend/.github/workflows/ci.yml"
+      - "admin-dashboard/**"
+      - ".github/workflows/admin-dashboard-ci.yml"
   pull_request:
     paths:
-      - "government-frontend/**"
-      - "government-frontend/.github/workflows/ci.yml"
+      - "admin-dashboard/**"
+      - ".github/workflows/admin-dashboard-ci.yml"
 
 permissions:
   contents: read
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: government-frontend
+        working-directory: admin-dashboard
 
     steps:
       - name: Check out repository
@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: government-frontend/package-lock.json
+          cache-dependency-path: admin-dashboard/package-lock.json
 
       - name: Install dependencies
         run: npm ci
