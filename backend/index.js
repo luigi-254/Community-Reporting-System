@@ -11,6 +11,9 @@ import authRoutes from './routes/authroutes.js';
 import reportRoutes from './routes/reportroutes.js';
 import categoryRoutes from './routes/categoryroutes.js';
 import subcategoryRoutes from './routes/subcategoryroutes.js';
+import locationRoutes from './routes/locationroutes.js';
+import departmentRoutes from './routes/departmentroutes.js';
+import officerRoutes from './routes/officerroutes.js';
 import {
   notFoundHandler,
   errorHandler,
@@ -56,6 +59,9 @@ app.get('/', (req, res) => {
       reports: '/api/reports',
       categories: '/api/categories',
       subcategories: '/api/subcategories',
+      locations: '/api/locations',
+      departments: '/api/departments',
+      officers: '/api/officers',
       health: '/health',
     },
   });
@@ -66,6 +72,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/subcategories', subcategoryRoutes);
+app.use('/api/locations', locationRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/officers', officerRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
