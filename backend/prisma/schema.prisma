@@ -70,6 +70,64 @@ model User {
   @@map("users")
 }
 
+model Department {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  code         String   @unique
+  description  String?
+  contactEmail String?
+  contactPhone String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("departments")
+}
+
+model County {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  name        String      @unique
+  slug        String      @unique
+  isActive    Boolean     @default(true)
+  subCounties SubCounty[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("counties")
+}
+
+model SubCounty {
+  id        String   @id @default(uuid())
+  countyId  String
+  county    County   @relation(fields: [countyId], references: [id], onDelete: Cascade)
+  name      String
+  code      String?
+  isActive  Boolean  @default(true)
+  wards     Ward[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([countyId, name])
+  @@index([countyId])
+  @@map("sub_counties")
+}
+
+model Ward {
+  id          String    @id @default(uuid())
+  subCountyId String
+  subCounty   SubCounty @relation(fields: [subCountyId], references: [id], onDelete: Cascade)
+  name        String
+  code        String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([subCountyId, name])
+  @@index([subCountyId])
+  @@map("wards")
+}
+
 model RefreshToken {
   id        String    @id @default(uuid())
   token     String    @unique
