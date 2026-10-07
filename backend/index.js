@@ -5,8 +5,10 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
+import path from 'path';
 
 import authRoutes from './routes/authroutes.js';
+import reportRoutes from './routes/reportroutes.js';
 import {
   notFoundHandler,
   errorHandler,
@@ -27,6 +29,7 @@ app.use(compression());
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use('/uploads', express.static(path.resolve('uploads')));
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
@@ -40,10 +43,23 @@ app.get('/health', (req, res) => {
   });
 });
 
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    service: 'Community Reporting System API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      reports: '/api/reports',
+      health: '/health',
+    },
+  });
+});
+
 app.use('/api/auth', authRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.use(notFoundHandler);
-
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
@@ -52,6 +68,7 @@ if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
     console.log(`Auth endpoints available at http://localhost:${PORT}/api/auth`);
+    console.log(`Report endpoints available at http://localhost:${PORT}/api/reports`);
   });
 }
 

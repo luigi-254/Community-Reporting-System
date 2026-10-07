@@ -3,7 +3,7 @@ import http from 'http';
 process.env.NODE_ENV = 'test';
 process.env.PORT = '5055';
 
-import app from './index.js';
+import app from '../index.js';
 
 let server;
 
