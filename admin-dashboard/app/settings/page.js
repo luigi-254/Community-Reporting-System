@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 export default function SettingsPage() {
@@ -22,12 +23,12 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <a
+          <Link
             href="/"
             className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
           >
             Back to Dashboard
-          </a>
+          </Link>
         </div>
       </header>
 
