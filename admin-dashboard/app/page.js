@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { reports } from "../data/reports";
 
 export default function AdminDashboard() {
   const [activePage, setActivePage] = useState("Dashboard");
+  const router = useRouter();
 
   const totalReports = reports.length;
 
@@ -20,27 +22,33 @@ export default function AdminDashboard() {
     (report) => report.status === "Resolved"
   ).length;
 
- const handleNavigation = (page) => {
-  if (page === "Reports") {
-    window.location.href = "/reports";
-    return;
-  }
+  const handleNavigation = (page) => {
+    setActivePage(page);
 
-  if (page === "Users") {
-    window.location.href = "/users";
-    return;
-  }
-   if (page === "Statistics") {
-    window.location.href = "/statistics";
-    return;
-  }
- if (page === "Settings") {
-    window.location.href = "/settings";
-    return;
-  }
+    if (page === "Dashboard") {
+      return;
+    }
 
-  setActivePage(page);
-};
+    if (page === "Reports") {
+      router.push("/reports");
+      return;
+    }
+
+    if (page === "Users") {
+      router.push("/users");
+      return;
+    }
+
+    if (page === "Statistics") {
+      router.push("/statistics");
+      return;
+    }
+
+    if (page === "Settings") {
+      router.push("/settings");
+      return;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 flex">
