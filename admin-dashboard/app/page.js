@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { reports } from "../data/reports";
 
 export default function AdminDashboard() {
-  const [activePage, setActivePage] = useState("Dashboard");
   const router = useRouter();
+  const [activePage, setActivePage] = useState("Dashboard");
 
   const totalReports = reports.length;
 
@@ -172,11 +172,21 @@ export default function AdminDashboard() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="text-left px-6 py-4 font-semibold">Report ID</th>
-                    <th className="text-left px-6 py-4 font-semibold">Issue</th>
-                    <th className="text-left px-6 py-4 font-semibold">Location</th>
-                    <th className="text-left px-6 py-4 font-semibold">Status</th>
-                    <th className="text-left px-6 py-4 font-semibold">Date</th>
+                    <th className="text-left px-6 py-4 font-semibold">
+                      Report ID
+                    </th>
+                    <th className="text-left px-6 py-4 font-semibold">
+                      Issue
+                    </th>
+                    <th className="text-left px-6 py-4 font-semibold">
+                      Location
+                    </th>
+                    <th className="text-left px-6 py-4 font-semibold">
+                      Status
+                    </th>
+                    <th className="text-left px-6 py-4 font-semibold">
+                      Date
+                    </th>
                   </tr>
                 </thead>
 
@@ -188,7 +198,9 @@ export default function AdminDashboard() {
                     >
                       <td className="px-6 py-4 font-medium">{report.id}</td>
                       <td className="px-6 py-4">{report.issue}</td>
-                      <td className="px-6 py-4 text-gray-600">{report.location}</td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {report.location}
+                      </td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
@@ -202,7 +214,9 @@ export default function AdminDashboard() {
                           {report.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{report.date}</td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {report.date}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
