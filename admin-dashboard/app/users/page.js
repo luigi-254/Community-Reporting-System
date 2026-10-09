@@ -6,16 +6,16 @@ import Link from "next/link";
 const initialUsers = [
   {
     id: 1,
-    name: "John Doe",
-    email: "john@example.com",
+    name: "Enock matara",
+    email: "enock@example.com",
     role: "Citizen",
     status: "Active",
     reports: 3,
   },
   {
     id: 2,
-    name: "Mary Wanjiku",
-    email: "mary@example.com",
+    name: "John Osiemo",
+    email: "john@example.com",
     role: "Citizen",
     status: "Active",
     reports: 5,

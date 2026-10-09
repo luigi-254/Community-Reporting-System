@@ -2,42 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
-const initialReports = [
-  {
-    id: "RPT-1024",
-    issue: "Large pothole on Main Street",
-    category: "Roads",
-    location: "Main Street, Downtown",
-    reportedBy: "Alicia Thompson",
-    status: "Pending",
-    description:
-      "A large pothole has formed near the downtown crossing and is causing traffic issues and potential vehicle damage.",
-    date: "2025-01-15",
-  },
-  {
-    id: "RPT-1025",
-    issue: "Blocked drainage channel",
-    category: "Drainage",
-    location: "Oak Avenue",
-    reportedBy: "Marcus Lee",
-    status: "In Progress",
-    description:
-      "The drainage channel near Oak Avenue is blocked by debris and is causing water to pool on the road after rainfall.",
-    date: "2025-01-18",
-  },
-  {
-    id: "RPT-1026",
-    issue: "Broken streetlight",
-    category: "Infrastructure",
-    location: "Cedar Lane",
-    reportedBy: "Priya Shah",
-    status: "Resolved",
-    description:
-      "The streetlight at the corner of Cedar Lane and 5th Street has been out for several nights, creating unsafe walking conditions.",
-    date: "2025-01-20",
-  },
-];
+import { reports as initialReports } from "../../data/reports";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState(initialReports);
