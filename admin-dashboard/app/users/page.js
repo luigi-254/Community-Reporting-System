@@ -105,11 +105,11 @@ export default function UsersPage() {
             </label>
             <input
               id="user-search"
-              type="search"
+              type="text"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by name, email, or role..."
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
@@ -136,7 +136,7 @@ export default function UsersPage() {
                     <td className="p-4">{user.reports}</td>
                     <td className="p-4">
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${
+                        className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
                           user.status === "Active"
                             ? "bg-green-100 text-green-700"
                             : "bg-gray-100 text-gray-600"
@@ -149,7 +149,8 @@ export default function UsersPage() {
                       <button
                         type="button"
                         onClick={() => toggleStatus(user.id)}
-                        className="font-medium text-blue-600 hover:text-blue-800"
+                        className="font-medium text-blue-600 hover:text-blue-800 focus:outline-none focus:underline"
+                        aria-label={`${user.status === "Active" ? "Deactivate" : "Activate"} ${user.name}`}
                       >
                         {user.status === "Active" ? "Deactivate" : "Activate"}
                       </button>
