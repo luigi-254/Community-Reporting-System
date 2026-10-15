@@ -8,19 +8,35 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [activePage, setActivePage] = useState("Dashboard");
 
-  const totalReports = reports.length;
+  const reportList = Array.isArray(reports) ? reports : [];
 
-  const pendingReports = reports.filter(
+  const totalReports = reportList.length;
+
+  const pendingReports = reportList.filter(
     (report) => report.status === "Pending"
   ).length;
 
-  const inProgressReports = reports.filter(
+  const inProgressReports = reportList.filter(
     (report) => report.status === "In Progress"
   ).length;
 
-  const resolvedReports = reports.filter(
+  const resolvedReports = reportList.filter(
     (report) => report.status === "Resolved"
   ).length;
+
+  const resolutionRate =
+    totalReports === 0
+      ? 0
+      : Math.round((resolvedReports / totalReports) * 100);
+
+  const categoryCounts = reportList.reduce((counts, report) => {
+    const category = report.category || "Other";
+    counts[category] = (counts[category] || 0) + 1;
+    return counts;
+  }, {});
+
+  const recentReports = [...reportList].slice(-5).reverse();
+
 
   const handleNavigation = (page) => {
     setActivePage(page);
@@ -150,6 +166,71 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+{/* Resolution Progress */}
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+  <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="flex items-center justify-between">
+      <h3 className="text-lg font-bold">Resolution Progress</h3>
+      <span className="text-2xl font-bold text-green-600">
+        {resolutionRate}%
+      </span>
+    </div>
+
+    <p className="text-sm text-gray-500 mt-2">
+      Percentage of community reports resolved
+    </p>
+
+    <div
+      className="w-full h-3 bg-gray-100 rounded-full mt-5 overflow-hidden"
+      role="progressbar"
+      aria-label="Report resolution rate"
+      aria-valuenow={resolutionRate}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <div
+        className="h-full bg-green-600 rounded-full transition-all"
+        style={{ width: `${resolutionRate}%` }}
+      />
+    </div>
+
+    <p className="text-sm text-gray-600 mt-3">
+      {resolvedReports} of {totalReports} reports resolved
+    </p>
+  </div>
+
+  <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <h3 className="text-lg font-bold">Reports by Category</h3>
+    <p className="text-sm text-gray-500 mt-2">
+      Breakdown of reported community issues
+    </p>
+
+    <div className="space-y-4 mt-5">
+      {Object.entries(categoryCounts).map(([category, count]) => (
+        <div key={category}>
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-gray-700">{category}</span>
+            <span className="font-semibold">{count}</span>
+          </div>
+
+          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-600 rounded-full"
+              style={{
+                width: `${totalReports ? (count / totalReports) * 100 : 0}%`,
+              }}
+            />
+          </div>
+        </div>
+      ))}
+
+      {Object.keys(categoryCounts).length === 0 && (
+        <p className="text-sm text-gray-500">No reports available yet.</p>
+      )}
+    </div>
+  </div>
+</div>
+
           {/* Recent Reports */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
@@ -191,7 +272,7 @@ export default function AdminDashboard() {
                 </thead>
 
                 <tbody>
-                  {reports.map((report) => (
+                  {recentReports.map((report) => (
                     <tr
                       key={report.id}
                       className="border-b border-gray-100 last:border-0 hover:bg-gray-50"
