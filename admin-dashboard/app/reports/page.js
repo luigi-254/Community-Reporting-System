@@ -11,8 +11,53 @@ export default function ReportsPage() {
 
   const [selectedReport, setSelectedReport] = useState(null);
   const [editingReport, setEditingReport] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
+  
+const exportReports = () => {
+  const headers = [
+    "Report ID",
+    "Issue",
+    "Category",
+    "Location",
+    "Status",
+    "Date",
+    "Reported By",
+    "Description",
+  ];
+
+  const escapeCSV = (value) =>
+    `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+  const rows = filteredReports.map((report) =>
+    [
+      report.id,
+      report.issue,
+      report.category,
+      report.location,
+      report.status,
+      report.date,
+      report.reportedBy,
+      report.description,
+    ]
+      .map(escapeCSV)
+      .join(",")
+  );
+
+  const csv = [headers.map(escapeCSV).join(","), ...rows].join("\r\n");
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "community-reports.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
 
   const filteredReports = reports.filter((report) => {
     const searchText = normalizeText(search);
@@ -37,26 +82,44 @@ export default function ReportsPage() {
     setSelectedReport(null);
   };
 
-  const saveReport = () => {
-    if (!editingReport) return;
+ 
+const saveReport = () => {
+  if (!editingReport) return;
 
-    const updatedReport = {
-      ...editingReport,
-      issue: editingReport.issue.trim(),
-      location: editingReport.location.trim(),
-      reportedBy: editingReport.reportedBy.trim(),
-      description: editingReport.description.trim(),
-    };
+  if (
+    !editingReport.issue.trim() ||
+    !editingReport.location.trim() ||
+    !editingReport.reportedBy.trim() ||
+    !editingReport.description.trim()
+  ) {
+    setSuccessMessage("");
+    alert("Please fill in all required fields.");
+    return;
+  }
 
-    setReports((currentReports) =>
-      currentReports.map((report) =>
-        report.id === updatedReport.id ? updatedReport : report
-      )
-    );
-
-    setSelectedReport(updatedReport);
-    setEditingReport(null);
+  const updatedReport = {
+    ...editingReport,
+    issue: editingReport.issue.trim(),
+    location: editingReport.location.trim(),
+    reportedBy: editingReport.reportedBy.trim(),
+    description: editingReport.description.trim(),
   };
+
+  setReports((currentReports) =>
+    currentReports.map((report) =>
+      report.id === updatedReport.id ? updatedReport : report
+    )
+  );
+
+  setSelectedReport(updatedReport);
+  setEditingReport(null);
+  setSuccessMessage(`Report ${updatedReport.id} updated successfully.`);
+
+  setTimeout(() => {
+    setSuccessMessage("");
+  }, 3000);
+};
+
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
@@ -80,6 +143,24 @@ export default function ReportsPage() {
       </header>
 
       <main className="p-8">
+      
+{successMessage && (
+  <div
+    role="status"
+    className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800"
+  >
+    {successMessage}
+    
+<button
+  onClick={exportReports}
+  className="px-4 py-3 bg-green-700 text-white rounded-lg text-sm font-medium hover:bg-green-800"
+>
+  Export CSV
+</button>
+
+  </div>
+)}
+
         {/* Search and Filter */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
