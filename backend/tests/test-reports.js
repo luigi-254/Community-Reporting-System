@@ -60,9 +60,10 @@ async function runReportTests() {
 
   try {
     // 0. Seed a citizen user and an officer user
+    const testId = Date.now();
     const citizen = await db.createUser({
       name: 'Alice Citizen',
-      email: 'alice.citizen@example.com',
+      email: `alice.${testId}@example.com`,
       password: 'hashedpassword',
       role: 'CITIZEN',
       ward: 'Kilimani Ward',
@@ -75,7 +76,7 @@ async function runReportTests() {
 
     const officer = await db.createUser({
       name: 'Officer Bob',
-      email: 'bob.officer@example.com',
+      email: `bob.${testId}@example.com`,
       password: 'hashedpassword',
       role: 'OFFICER',
     });

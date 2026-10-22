@@ -65,13 +65,14 @@ const locationRepository = {
   async findCounties({ search } = {}) {
     if (checkIsPrisma()) {
       try {
-        return await getPrismaClient().county.findMany({
+        const rows = await getPrismaClient().county.findMany({
           where: {
             isActive: true,
             ...(search && { name: { contains: search, mode: 'insensitive' } }),
           },
           orderBy: { name: 'asc' },
         });
+        if (rows && rows.length > 0) return rows;
       } catch (error) {
         console.warn('[DB] Prisma findCounties failed, falling back to memory:', error.message);
       }
@@ -88,10 +89,11 @@ const locationRepository = {
   async findCountyById(id) {
     if (checkIsPrisma()) {
       try {
-        return await getPrismaClient().county.findUnique({
+        const county = await getPrismaClient().county.findUnique({
           where: { id },
           include: { subCounties: { where: { isActive: true }, orderBy: { name: 'asc' } } },
         });
+        if (county) return county;
       } catch (error) {
         console.warn('[DB] Prisma findCountyById failed, falling back to memory:', error.message);
       }
@@ -102,10 +104,11 @@ const locationRepository = {
   async findSubCounties(countyId) {
     if (checkIsPrisma()) {
       try {
-        return await getPrismaClient().subCounty.findMany({
+        const rows = await getPrismaClient().subCounty.findMany({
           where: { countyId, isActive: true },
           orderBy: { name: 'asc' },
         });
+        if (rows && rows.length > 0) return rows;
       } catch (error) {
         console.warn('[DB] Prisma findSubCounties failed, falling back to memory:', error.message);
       }
@@ -118,10 +121,11 @@ const locationRepository = {
   async findWards(subCountyId) {
     if (checkIsPrisma()) {
       try {
-        return await getPrismaClient().ward.findMany({
+        const rows = await getPrismaClient().ward.findMany({
           where: { subCountyId, isActive: true },
           orderBy: { name: 'asc' },
         });
+        if (rows && rows.length > 0) return rows;
       } catch (error) {
         console.warn('[DB] Prisma findWards failed, falling back to memory:', error.message);
       }
@@ -134,7 +138,8 @@ const locationRepository = {
   async findSubCountyById(id) {
     if (checkIsPrisma()) {
       try {
-        return await getPrismaClient().subCounty.findUnique({ where: { id } });
+        const subCounty = await getPrismaClient().subCounty.findUnique({ where: { id } });
+        if (subCounty) return subCounty;
       } catch (error) {
         console.warn('[DB] Prisma findSubCountyById failed, falling back to memory:', error.message);
       }

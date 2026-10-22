@@ -1393,7 +1393,7 @@ const [gpsStatus, setGpsStatus] = useState("");
             )}
 
             <p className="mt-8 border-t border-[#dce2d8] pt-5 text-xs leading-5 text-[#7a8378]">
-              Use an account registered through this project's backend.
+              Use an account registered through this project&apos;s backend.
               Sample accounts from the dashboard do not work unless they
               also exist in the backend.
             </p>

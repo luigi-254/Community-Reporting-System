@@ -30,9 +30,10 @@ const request = (method, path, body = null, token = null) =>
 
 const server = app.listen(port, async () => {
   try {
+    const testId = Date.now();
     const admin = await db.createUser({
       name: 'Officer Test Admin',
-      email: 'officer-admin@example.com',
+      email: `officer-admin-${testId}@example.com`,
       password: 'hashedpassword',
       role: 'ADMIN',
     });
@@ -40,7 +41,8 @@ const server = app.listen(port, async () => {
 
     const created = await request('POST', '/api/officers', {
       name: 'Jane Officer',
-      email: 'jane.officer@example.com',
+      email: `jane.officer.${testId}@example.com`,
+      phone: `+2547${String(testId).slice(-8)}`,
       password: 'secure-password',
       departmentId: 'roads-department',
     }, token);
