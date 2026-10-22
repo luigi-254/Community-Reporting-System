@@ -109,7 +109,8 @@ export default function UsersPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by name, email, or role..."
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              aria-label="Search users"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus-visible:ring-2 focus-visible:ring-blue-200"
             />
           </div>
 
@@ -151,6 +152,7 @@ export default function UsersPage() {
                         onClick={() => toggleStatus(user.id)}
                         className="font-medium text-blue-600 hover:text-blue-800 focus:outline-none focus:underline"
                         aria-label={`${user.status === "Active" ? "Deactivate" : "Activate"} ${user.name}`}
+                        aria-pressed={user.status === "Active"}
                       >
                         {user.status === "Active" ? "Deactivate" : "Activate"}
                       </button>
