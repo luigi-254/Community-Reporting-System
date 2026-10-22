@@ -431,7 +431,7 @@ export default function StatisticsPage() {
               Status Breakdown
             </h2>
             <p className="mb-5 mt-1 text-sm text-gray-500">
-              Counts by the backend's report statuses
+              Counts by the backend&apos;s report statuses
             </p>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

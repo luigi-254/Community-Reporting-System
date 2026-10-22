@@ -136,9 +136,6 @@ export default function AdminDashboard() {
   const [lastUpdated, setLastUpdated] = useState("");
 
   const loadReports = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/reports?page=1&limit=100`,
@@ -354,7 +351,11 @@ export default function AdminDashboard() {
             </div>
 
             <button
-              onClick={loadReports}
+              onClick={() => {
+                setLoading(true);
+                setError("");
+                loadReports();
+              }}
               disabled={loading}
               className="rounded-lg bg-[#24543b] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#173d2d] disabled:cursor-not-allowed disabled:opacity-60"
             >

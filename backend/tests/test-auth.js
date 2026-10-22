@@ -62,10 +62,13 @@ async function runTests() {
     console.log('✓ GET /health:', healthRes.status, healthRes.body.status);
 
     // 1. POST /api/auth/register
+    const testId = Date.now();
+    const testEmail = `citizen.${testId}@example.com`;
+    const testPhone = `+2547${String(testId).slice(-8)}`;
     const registerPayload = {
       name: 'John Doe Citizen',
-      email: 'citizen.john@example.com',
-      phone: '+254712345678',
+      email: testEmail,
+      phone: testPhone,
       password: 'StrongPassword123!',
       role: 'CITIZEN',
       ward: 'Central Ward',
@@ -79,14 +82,14 @@ async function runTests() {
     let refreshToken = regRes.body.data.refreshToken;
 
     const verifyRes = await request('POST', '/api/auth/verify', {
-      identifier: 'citizen.john@example.com',
+      identifier: testEmail,
       code: verificationCode,
     });
     console.log('✓ POST /api/auth/verify:', verifyRes.status, verifyRes.body.message);
     if (verifyRes.status !== 200) throw new Error('Verification failed');
 
     const loginRes = await request('POST', '/api/auth/login', {
-      identifier: 'citizen.john@example.com',
+      identifier: testEmail,
       password: 'StrongPassword123!',
     });
     console.log('✓ POST /api/auth/login:', loginRes.status, loginRes.body.message);
@@ -109,7 +112,7 @@ async function runTests() {
     accessToken = refreshRes.body.data.accessToken;
     refreshToken = refreshRes.body.data.refreshToken;
     const forgotRes = await request('POST', '/api/auth/forgot-password', {
-      identifier: 'citizen.john@example.com',
+      identifier: testEmail,
     });
     console.log('✓ POST /api/auth/forgot-password:', forgotRes.status, forgotRes.body.message);
     if (forgotRes.status !== 200) throw new Error('Forgot password failed');
@@ -123,7 +126,7 @@ async function runTests() {
 
     // Test login with new password
     const newLoginRes = await request('POST', '/api/auth/login', {
-      identifier: 'citizen.john@example.com',
+      identifier: testEmail,
       password: 'BrandNewPassword456!',
     });
     console.log('✓ POST /api/auth/login (with new password):', newLoginRes.status, newLoginRes.body.message);
