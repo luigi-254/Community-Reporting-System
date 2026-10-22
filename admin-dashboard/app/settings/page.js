@@ -1,12 +1,97 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import Link from "next/link";
 
-export default function SettingsPage() {
-  const [notifications, setNotifications] = useState(true);
-  const [emailAlerts, setEmailAlerts] = useState(true);
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
+const initialReports = [
+  {
+    id: "RPT-1024",
+    issue: "Large pothole on Main Street",
+    category: "Roads",
+    location: "Main Street, Downtown",
+    reportedBy: "Alicia Thompson",
+    status: "Pending",
+    description:
+      "A large pothole has formed near the downtown crossing and is causing traffic issues and potential vehicle damage.",
+    date: "2025-01-15",
+  },
+  {
+    id: "RPT-1025",
+    issue: "Blocked drainage channel",
+    category: "Drainage",
+    location: "Oak Avenue",
+    reportedBy: "Marcus Lee",
+    status: "In Progress",
+    description:
+      "The drainage channel near Oak Avenue is blocked by debris and is causing water to pool on the road after rainfall.",
+    date: "2025-01-18",
+  },
+  {
+    id: "RPT-1026",
+    issue: "Broken streetlight",
+    category: "Infrastructure",
+    location: "Cedar Lane",
+    reportedBy: "Priya Shah",
+    status: "Resolved",
+    description:
+      "The streetlight at the corner of Cedar Lane and 5th Street has been out for several nights, creating unsafe walking conditions.",
+    date: "2025-01-20",
+  },
+];
+
+export default function ReportsPage() {
+  const [reports, setReports] = useState(initialReports);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [editingReport, setEditingReport] = useState(null);
+
+  const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
+
+  const filteredReports = reports.filter((report) => {
+    const searchText = normalizeText(search);
+
+    const matchesSearch = [
+      report.id,
+      report.issue,
+      report.category,
+      report.location,
+      report.reportedBy,
+      report.description,
+    ].some((value) => normalizeText(value).includes(searchText));
+
+    const matchesStatus =
+      statusFilter === "All" || report.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const openEditForm = (report) => {
+    setEditingReport({ ...report });
+    setSelectedReport(null);
+  };
+
+  const saveReport = () => {
+    if (!editingReport) return;
+
+    const updatedReport = {
+      ...editingReport,
+      issue: editingReport.issue.trim(),
+      location: editingReport.location.trim(),
+      reportedBy: editingReport.reportedBy.trim(),
+      description: editingReport.description.trim(),
+    };
+
+    setReports((currentReports) =>
+      currentReports.map((report) =>
+        report.id === updatedReport.id ? updatedReport : report
+      )
+    );
+
+    setSelectedReport(updatedReport);
+    setEditingReport(null);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
@@ -32,26 +117,99 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      {/* Main */}
       <main className="p-8">
-        <div className="max-w-4xl space-y-6">
+        {/* Search and Filter */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <label
+                htmlFor="report-search"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Search Reports
+              </label>
 
-          {/* Profile Settings */}
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
+              <input
+                id="report-search"
+                type="text"
+                placeholder="Search by ID, issue, category or location..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+
+            <div className="w-full md:w-56">
+              <label
+                htmlFor="status-filter"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Filter by Status
+              </label>
+
+              <select
+                id="status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-gray-900"
+              >
+                <option value="All">All Reports</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Reports Table */}
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-gray-200">
             <h2 className="text-lg font-bold">
-              Administrator Profile
+              Reports ({filteredReports.length})
             </h2>
+          </div>
 
-            <p className="text-sm text-gray-500 mt-1 mb-6">
-              Information about the administrator account
-            </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="text-left px-6 py-4 font-semibold">
+                    Report ID
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold">
+                    Issue
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold">
+                    Category
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold">
+                    Location
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold">
+                    Status
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold">
+                    Date
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold">
+                    Action
+                  </th>
+                </tr>
+              </thead>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <tbody>
+                {filteredReports.length > 0 ? (
+                  filteredReports.map((report) => (
+                    <tr
+                      key={report.id}
+                      className="border-b border-gray-100 last:border-0 hover:bg-gray-50"
+                    >
+                      <td className="px-6 py-4 font-medium">{report.id}</td>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Full Name
-                </label>
+                      <td className="px-6 py-4 font-medium">
+                        {report.issue}
+                      </td>
 
                 <input
                   type="text"
@@ -60,10 +218,9 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Email Address
-                </label>
+                      <td className="px-6 py-4 text-gray-600">
+                        {report.location}
+                      </td>
 
                 <input
                   type="email"
@@ -72,35 +229,137 @@ export default function SettingsPage() {
                 />
               </div>
 
+              <button
+                type="button"
+                onClick={() => setSelectedReport(null)}
+                aria-label={`Close report ${selectedReport.id}`}
+                className="text-gray-500 hover:text-gray-900 text-xl"
+              >
+                ×
+              </button>
             </div>
-          </section>
 
-          {/* Notification Settings */}
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold">
-              Notifications
-            </h2>
+            <div className="p-6 space-y-5">
+              <div>
+                <p className="text-sm text-gray-500">Issue</p>
+                <p className="font-semibold mt-1">
+                  {selectedReport.issue}
+                </p>
+              </div>
 
-            <p className="text-sm text-gray-500 mt-1 mb-6">
-              Control how the system sends notifications
-            </p>
-
-            <div className="space-y-5">
-
-              <div className="flex items-center justify-between">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <p className="font-medium">
-                    Dashboard Notifications
-                  </p>
-
-                  <p className="text-sm text-gray-500">
-                    Receive notifications about new reports
+                  <p className="text-sm text-gray-500">Category</p>
+                  <p className="font-medium mt-1">
+                    {selectedReport.category}
                   </p>
                 </div>
 
-                <button
-                  onClick={() =>
-                    setNotifications(!notifications)
+                <div>
+                  <p className="text-sm text-gray-500">Location</p>
+                  <p className="font-medium mt-1">
+                    {selectedReport.location}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-500">Reported By</p>
+                  <p className="font-medium mt-1">
+                    {selectedReport.reportedBy}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-500">Date</p>
+                  <p className="font-medium mt-1">
+                    {selectedReport.date}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Status</p>
+                <span className="inline-flex mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                  {selectedReport.status}
+                </span>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Description</p>
+                <p className="mt-2 text-gray-700 leading-6">
+                  {selectedReport.description}
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedReport(null)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+              >
+                Close
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openEditForm(selectedReport)}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
+              >
+                Edit Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Report Modal */}
+      {editingReport && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center p-6 z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-report-title"
+        >
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-5 border-b border-gray-200">
+              <h2 id="edit-report-title" className="text-xl font-bold">
+                Edit Report
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Update report information and status
+              </p>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Report ID */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Report ID
+                </label>
+
+                <input
+                  value={editingReport.id}
+                  disabled
+                  aria-label="Report ID"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-100 text-gray-500"
+                />
+              </div>
+
+              {/* Issue */}
+              <div>
+                <label htmlFor="edit-issue" className="block text-sm font-medium mb-2">
+                  Issue
+                </label>
+
+                <input
+                  id="edit-issue"
+                  value={editingReport.issue}
+                  onChange={(e) =>
+                    setEditingReport({
+                      ...editingReport,
+                      issue: e.target.value,
+                    })
                   }
                   className={`w-12 h-6 rounded-full ${
                     notifications
@@ -118,20 +377,66 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between">
+              {/* Category and Location */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <p className="font-medium">
-                    Email Alerts
-                  </p>
+                  <label htmlFor="edit-category" className="block text-sm font-medium mb-2">
+                    Category
+                  </label>
 
-                  <p className="text-sm text-gray-500">
-                    Receive important system updates by email
-                  </p>
+                  <select
+                    id="edit-category"
+                    value={editingReport.category}
+                    onChange={(e) =>
+                      setEditingReport({
+                        ...editingReport,
+                        category: e.target.value,
+                      })
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white"
+                  >
+                    <option>Roads</option>
+                    <option>Drainage</option>
+                    <option>Infrastructure</option>
+                    <option>Pedestrian</option>
+                    <option>Environment</option>
+                    <option>Water</option>
+                  </select>
                 </div>
 
-                <button
-                  onClick={() =>
-                    setEmailAlerts(!emailAlerts)
+                <div>
+                  <label htmlFor="edit-location" className="block text-sm font-medium mb-2">
+                    Location
+                  </label>
+
+                  <input
+                    id="edit-location"
+                    value={editingReport.location}
+                    onChange={(e) =>
+                      setEditingReport({
+                        ...editingReport,
+                        location: e.target.value,
+                      })
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  />
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label htmlFor="edit-status" className="block text-sm font-medium mb-2">
+                  Status
+                </label>
+
+                <select
+                  id="edit-status"
+                  value={editingReport.status}
+                  onChange={(e) =>
+                    setEditingReport({
+                      ...editingReport,
+                      status: e.target.value,
+                    })
                   }
                   className={`w-12 h-6 rounded-full ${
                     emailAlerts
@@ -139,39 +444,60 @@ export default function SettingsPage() {
                       : "bg-gray-300"
                   }`}
                 >
-                  <span
-                    className={`block w-5 h-5 bg-white rounded-full transition-transform ${
-                      emailAlerts
-                        ? "translate-x-6"
-                        : "translate-x-1"
-                    }`}
-                  ></span>
-                </button>
+                  <option>Pending</option>
+                  <option>In Progress</option>
+                  <option>Resolved</option>
+                </select>
               </div>
 
-            </div>
-          </section>
-
-          {/* System Settings */}
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold">
-              System Settings
-            </h2>
-
-            <p className="text-sm text-gray-500 mt-1 mb-6">
-              Configure general system behaviour
-            </p>
-
-            <div className="flex items-center justify-between">
+              {/* Reported By */}
               <div>
-                <p className="font-medium">
-                  Maintenance Mode
-                </p>
+                <label htmlFor="edit-reported-by" className="block text-sm font-medium mb-2">
+                  Reported By
+                </label>
 
-                <p className="text-sm text-gray-500">
-                  Temporarily restrict access while maintenance is being performed
-                </p>
+                <input
+                  id="edit-reported-by"
+                  value={editingReport.reportedBy}
+                  onChange={(e) =>
+                    setEditingReport({
+                      ...editingReport,
+                      reportedBy: e.target.value,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                />
               </div>
+
+              {/* Description */}
+              <div>
+                <label htmlFor="edit-description" className="block text-sm font-medium mb-2">
+                  Description
+                </label>
+
+                <textarea
+                  id="edit-description"
+                  rows="4"
+                  value={editingReport.description}
+                  onChange={(e) =>
+                    setEditingReport({
+                      ...editingReport,
+                      description: e.target.value,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setEditingReport(null)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+              >
+                Cancel
+              </button>
 
               <button
                 onClick={() =>
@@ -183,13 +509,7 @@ export default function SettingsPage() {
                     : "bg-gray-300"
                 }`}
               >
-                <span
-                  className={`block w-5 h-5 bg-white rounded-full transition-transform ${
-                    maintenanceMode
-                      ? "translate-x-6"
-                      : "translate-x-1"
-                  }`}
-                ></span>
+                Save Changes
               </button>
             </div>
           </section>
@@ -205,9 +525,8 @@ export default function SettingsPage() {
               Save Settings
             </button>
           </div>
-
         </div>
-      </main>
+      )}
     </div>
   );
 }

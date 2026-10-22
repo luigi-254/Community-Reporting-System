@@ -320,8 +320,10 @@ export default function ReportsPage() {
     const matchesStatus =
       statusFilter === "ALL" || report.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+    if (page === "Reports") {
+      router.push("/reports");
+      return;
+    }
 
   const stats = [
     {
@@ -389,7 +391,19 @@ export default function ReportsPage() {
             </Link>
           </div>
         </div>
-      </header>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Admin Dashboard</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Community issue reporting management system
+              </p>
+            </div>
 
       <main className="mx-auto max-w-7xl space-y-6 p-5 md:p-8">
         {error && (

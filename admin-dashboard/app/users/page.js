@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { reports } from "../../data/reports";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -435,6 +436,18 @@ export default function UsersPage() {
               {loading ? "Refreshing..." : "Refresh list"}
             </button>
           </div>
+        </div>
+
+        {/* Resolution Rate */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-bold">Resolution Rate</h2>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Percentage of reports successfully resolved
+              </p>
+            </div>
 
           <input
             value={search}
