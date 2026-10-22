@@ -1,412 +1,503 @@
 
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-const initialUsers = [
-  {
-    id: 1,
-    name: "Enock matara",
-    email: "enock@example.com",
-    role: "Citizen",
-    status: "Active",
-    reports: 3,
-  },
-  {
-    id: 2,
-    name: "John Osiemo",
-    email: "john@example.com",
-    role: "Citizen",
-    status: "Active",
-    reports: 5,
-  },
-  {
-    id: 3,
-    name: "Admin User",
-    email: "admin@example.com",
-    role: "Administrator",
-    status: "Active",
-    reports: 0,
-  },
-];
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/+$/, "");
 
-export default function UsersPage() {
-  const [users, setUsers] = useState(initialUsers);
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("All");
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [newRole, setNewRole] = useState("Citizen");
-  const [message, setMessage] = useState("");
+const INITIAL_FORM = {
+  name: "",
+  email: "",
+  password: "",
+  phone: "",
+  county: "Kisii",
+  subCounty: "",
+  ward: "",
+};
 
-  const activeUsers = users.filter(
-    (user) => user.status === "Active"
-  ).length;
+const inputClass =
+  "w-full rounded-lg border border-[#cbd6c8] bg-white px-3 py-2.5 text-sm text-[#243329] outline-none focus:border-[#55745c] focus:ring-2 focus:ring-[#eff1e9]";
 
-  const inactiveUsers = users.filter(
-    (user) => user.status === "Inactive"
-  ).length;
+function getAdminToken() {
+  if (typeof window === "undefined") return null;
 
-  const filteredUsers = users.filter((user) => {
-    const searchText =
-      `${user.name} ${user.email} ${user.role}`.toLowerCase();
+  const keys = [
+    "crs_admin_access_token",
+    "crs_access_token",
+    "accessToken",
+    "access_token",
+    "authToken",
+    "token",
+  ];
 
-    const matchesSearch = searchText.includes(
-      search.toLowerCase().trim()
-    );
-
-    const matchesRole =
-      roleFilter === "All" || user.role === roleFilter;
-
-    return matchesSearch && matchesRole;
-  });
-
-  function toggleStatus(id) {
-    setUsers((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              status:
-                user.status === "Active" ? "Inactive" : "Active",
-            }
-          : user
-      )
-    );
-
-    setMessage("User status updated in this demo.");
+  for (const key of keys) {
+    const value = window.localStorage.getItem(key);
+    if (value) return value;
   }
 
-  function addUser(event) {
-    event.preventDefault();
+  return null;
+}
 
-    const name = newName.trim();
-    const email = newEmail.trim();
+async function readResponse(response) {
+  return response.json().catch(() => ({}));
+}
 
-    if (!name || !email) {
-      setMessage("Please enter the user's name and email.");
+function friendlyApiError(response, payload) {
+  if (response.status === 401) {
+    return "Your admin session is missing or expired. Sign in to the Admin Dashboard again.";
+  }
+
+  if (response.status === 403) {
+    return "Access denied. Only an ADMIN or SUPER_ADMIN can manage officer accounts.";
+  }
+
+  return payload?.message || `Request failed with status ${response.status}.`;
+}
+
+export default function UsersPage() {
+  const [officers, setOfficers] = useState([]);
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const loadOfficers = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    const token = getAdminToken();
+
+    if (!token) {
+      setError(
+        "No admin login token was found. Sign in using an ADMIN or SUPER_ADMIN account before managing officers."
+      );
+      setLoading(false);
       return;
     }
 
-    const emailExists = users.some(
-      (user) => user.email.toLowerCase() === email.toLowerCase()
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/officers`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      });
+
+      const payload = await readResponse(response);
+
+      if (!response.ok) {
+        throw new Error(friendlyApiError(response, payload));
+      }
+
+      const result = payload?.data?.officers;
+
+      setOfficers(Array.isArray(result) ? result : []);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not load officer accounts. Check that the backend is running."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadOfficers();
+  }, [loadOfficers]);
+
+  const filteredOfficers = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) return officers;
+
+    return officers.filter((officer) =>
+      [
+        officer.name,
+        officer.email,
+        officer.phone,
+        officer.county,
+        officer.subCounty,
+        officer.ward,
+        officer.role,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query))
     );
+  }, [officers, search]);
 
-    if (emailExists) {
-      setMessage("A user with this email already exists.");
+  const activeCount = officers.filter(
+    (officer) => officer.isActive !== false
+  ).length;
+
+  async function handleCreateOfficer(event) {
+    event.preventDefault();
+    setError("");
+    setSuccess("");
+
+    const token = getAdminToken();
+
+    if (!token) {
+      setError(
+        "Please sign in to the Admin Dashboard before creating an officer."
+      );
       return;
     }
 
-    const newUser = {
-      id: Date.now(),
-      name,
-      email,
-      role: newRole,
-      status: "Active",
-      reports: 0,
-    };
+    if (form.name.trim().length < 2) {
+      setError("Enter the officer's full name.");
+      return;
+    }
 
-    setUsers((currentUsers) => [...currentUsers, newUser]);
+    if (form.password.length < 6) {
+      setError("The initial password must contain at least 6 characters.");
+      return;
+    }
 
-    setNewName("");
-    setNewEmail("");
-    setNewRole("Citizen");
-    setShowAddForm(false);
-    setRoleFilter("All");
-    setSearch("");
-    setMessage("Demo user added successfully.");
+    setSubmitting(true);
+
+    try {
+      const body = {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        phone: form.phone.trim(),
+        county: form.county.trim(),
+        subCounty: form.subCounty.trim(),
+        ward: form.ward.trim(),
+        isActive: true,
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/officers`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const payload = await readResponse(response);
+
+      if (!response.ok) {
+        throw new Error(friendlyApiError(response, payload));
+      }
+
+      setForm(INITIAL_FORM);
+      setSuccess(
+        "Officer account created. The backend assigned the OFFICER role and saved the account."
+      );
+
+      await loadOfficers();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to create the officer account."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function updateField(event) {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6 text-gray-900 md:p-10">
+    <main className="min-h-screen bg-[#f7f7f2] p-5 text-[#243329] md:p-10">
       <div className="mx-auto max-w-7xl">
-        {/* Page Header */}
-        <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <header className="mb-8 flex flex-wrap items-center justify-between gap-5 border-b border-[#dce2d8] pb-7">
           <div>
-            <h1 className="text-3xl font-bold">
-              User Management
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#55745c]">
+              Community Reporting System
+            </p>
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Government Officer Management
             </h1>
-            <p className="mt-2 text-gray-600">
-              View and manage community reporting system users.
+            <p className="mt-2 text-sm text-[#687468]">
+              Create officer accounts and manage the officers registered in the database.
             </p>
           </div>
 
           <Link
             href="/"
-            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+            className="inline-flex items-center rounded-lg border border-[#cbd6c8] px-4 py-3 text-sm font-medium text-[#244637] hover:bg-[#eff1e9]"
           >
             Back to Dashboard
           </Link>
         </header>
 
-        {/* User Statistics */}
-        <section className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <p className="text-sm text-gray-500">Total Users</p>
-            <p className="mt-2 text-3xl font-bold">
-              {users.length}
-            </p>
+        <section className="mb-8 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-[#dce2d8] bg-white p-5">
+            <p className="text-sm text-[#687468]">Total officers</p>
+            <p className="mt-2 text-3xl font-semibold">{officers.length}</p>
           </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <p className="text-sm text-gray-500">Active Users</p>
-            <p className="mt-2 text-3xl font-bold text-green-600">
-              {activeUsers}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <p className="text-sm text-gray-500">Inactive Users</p>
-            <p className="mt-2 text-3xl font-bold text-gray-500">
-              {inactiveUsers}
-            </p>
+          <div className="rounded-xl border border-[#dce2d8] bg-white p-5">
+            <p className="text-sm text-[#687468]">Active officers</p>
+            <p className="mt-2 text-3xl font-semibold">{activeCount}</p>
           </div>
         </section>
 
-        {/* User Management Controls */}
-        <section className="mb-6 rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-bold">Manage Users</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Search, filter, or add a demo user.
-              </p>
-            </div>
+        {error && (
+          <div
+            role="alert"
+            className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          >
+            {error}
+          </div>
+        )}
 
-            <button
-              type="button"
-              onClick={() => {
-                setShowAddForm((current) => !current);
-                setMessage("");
-              }}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              {showAddForm ? "Cancel" : "+ Add User"}
-            </button>
+        {success && (
+          <div
+            role="status"
+            className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+          >
+            {success}
+          </div>
+        )}
+
+        <section className="mb-8 rounded-xl border border-[#dce2d8] bg-white p-5 md:p-7">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold">Create officer account</h2>
+            <p className="mt-1 text-sm text-[#687468]">
+              The backend assigns the OFFICER role. The officer can then sign in through the Government Portal.
+            </p>
           </div>
 
-          {message && (
-            <p
-              role="status"
-              className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-800"
-            >
-              {message}
-            </p>
-          )}
-
-          {/* Add User Form */}
-          {showAddForm && (
-            <form
-              onSubmit={addUser}
-              className="mt-5 grid gap-4 border-t border-gray-100 pt-5 md:grid-cols-2"
-            >
-              <div>
-                <label
-                  htmlFor="new-name"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  Full Name
-                </label>
-                <input
-                  id="new-name"
-                  type="text"
-                  required
-                  value={newName}
-                  onChange={(event) => setNewName(event.target.value)}
-                  placeholder="Enter full name"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="new-email"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  Email Address
-                </label>
-                <input
-                  id="new-email"
-                  type="email"
-                  required
-                  value={newEmail}
-                  onChange={(event) => setNewEmail(event.target.value)}
-                  placeholder="Enter email address"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="new-role"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  User Role
-                </label>
-                <select
-                  id="new-role"
-                  value={newRole}
-                  onChange={(event) => setNewRole(event.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                >
-                  <option value="Citizen">Citizen</option>
-                  <option value="Government Officer">
-                    Government Officer
-                  </option>
-                  <option value="Administrator">
-                    Administrator
-                  </option>
-                </select>
-              </div>
-
-              <div className="flex items-end">
-                <button
-                  type="submit"
-                  className="w-full rounded-lg bg-gray-900 px-4 py-2 font-medium text-white hover:bg-gray-700"
-                >
-                  Create Demo User
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Search and Role Filter */}
-          <div className="mt-5 grid gap-4 border-t border-gray-100 pt-5 md:grid-cols-2">
+          <form onSubmit={handleCreateOfficer} className="grid gap-5 md:grid-cols-2">
             <div>
-              <label
-                htmlFor="user-search"
-                className="mb-2 block text-sm font-medium text-gray-700"
-              >
-                Search Users
+              <label htmlFor="officer-name" className="mb-2 block text-sm font-medium">
+                Full name *
               </label>
               <input
-                id="user-search"
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search name, email, or role..."
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-blue-500"
+                id="officer-name"
+                name="name"
+                value={form.name}
+                onChange={updateField}
+                className={inputClass}
+                placeholder="Enter full name"
+                autoComplete="name"
+                minLength={2}
+                maxLength={100}
+                required
               />
             </div>
 
             <div>
-              <label
-                htmlFor="role-filter"
-                className="mb-2 block text-sm font-medium text-gray-700"
-              >
-                Filter by Role
+              <label htmlFor="officer-email" className="mb-2 block text-sm font-medium">
+                Email address *
               </label>
-              <select
-                id="role-filter"
-                value={roleFilter}
-                onChange={(event) => setRoleFilter(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-blue-500"
-              >
-                <option value="All">All Roles</option>
-                <option value="Citizen">Citizen</option>
-                <option value="Government Officer">
-                  Government Officer
-                </option>
-                <option value="Administrator">Administrator</option>
-              </select>
+              <input
+                id="officer-email"
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={updateField}
+                className={inputClass}
+                placeholder="officer@example.com"
+                autoComplete="email"
+                required
+              />
             </div>
-          </div>
+
+            <div>
+              <label htmlFor="officer-password" className="mb-2 block text-sm font-medium">
+                Initial password *
+              </label>
+              <input
+                id="officer-password"
+                name="password"
+                type="password"
+                value={form.password}
+                onChange={updateField}
+                className={inputClass}
+                placeholder="At least 6 characters"
+                autoComplete="new-password"
+                minLength={6}
+                maxLength={100}
+                required
+              />
+              <p className="mt-1 text-xs text-[#687468]">
+                Give the officer their initial password securely.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="officer-phone" className="mb-2 block text-sm font-medium">
+                Phone number
+              </label>
+              <input
+                id="officer-phone"
+                name="phone"
+                value={form.phone}
+                onChange={updateField}
+                className={inputClass}
+                placeholder="Optional"
+                autoComplete="tel"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="officer-county" className="mb-2 block text-sm font-medium">
+                County
+              </label>
+              <input
+                id="officer-county"
+                name="county"
+                value={form.county}
+                onChange={updateField}
+                className={inputClass}
+                placeholder="Kisii"
+                maxLength={100}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="officer-subcounty" className="mb-2 block text-sm font-medium">
+                Sub-county
+              </label>
+              <input
+                id="officer-subcounty"
+                name="subCounty"
+                value={form.subCounty}
+                onChange={updateField}
+                className={inputClass}
+                placeholder="Optional"
+                maxLength={100}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="officer-ward" className="mb-2 block text-sm font-medium">
+                Ward
+              </label>
+              <input
+                id="officer-ward"
+                name="ward"
+                value={form.ward}
+                onChange={updateField}
+                className={inputClass}
+                placeholder="Optional"
+                maxLength={100}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="officer-role" className="mb-2 block text-sm font-medium">
+                Assigned role
+              </label>
+              <input
+                id="officer-role"
+                value="Government Officer (OFFICER)"
+                className={`${inputClass} bg-[#eff1e9]`}
+                readOnly
+              />
+              <p className="mt-1 text-xs text-[#687468]">
+                This account creation form cannot assign administrator privileges.
+              </p>
+            </div>
+
+            <div className="md:col-span-2">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="rounded-lg bg-[#244637] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#19372a] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitting ? "Creating account..." : "Create officer account"}
+              </button>
+            </div>
+          </form>
         </section>
 
-        {/* Users Table */}
-        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-5">
-            <h2 className="text-lg font-bold">System Users</h2>
-            <p className="text-sm text-gray-500">
-              Showing {filteredUsers.length} of {users.length} users
+        <section className="rounded-xl border border-[#dce2d8] bg-white p-5 md:p-7">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold">Registered officers</h2>
+              <p className="mt-1 text-sm text-[#687468]">
+                This list is loaded from the backend API.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={loadOfficers}
+              disabled={loading}
+              className="rounded-lg border border-[#cbd6c8] px-4 py-2 text-sm font-medium hover:bg-[#eff1e9] disabled:opacity-60"
+            >
+              {loading ? "Refreshing..." : "Refresh list"}
+            </button>
+          </div>
+
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className={inputClass}
+            placeholder="Search by name, email, phone or location"
+            aria-label="Search officers"
+          />
+
+          {loading ? (
+            <p className="py-8 text-sm text-[#687468]">Loading officer accounts...</p>
+          ) : filteredOfficers.length === 0 ? (
+            <p className="py-8 text-sm text-[#687468]">
+              {officers.length === 0
+                ? "No officer accounts were returned. Create an account using the form above."
+                : "No officers match your search."}
             </p>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-600">
-                <tr>
-                  <th className="p-4 font-semibold">Name</th>
-                  <th className="p-4 font-semibold">Email</th>
-                  <th className="p-4 font-semibold">Role</th>
-                  <th className="p-4 font-semibold">Reports</th>
-                  <th className="p-4 font-semibold">Status</th>
-                  <th className="p-4 font-semibold">Action</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-100">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="p-4 font-medium">
-                      {user.name}
-                    </td>
-
-                    <td className="p-4 text-gray-600">
-                      {user.email}
-                    </td>
-
-                    <td className="p-4">
-                      <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-                        {user.role}
-                      </span>
-                    </td>
-
-                    <td className="p-4">{user.reports}</td>
-
-                    <td className="p-4">
-                      <span
-                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                          user.status === "Active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-
-                    <td className="p-4">
-                      <button
-                        type="button"
-                        onClick={() => toggleStatus(user.id)}
-                        className={`font-medium ${
-                          user.status === "Active"
-                            ? "text-red-600 hover:text-red-800"
-                            : "text-green-600 hover:text-green-800"
-                        }`}
-                      >
-                        {user.status === "Active"
-                          ? "Deactivate"
-                          : "Activate"}
-                      </button>
-                    </td>
+          ) : (
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] text-[#687468]">
+                    <th className="px-3 py-3 font-medium">Name</th>
+                    <th className="px-3 py-3 font-medium">Email</th>
+                    <th className="px-3 py-3 font-medium">Location</th>
+                    <th className="px-3 py-3 font-medium">Role</th>
+                    <th className="px-3 py-3 font-medium">Status</th>
                   </tr>
-                ))}
-
-                {filteredUsers.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="p-8 text-center text-gray-500"
+                </thead>
+                <tbody>
+                  {filteredOfficers.map((officer) => (
+                    <tr
+                      key={officer.id || officer.email}
+                      className="border-b border-[#edf0e9] last:border-0"
                     >
-                      No users match your search or selected role.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                      <td className="px-3 py-4 font-medium">
+                        {officer.name || "Unnamed"}
+                      </td>
+                      <td className="px-3 py-4">{officer.email}</td>
+                      <td className="px-3 py-4">
+                        {[officer.ward, officer.subCounty, officer.county]
+                          .filter(Boolean)
+                          .join(", ") || "Not provided"}
+                      </td>
+                      <td className="px-3 py-4">Government Officer</td>
+                      <td className="px-3 py-4">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                            officer.isActive === false
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {officer.isActive === false ? "Inactive" : "Active"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
-
-        {/* Demo Notice */}
-        <p className="mt-4 text-xs text-gray-500">
-          Demo data only. User additions and status changes are held in
-          browser memory and are not saved to a database. Refreshing the
-          page resets these changes.
-        </p>
       </div>
     </main>
   );

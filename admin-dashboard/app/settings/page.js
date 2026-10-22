@@ -11,21 +11,21 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-8 py-6">
+      <header className="bg-slate-900 border-b border-slate-800 px-8 py-6 text-white">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">
               Settings
             </h1>
 
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-400 mt-1">
               Manage your admin dashboard settings
             </p>
           </div>
 
           <Link
             href="/"
-            className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
           >
             Back to Dashboard
           </Link>
@@ -56,7 +56,7 @@ export default function SettingsPage() {
                 <input
                   type="text"
                   defaultValue="System Administrator"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-gray-300"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -68,7 +68,7 @@ export default function SettingsPage() {
                 <input
                   type="email"
                   defaultValue="admin@communityreporting.com"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-gray-300"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -104,7 +104,7 @@ export default function SettingsPage() {
                   }
                   className={`w-12 h-6 rounded-full ${
                     notifications
-                      ? "bg-green-500"
+                      ? "bg-blue-600"
                       : "bg-gray-300"
                   }`}
                 >
@@ -135,7 +135,7 @@ export default function SettingsPage() {
                   }
                   className={`w-12 h-6 rounded-full ${
                     emailAlerts
-                      ? "bg-green-500"
+                      ? "bg-blue-600"
                       : "bg-gray-300"
                   }`}
                 >
@@ -179,7 +179,7 @@ export default function SettingsPage() {
                 }
                 className={`w-12 h-6 rounded-full ${
                   maintenanceMode
-                    ? "bg-green-500"
+                    ? "bg-blue-600"
                     : "bg-gray-300"
                 }`}
               >
@@ -200,7 +200,7 @@ export default function SettingsPage() {
               onClick={() =>
                 alert("Settings saved successfully.")
               }
-              className="px-6 py-3 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
             >
               Save Settings
             </button>
