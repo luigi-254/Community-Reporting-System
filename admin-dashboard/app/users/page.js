@@ -1,185 +1,194 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { reports } from "../../data/reports";
 
-const initialUsers = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-    role: "Citizen",
-    status: "Active",
-    reports: 3,
-  },
-  {
-    id: 2,
-    name: "Mary Wanjiku",
-    email: "mary@example.com",
-    role: "Citizen",
-    status: "Active",
-    reports: 5,
-  },
-  {
-    id: 3,
-    name: "Admin User",
-    email: "admin@example.com",
-    role: "Administrator",
-    status: "Active",
-    reports: 0,
-  },
-];
+export default function StatisticsPage() {
+  const totalReports = reports.length;
 
-export default function UsersPage() {
-  const [users, setUsers] = useState(initialUsers);
-  const [search, setSearch] = useState("");
+  const pendingReports = reports.filter(
+    (report) => report.status === "Pending"
+  ).length;
 
-  const filteredUsers = users.filter((user) =>
-    `${user.name} ${user.email} ${user.role}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const inProgressReports = reports.filter(
+    (report) => report.status === "In Progress"
+  ).length;
 
-  function toggleStatus(id) {
-    setUsers((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              status: user.status === "Active" ? "Inactive" : "Active",
-            }
-          : user
-      )
-    );
-  }
+  const resolvedReports = reports.filter(
+    (report) => report.status === "Resolved"
+  ).length;
+
+  const resolutionRate =
+    totalReports === 0
+      ? 0
+      : Math.round((resolvedReports / totalReports) * 100);
+
+  const categories = {};
+
+  reports.forEach((report) => {
+    categories[report.category] =
+      (categories[report.category] || 0) + 1;
+  });
+
+  const locations = {};
+
+  reports.forEach((report) => {
+    locations[report.location] =
+      (locations[report.location] || 0) + 1;
+  });
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6 md:p-10">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <div className="min-h-screen bg-gray-100 text-gray-900">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-8 py-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              User Management
-            </h1>
-            <p className="mt-2 text-gray-600">
-              View and manage community reporting system users.
+            <h1 className="text-2xl font-bold">Statistics</h1>
+
+            <p className="text-sm text-gray-500 mt-1">
+              Community issue reporting statistics and analytics
             </p>
           </div>
 
           <Link
             href="/"
-            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+            className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
           >
             Back to Dashboard
           </Link>
         </div>
+      </header>
 
-        <section className="mb-6 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border bg-white p-5">
-            <p className="text-sm text-gray-500">Total Users</p>
-            <p className="mt-2 text-2xl font-bold">{users.length}</p>
-          </div>
+      <main className="p-8">
+        {/* Main Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <p className="text-sm text-gray-500">Total Reports</p>
 
-          <div className="rounded-xl border bg-white p-5">
-            <p className="text-sm text-gray-500">Active Users</p>
-            <p className="mt-2 text-2xl font-bold">
-              {users.filter((user) => user.status === "Active").length}
+            <p className="text-3xl font-bold mt-2">{totalReports}</p>
+
+            <p className="text-xs text-gray-500 mt-2">
+              All submitted reports
             </p>
           </div>
 
-          <div className="rounded-xl border bg-white p-5">
-            <p className="text-sm text-gray-500">Inactive Users</p>
-            <p className="mt-2 text-2xl font-bold">
-              {users.filter((user) => user.status === "Inactive").length}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <p className="text-sm text-gray-500">Pending</p>
+
+            <p className="text-3xl font-bold text-yellow-600 mt-2">
+              {pendingReports}
+            </p>
+
+            <p className="text-xs text-gray-500 mt-2">Awaiting action</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <p className="text-sm text-gray-500">In Progress</p>
+
+            <p className="text-3xl font-bold text-blue-600 mt-2">
+              {inProgressReports}
+            </p>
+
+            <p className="text-xs text-gray-500 mt-2">
+              Currently being handled
             </p>
           </div>
-        </section>
 
-        <section className="overflow-hidden rounded-xl border bg-white">
-          <div className="border-b p-5">
-            <label
-              htmlFor="user-search"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
-              Search users
-            </label>
-            <input
-              id="user-search"
-              type="text"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by name, email, or role..."
-              aria-label="Search users"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus-visible:ring-2 focus-visible:ring-blue-200"
-            />
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <p className="text-sm text-gray-500">Resolved</p>
+
+            <p className="text-3xl font-bold text-green-600 mt-2">
+              {resolvedReports}
+            </p>
+
+            <p className="text-xs text-gray-500 mt-2">
+              Successfully resolved
+            </p>
+          </div>
+        </div>
+
+        {/* Resolution Rate */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-bold">Resolution Rate</h2>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Percentage of reports successfully resolved
+              </p>
+            </div>
+
+            <p className="text-3xl font-bold text-green-600">
+              {resolutionRate}%
+            </p>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-600">
-                <tr>
-                  <th className="p-4 font-semibold">Name</th>
-                  <th className="p-4 font-semibold">Email</th>
-                  <th className="p-4 font-semibold">Role</th>
-                  <th className="p-4 font-semibold">Reports</th>
-                  <th className="p-4 font-semibold">Status</th>
-                  <th className="p-4 font-semibold">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">
-                      {user.name}
-                    </td>
-                    <td className="p-4 text-gray-600">{user.email}</td>
-                    <td className="p-4">{user.role}</td>
-                    <td className="p-4">{user.reports}</td>
-                    <td className="p-4">
-                      <span
-                        className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
-                          user.status === "Active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <button
-                        type="button"
-                        onClick={() => toggleStatus(user.id)}
-                        className="font-medium text-blue-600 hover:text-blue-800 focus:outline-none focus:underline"
-                        aria-label={`${user.status === "Active" ? "Deactivate" : "Activate"} ${user.name}`}
-                        aria-pressed={user.status === "Active"}
-                      >
-                        {user.status === "Active" ? "Deactivate" : "Activate"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-
-                {filteredUsers.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="p-8 text-center text-gray-500"
-                    >
-                      No users match your search.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div
+            className="w-full bg-gray-200 rounded-full h-4"
+            role="progressbar"
+            aria-label={`Resolution rate ${resolutionRate}%`}
+            aria-valuenow={resolutionRate}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div
+              className="bg-green-500 h-4 rounded-full"
+              style={{ width: `${resolutionRate}%` }}
+            ></div>
           </div>
-        </section>
+        </div>
 
-        <p className="mt-4 text-xs text-gray-500">
-          Demo data only. User changes are stored in browser memory and are not
-          saved to a database.
-        </p>
-      </div>
-    </main>
+        {/* Category and Location Statistics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Categories */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-lg font-bold">Reports by Category</h2>
+
+            <p className="text-sm text-gray-500 mt-1 mb-6">
+              Number of reports in each issue category
+            </p>
+
+            <div className="space-y-4">
+              {Object.entries(categories).map(([category, count]) => (
+                <div
+                  key={category}
+                  className="flex items-center justify-between"
+                >
+                  <span className="text-sm font-medium">{category}</span>
+
+                  <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-semibold">
+                    {count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Locations */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-lg font-bold">Reports by Location</h2>
+
+            <p className="text-sm text-gray-500 mt-1 mb-6">
+              Number of reports from each location
+            </p>
+
+            <div className="space-y-4">
+              {Object.entries(locations).map(([location, count]) => (
+                <div
+                  key={location}
+                  className="flex items-center justify-between"
+                >
+                  <span className="text-sm font-medium">{location}</span>
+
+                  <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-semibold">
+                    {count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
