@@ -1,259 +1,211 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { reports as initialReports } from "../../data/reports";
+import { useRouter } from "next/navigation";
+import { reports } from "../data/reports";
 
-export default function ReportsPage() {
-  const [reports, setReports] = useState(initialReports);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+export default function AdminDashboard() {
+  const router = useRouter();
+  const [activePage, setActivePage] = useState("Dashboard");
 
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [editingReport, setEditingReport] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
+  const totalReports = reports.length;
 
-  const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
-  
-const exportReports = () => {
-  const headers = [
-    "Report ID",
-    "Issue",
-    "Category",
-    "Location",
-    "Status",
-    "Date",
-    "Reported By",
-    "Description",
-  ];
+  const pendingReports = reports.filter(
+    (report) => report.status === "Pending"
+  ).length;
 
-  const escapeCSV = (value) =>
-    `"${String(value ?? "").replace(/"/g, '""')}"`;
+  const inProgressReports = reports.filter(
+    (report) => report.status === "In Progress"
+  ).length;
 
-  const rows = filteredReports.map((report) =>
-    [
-      report.id,
-      report.issue,
-      report.category,
-      report.location,
-      report.status,
-      report.date,
-      report.reportedBy,
-      report.description,
-    ]
-      .map(escapeCSV)
-      .join(",")
-  );
+  const resolvedReports = reports.filter(
+    (report) => report.status === "Resolved"
+  ).length;
 
-  const csv = [headers.map(escapeCSV).join(","), ...rows].join("\r\n");
-  const blob = new Blob(["\uFEFF" + csv], {
-    type: "text/csv;charset=utf-8;",
-  });
+  const handleNavigation = (page) => {
+    setActivePage(page);
 
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "community-reports.csv";
-  link.click();
-  URL.revokeObjectURL(url);
-};
+    if (page === "Dashboard") {
+      return;
+    }
 
+    if (page === "Reports") {
+      router.push("/reports");
+      return;
+    }
 
-  const filteredReports = reports.filter((report) => {
-    const searchText = normalizeText(search);
+    if (page === "Users") {
+      router.push("/users");
+      return;
+    }
 
-    const matchesSearch = [
-      report.id,
-      report.issue,
-      report.category,
-      report.location,
-      report.reportedBy,
-      report.description,
-    ].some((value) => normalizeText(value).includes(searchText));
+    if (page === "Statistics") {
+      router.push("/statistics");
+      return;
+    }
 
-    const matchesStatus =
-      statusFilter === "All" || report.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const openEditForm = (report) => {
-    setEditingReport({ ...report });
-    setSelectedReport(null);
+    if (page === "Settings") {
+      router.push("/settings");
+      return;
+    }
   };
-
- 
-const saveReport = () => {
-  if (!editingReport) return;
-
-  if (
-    !editingReport.issue.trim() ||
-    !editingReport.location.trim() ||
-    !editingReport.reportedBy.trim() ||
-    !editingReport.description.trim()
-  ) {
-    setSuccessMessage("");
-    alert("Please fill in all required fields.");
-    return;
-  }
-
-  const updatedReport = {
-    ...editingReport,
-    issue: editingReport.issue.trim(),
-    location: editingReport.location.trim(),
-    reportedBy: editingReport.reportedBy.trim(),
-    description: editingReport.description.trim(),
-  };
-
-  setReports((currentReports) =>
-    currentReports.map((report) =>
-      report.id === updatedReport.id ? updatedReport : report
-    )
-  );
-
-  setSelectedReport(updatedReport);
-  setEditingReport(null);
-  setSuccessMessage(`Report ${updatedReport.id} updated successfully.`);
-
-  setTimeout(() => {
-    setSuccessMessage("");
-  }, 3000);
-};
-
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-8 py-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Community Reports</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              View and manage issues reported by citizens
-            </p>
-          </div>
+    <div className="min-h-screen bg-gray-100 text-gray-900 flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-gray-900 text-white min-h-screen p-6">
+        <div className="mb-10">
+          <h1 className="text-xl font-bold">Community Reports</h1>
+          <p className="text-sm text-gray-400 mt-1">Admin Panel</p>
+        </div>
 
-          <Link
-            href="/"
-            className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
+        <nav className="space-y-2" aria-label="Sidebar navigation">
+          {[
+            "Dashboard",
+            "Reports",
+            "Users",
+            "Statistics",
+            "Settings",
+          ].map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => handleNavigation(item)}
+              aria-current={activePage === item ? "page" : undefined}
+              className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium ${
+                activePage === item
+                  ? "bg-white text-gray-900"
+                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+              }`}
+            >
+              {item}
+            </button>
+          ))}
+        </nav>
+
+        <div className="mt-10 border-t border-gray-700 pt-6">
+          <button
+            type="button"
+            aria-label="Log out of the admin dashboard"
+            className="w-full text-left px-4 py-3 rounded-lg text-sm text-gray-300 hover:bg-gray-800"
+            onClick={() => alert("Logout functionality will be added later.")}
           >
-            Back to Dashboard
-          </Link>
+            Logout
+          </button>
         </div>
-      </header>
+      </aside>
 
-      <main className="p-8">
-      
-{successMessage && (
-  <div
-    role="status"
-    className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800"
-  >
-    {successMessage}
-    
-<button
-  onClick={exportReports}
-  className="px-4 py-3 bg-green-700 text-white rounded-lg text-sm font-medium hover:bg-green-800"
->
-  Export CSV
-</button>
-
-  </div>
-)}
-
-        {/* Search and Filter */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Reports
-              </label>
-
-              <input
-                type="text"
-                placeholder="Search by ID, issue, category or location..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-gray-900"
-              />
+      {/* Main Content */}
+      <main className="flex-1">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Admin Dashboard</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Community issue reporting management system
+              </p>
             </div>
 
-            <div className="w-full md:w-56">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Filter by Status
-              </label>
+            <div className="text-right">
+              <p className="text-sm font-medium">Administrator</p>
+              <p className="text-xs text-gray-500">Government Officer</p>
+            </div>
+          </div>
+        </header>
 
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-gray-900"
+        <div className="p-8">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <p className="text-sm text-gray-500">Total Reports</p>
+              <p className="text-3xl font-bold mt-2">{totalReports}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                All community reports
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <p className="text-sm text-gray-500">Pending</p>
+              <p className="text-3xl font-bold text-yellow-600 mt-2">
+                {pendingReports}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">Awaiting action</p>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <p className="text-sm text-gray-500">In Progress</p>
+              <p className="text-3xl font-bold text-blue-600 mt-2">
+                {inProgressReports}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Currently being handled
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <p className="text-sm text-gray-500">Resolved</p>
+              <p className="text-3xl font-bold text-green-600 mt-2">
+                {resolvedReports}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Successfully resolved
+              </p>
+            </div>
+          </div>
+
+          {/* Recent Reports */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold">Recent Reports</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Latest issues submitted by citizens
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleNavigation("Reports")}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
               >
-                <option value="All">All Reports</option>
-                <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Resolved">Resolved</option>
-              </select>
+                View All Reports
+              </button>
             </div>
-          </div>
-        </div>
 
-        {/* Reports Table */}
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-200">
-            <h2 className="text-lg font-bold">
-              Reports ({filteredReports.length})
-            </h2>
-          </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left px-6 py-4 font-semibold">
+                      Report ID
+                    </th>
+                    <th className="text-left px-6 py-4 font-semibold">
+                      Issue
+                    </th>
+                    <th className="text-left px-6 py-4 font-semibold">
+                      Location
+                    </th>
+                    <th className="text-left px-6 py-4 font-semibold">
+                      Status
+                    </th>
+                    <th className="text-left px-6 py-4 font-semibold">
+                      Date
+                    </th>
+                  </tr>
+                </thead>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-6 py-4 font-semibold">
-                    Report ID
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold">
-                    Issue
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold">
-                    Category
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold">
-                    Location
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold">
-                    Status
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold">
-                    Date
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredReports.length > 0 ? (
-                  filteredReports.map((report) => (
+                <tbody>
+                  {reports.map((report) => (
                     <tr
                       key={report.id}
                       className="border-b border-gray-100 last:border-0 hover:bg-gray-50"
                     >
                       <td className="px-6 py-4 font-medium">{report.id}</td>
-
-                      <td className="px-6 py-4 font-medium">
-                        {report.issue}
-                      </td>
-
-                      <td className="px-6 py-4 text-gray-600">
-                        {report.category}
-                      </td>
-
+                      <td className="px-6 py-4">{report.issue}</td>
                       <td className="px-6 py-4 text-gray-600">
                         {report.location}
                       </td>
-
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
@@ -267,294 +219,17 @@ const saveReport = () => {
                           {report.status}
                         </span>
                       </td>
-
                       <td className="px-6 py-4 text-gray-600">
                         {report.date}
                       </td>
-
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => setSelectedReport(report)}
-                          className="px-3 py-2 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-800"
-                        >
-                          View
-                        </button>
-                      </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="7"
-                      className="px-6 py-10 text-center text-gray-500"
-                    >
-                      No reports found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>
-
-      {/* View Report Modal */}
-      {selectedReport && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-6 z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl">
-            <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold">Report Details</h2>
-                <p className="text-sm text-gray-500">
-                  {selectedReport.id}
-                </p>
-              </div>
-
-              <button
-                onClick={() => setSelectedReport(null)}
-                className="text-gray-500 hover:text-gray-900 text-xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              <div>
-                <p className="text-sm text-gray-500">Issue</p>
-                <p className="font-semibold mt-1">
-                  {selectedReport.issue}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <p className="text-sm text-gray-500">Category</p>
-                  <p className="font-medium mt-1">
-                    {selectedReport.category}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500">Location</p>
-                  <p className="font-medium mt-1">
-                    {selectedReport.location}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500">Reported By</p>
-                  <p className="font-medium mt-1">
-                    {selectedReport.reportedBy}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500">Date</p>
-                  <p className="font-medium mt-1">
-                    {selectedReport.date}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">Status</p>
-                <span className="inline-flex mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
-                  {selectedReport.status}
-                </span>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">Description</p>
-                <p className="mt-2 text-gray-700 leading-6">
-                  {selectedReport.description}
-                </p>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
-              <button
-                onClick={() => setSelectedReport(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
-              >
-                Close
-              </button>
-
-              <button
-                onClick={() => openEditForm(selectedReport)}
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
-              >
-                Edit Report
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Report Modal */}
-      {editingReport && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-6 z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-5 border-b border-gray-200">
-              <h2 className="text-xl font-bold">Edit Report</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Update report information and status
-              </p>
-            </div>
-
-            <div className="p-6 space-y-5">
-              {/* Report ID */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Report ID
-                </label>
-
-                <input
-                  value={editingReport.id}
-                  disabled
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-100 text-gray-500"
-                />
-              </div>
-
-              {/* Issue */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Issue
-                </label>
-
-                <input
-                  value={editingReport.issue}
-                  onChange={(e) =>
-                    setEditingReport({
-                      ...editingReport,
-                      issue: e.target.value,
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-gray-900"
-                />
-              </div>
-
-              {/* Category and Location */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Category
-                  </label>
-
-                  <select
-                    value={editingReport.category}
-                    onChange={(e) =>
-                      setEditingReport({
-                        ...editingReport,
-                        category: e.target.value,
-                      })
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white"
-                  >
-                    <option>Roads</option>
-                    <option>Drainage</option>
-                    <option>Infrastructure</option>
-                    <option>Pedestrian</option>
-                    <option>Environment</option>
-                    <option>Water</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Location
-                  </label>
-
-                  <input
-                    value={editingReport.location}
-                    onChange={(e) =>
-                      setEditingReport({
-                        ...editingReport,
-                        location: e.target.value,
-                      })
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
-                  />
-                </div>
-              </div>
-
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Status
-                </label>
-
-                <select
-                  value={editingReport.status}
-                  onChange={(e) =>
-                    setEditingReport({
-                      ...editingReport,
-                      status: e.target.value,
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white"
-                >
-                  <option>Pending</option>
-                  <option>In Progress</option>
-                  <option>Resolved</option>
-                </select>
-              </div>
-
-              {/* Reported By */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Reported By
-                </label>
-
-                <input
-                  value={editingReport.reportedBy}
-                  onChange={(e) =>
-                    setEditingReport({
-                      ...editingReport,
-                      reportedBy: e.target.value,
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Description
-                </label>
-
-                <textarea
-                  rows="4"
-                  value={editingReport.description}
-                  onChange={(e) =>
-                    setEditingReport({
-                      ...editingReport,
-                      description: e.target.value,
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
-              <button
-                onClick={() => setEditingReport(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={saveReport}
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

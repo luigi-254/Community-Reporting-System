@@ -1,53 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { reports } from "../../data/reports";
+import { useState } from "react";
 
-export default function StatisticsPage() {
-  const totalReports = reports.length;
+export default function SettingsPage() {
+  const [notifications, setNotifications] = useState(true);
+  const [emailAlerts, setEmailAlerts] = useState(true);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
 
-  const pendingReports = reports.filter(
-    (report) => report.status === "Pending"
-  ).length;
-
-  const inProgressReports = reports.filter(
-    (report) => report.status === "In Progress"
-  ).length;
-
-  const resolvedReports = reports.filter(
-    (report) => report.status === "Resolved"
-  ).length;
-
-  const resolutionRate =
-    totalReports === 0
-      ? 0
-      : Math.round((resolvedReports / totalReports) * 100);
-
-  const categories = {};
-
-reports.forEach((report) => {
-  const category = report.category || "Other";
-  categories[category] = (categories[category] || 0) + 1;
-});
- 
-const locations = {};
-
-reports.forEach((report) => {
-  const location = report.location || "Unknown";
-  locations[location] = (locations[location] || 0) + 1;
-});
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-8 py-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">
-              Statistics
-            </h1>
+            <h1 className="text-2xl font-bold">Settings</h1>
 
             <p className="text-sm text-gray-500 mt-1">
-              Community issue reporting statistics and analytics
+              Manage your admin dashboard settings
             </p>
           </div>
 
@@ -60,183 +30,163 @@ reports.forEach((report) => {
         </div>
       </header>
 
+      {/* Main */}
       <main className="p-8">
-        {/* Main Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <p className="text-sm text-gray-500">
-              Total Reports
-            </p>
-
-            <p className="text-3xl font-bold mt-2">
-              {totalReports}
-            </p>
-
-            <p className="text-xs text-gray-500 mt-2">
-              All submitted reports
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <p className="text-sm text-gray-500">
-              Pending
-            </p>
-
-            <p className="text-3xl font-bold text-yellow-600 mt-2">
-              {pendingReports}
-            </p>
-
-            <p className="text-xs text-gray-500 mt-2">
-              Awaiting action
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <p className="text-sm text-gray-500">
-              In Progress
-            </p>
-
-            <p className="text-3xl font-bold text-blue-600 mt-2">
-              {inProgressReports}
-            </p>
-
-            <p className="text-xs text-gray-500 mt-2">
-              Currently being handled
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <p className="text-sm text-gray-500">
-              Resolved
-            </p>
-
-            <p className="text-3xl font-bold text-green-600 mt-2">
-              {resolvedReports}
-            </p>
-
-            <p className="text-xs text-gray-500 mt-2">
-              Successfully resolved
-            </p>
-          </div>
-        </div>
-
-        {/* Resolution Rate */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-bold">
-                Resolution Rate
-              </h2>
-
-              <p className="text-sm text-gray-500 mt-1">
-                Percentage of reports successfully resolved
-              </p>
-            </div>
-
-            <p className="text-3xl font-bold text-green-600">
-              {resolutionRate}%
-            </p>
-          </div>
-
-          <div className="w-full bg-gray-200 rounded-full h-4">
-            <div
-              className="bg-green-500 h-4 rounded-full"
-              style={{ width: `${resolutionRate}%` }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Category and Location Statistics */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Categories */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold">
-              Reports by Category
-            </h2>
+        <div className="max-w-4xl space-y-6">
+          {/* Profile Settings */}
+          <section className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-lg font-bold">Administrator Profile</h2>
 
             <p className="text-sm text-gray-500 mt-1 mb-6">
-              Number of reports in each issue category
+              Information about the administrator account
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label htmlFor="full-name" className="block text-sm font-medium mb-2">
+                  Full Name
+                </label>
+
+                <input
+                  id="full-name"
+                  type="text"
+                  defaultValue="System Administrator"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-gray-300"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="email-address" className="block text-sm font-medium mb-2">
+                  Email Address
+                </label>
+
+                <input
+                  id="email-address"
+                  type="email"
+                  defaultValue="admin@communityreporting.com"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-gray-300"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Notification Settings */}
+          <section className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-lg font-bold">Notifications</h2>
+
+            <p className="text-sm text-gray-500 mt-1 mb-6">
+              Control how the system sends notifications
             </p>
 
             <div className="space-y-5">
-              {Object.entries(categories).map(([category, count]) => {
-                const percentage =
-                  totalReports === 0
-                    ? 0
-                    : Math.round((count / totalReports) * 100);
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Dashboard Notifications</p>
 
-                return (
-                  <div key={category}>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium">{category}</span>
-                      <span className="text-sm text-gray-500">
-                        {count} ({percentage}%)
-                      </span>
-                    </div>
+                  <p className="text-sm text-gray-500">
+                    Receive notifications about new reports
+                  </p>
+                </div>
 
-                    <div className="w-full bg-gray-100 rounded-full h-2.5">
-                      <div
-                        className="bg-purple-600 h-2.5 rounded-full"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                <button
+                  type="button"
+                  aria-label={
+                    notifications
+                      ? "Turn dashboard notifications off"
+                      : "Turn dashboard notifications on"
+                  }
+                  aria-pressed={notifications}
+                  onClick={() => setNotifications(!notifications)}
+                  className={`w-12 h-6 rounded-full ${
+                    notifications ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`block w-5 h-5 bg-white rounded-full transition-transform ${
+                      notifications ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  ></span>
+                </button>
+              </div>
 
-              {Object.keys(categories).length === 0 && (
-                <p className="text-sm text-gray-500">
-                  No category data available yet.
-                </p>
-              )}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Email Alerts</p>
+
+                  <p className="text-sm text-gray-500">
+                    Receive important system updates by email
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  aria-label={
+                    emailAlerts ? "Turn email alerts off" : "Turn email alerts on"
+                  }
+                  aria-pressed={emailAlerts}
+                  onClick={() => setEmailAlerts(!emailAlerts)}
+                  className={`w-12 h-6 rounded-full ${
+                    emailAlerts ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`block w-5 h-5 bg-white rounded-full transition-transform ${
+                      emailAlerts ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  ></span>
+                </button>
+              </div>
             </div>
-          </div>
+          </section>
 
-          {/* Locations */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold">
-              Reports by Location
-            </h2>
+          {/* System Settings */}
+          <section className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-lg font-bold">System Settings</h2>
 
             <p className="text-sm text-gray-500 mt-1 mb-6">
-              Number of reports from each location
+              Configure general system behaviour
             </p>
 
-            <div className="space-y-4">
-              
-<div className="space-y-5">
-  {Object.entries(locations).map(([location, count]) => {
-    const percentage =
-      totalReports === 0
-        ? 0
-        : Math.round((count / totalReports) * 100);
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Maintenance Mode</p>
 
-    return (
-      <div key={location}>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium">{location}</span>
-          <span className="text-sm text-gray-500">
-            {count} ({percentage}%)
-          </span>
-        </div>
+                <p className="text-sm text-gray-500">
+                  Temporarily restrict access while maintenance is being performed
+                </p>
+              </div>
 
-        <div className="w-full bg-gray-100 rounded-full h-2.5">
-          <div
-            className="bg-purple-600 h-2.5 rounded-full"
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-      </div>
-    );
-  })}
-
-  {Object.keys(locations).length === 0 && (
-    <p className="text-sm text-gray-500">
-      No location data available yet.
-    </p>
-  )}
-</div>
+              <button
+                type="button"
+                aria-label={
+                  maintenanceMode
+                    ? "Turn maintenance mode off"
+                    : "Turn maintenance mode on"
+                }
+                aria-pressed={maintenanceMode}
+                onClick={() => setMaintenanceMode(!maintenanceMode)}
+                className={`w-12 h-6 rounded-full ${
+                  maintenanceMode ? "bg-green-500" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`block w-5 h-5 bg-white rounded-full transition-transform ${
+                    maintenanceMode ? "translate-x-6" : "translate-x-1"
+                  }`}
+                ></span>
+              </button>
             </div>
+          </section>
+
+          {/* Save */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => alert("Settings saved successfully.")}
+              className="px-6 py-3 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
+            >
+              Save Settings
+            </button>
           </div>
         </div>
       </main>
