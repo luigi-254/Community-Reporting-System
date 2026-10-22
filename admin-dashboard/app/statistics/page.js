@@ -25,18 +25,17 @@ export default function StatisticsPage() {
 
   const categories = {};
 
-  reports.forEach((report) => {
-    categories[report.category] =
-      (categories[report.category] || 0) + 1;
-  });
+reports.forEach((report) => {
+  const category = report.category || "Other";
+  categories[category] = (categories[category] || 0) + 1;
+});
+ 
+const locations = {};
 
-  const locations = {};
-
-  reports.forEach((report) => {
-    locations[report.location] =
-      (locations[report.location] || 0) + 1;
-  });
-
+reports.forEach((report) => {
+  const location = report.location || "Unknown";
+  locations[location] = (locations[location] || 0) + 1;
+});
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
       {/* Header */}
@@ -159,22 +158,36 @@ export default function StatisticsPage() {
               Number of reports in each issue category
             </p>
 
-            <div className="space-y-4">
-              {Object.entries(categories).map(
-                ([category, count]) => (
-                  <div
-                    key={category}
-                    className="flex items-center justify-between"
-                  >
-                    <span className="text-sm font-medium">
-                      {category}
-                    </span>
+            <div className="space-y-5">
+              {Object.entries(categories).map(([category, count]) => {
+                const percentage =
+                  totalReports === 0
+                    ? 0
+                    : Math.round((count / totalReports) * 100);
 
-                    <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-semibold">
-                      {count}
-                    </span>
+                return (
+                  <div key={category}>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">{category}</span>
+                      <span className="text-sm text-gray-500">
+                        {count} ({percentage}%)
+                      </span>
+                    </div>
+
+                    <div className="w-full bg-gray-100 rounded-full h-2.5">
+                      <div
+                        className="bg-purple-600 h-2.5 rounded-full"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
                   </div>
-                )
+                );
+              })}
+
+              {Object.keys(categories).length === 0 && (
+                <p className="text-sm text-gray-500">
+                  No category data available yet.
+                </p>
               )}
             </div>
           </div>
@@ -190,22 +203,39 @@ export default function StatisticsPage() {
             </p>
 
             <div className="space-y-4">
-              {Object.entries(locations).map(
-                ([location, count]) => (
-                  <div
-                    key={location}
-                    className="flex items-center justify-between"
-                  >
-                    <span className="text-sm font-medium">
-                      {location}
-                    </span>
+              
+<div className="space-y-5">
+  {Object.entries(locations).map(([location, count]) => {
+    const percentage =
+      totalReports === 0
+        ? 0
+        : Math.round((count / totalReports) * 100);
 
-                    <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-semibold">
-                      {count}
-                    </span>
-                  </div>
-                )
-              )}
+    return (
+      <div key={location}>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-medium">{location}</span>
+          <span className="text-sm text-gray-500">
+            {count} ({percentage}%)
+          </span>
+        </div>
+
+        <div className="w-full bg-gray-100 rounded-full h-2.5">
+          <div
+            className="bg-purple-600 h-2.5 rounded-full"
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+      </div>
+    );
+  })}
+
+  {Object.keys(locations).length === 0 && (
+    <p className="text-sm text-gray-500">
+      No location data available yet.
+    </p>
+  )}
+</div>
             </div>
           </div>
         </div>
