@@ -1,9 +1,7 @@
-
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { reports } from "../../data/reports";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -97,7 +95,6 @@ export default function UsersPage() {
       }
 
       const result = payload?.data?.officers;
-
       setOfficers(Array.isArray(result) ? result : []);
     } catch (err) {
       setError(
@@ -146,9 +143,7 @@ export default function UsersPage() {
     const token = getAdminToken();
 
     if (!token) {
-      setError(
-        "Please sign in to the Admin Dashboard before creating an officer."
-      );
+      setError("Please sign in to the Admin Dashboard before creating an officer.");
       return;
     }
 
@@ -436,26 +431,16 @@ export default function UsersPage() {
               {loading ? "Refreshing..." : "Refresh list"}
             </button>
           </div>
-        </div>
 
-        {/* Resolution Rate */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-bold">Resolution Rate</h2>
-
-              <p className="text-sm text-gray-500 mt-1">
-                Percentage of reports successfully resolved
-              </p>
-            </div>
-
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className={inputClass}
-            placeholder="Search by name, email, phone or location"
-            aria-label="Search officers"
-          />
+          <div className="mb-5">
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className={inputClass}
+              placeholder="Search by name, email, phone or location"
+              aria-label="Search officers"
+            />
+          </div>
 
           {loading ? (
             <p className="py-8 text-sm text-[#687468]">Loading officer accounts...</p>
@@ -466,7 +451,7 @@ export default function UsersPage() {
                 : "No officers match your search."}
             </p>
           ) : (
-            <div className="mt-5 overflow-x-auto">
+            <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-b border-[#dce2d8] text-[#687468]">
@@ -515,3 +500,4 @@ export default function UsersPage() {
     </main>
   );
 }
+" , 
