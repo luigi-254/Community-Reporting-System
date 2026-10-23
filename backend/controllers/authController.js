@@ -22,16 +22,15 @@ export const sanitizeUser = (user) => {
 export const register = async (req, res, next) => {
   try {
     const {
-      name,
-      email,
-      phone,
-      password,
-      role = 'CITIZEN',
-      county,
-      subCounty,
-      ward,
-      address,
-    } = req.body;
+  name,
+  email,
+  phone,
+  password,
+  county,
+  subCounty,
+  ward,
+  address,
+} = req.body;
     const existingByEmail = await db.findUserByEmail(email);
     if (existingByEmail) {
       return res.status(409).json({
@@ -50,7 +49,6 @@ export const register = async (req, res, next) => {
       }
     }
 
-    const assignedRole = role === 'ADMIN' || role === 'SUPER_ADMIN' ? 'CITIZEN' : role;
 
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -59,7 +57,7 @@ export const register = async (req, res, next) => {
       email,
       phone,
       password: hashedPassword,
-      role: assignedRole,
+      role: 'CITIZEN',
       isVerified: false,
       emailVerified: false,
       phoneVerified: false,
