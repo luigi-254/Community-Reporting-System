@@ -22,7 +22,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^6.19.2",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.2",
     "cookie-parser": "^1.4.7",
@@ -34,12 +35,13 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.12.1",
     "multer": "^2.4.0",
+    "pg": "^8.23.1",
     "resend": "^6.32.1",
     "uuid": "^14.0.2",
-    "zod": "^4.6.5"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
-    "prisma": "^6.19.2"
+    "prisma": "^7.10.1"
   }
 }

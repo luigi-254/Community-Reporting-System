@@ -429,7 +429,12 @@ export default function AdminDashboard() {
                 className="mt-5 h-3 w-full overflow-hidden rounded-full bg-gray-100"
                 role="progressbar"
                 aria-label="Report resolution rate"
-                aria-valuenow={reportStats.resolutionRate}
+                aria-valuenow={loading ? undefined : reportStats.resolutionRate}
+                aria-valuetext={
+                  loading
+                    ? "Loading resolution rate"
+                    : `${reportStats.resolutionRate}% resolved`
+                }
                 aria-valuemin={0}
                 aria-valuemax={100}
               >

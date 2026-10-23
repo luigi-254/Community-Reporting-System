@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -707,9 +708,12 @@ export default function ReportsPage() {
                               rel="noreferrer"
                               className="block"
                             >
-                              <img
+                              <Image
                                 src={url}
                                 alt={`Attachment ${index + 1}`}
+                                width={800}
+                                height={416}
+                                unoptimized
                                 className="h-52 w-full object-cover"
                               />
                             </a>
