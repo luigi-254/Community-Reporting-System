@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.next/
+.env
+.env.local
+
+# Local temporary backups
+new-portal-backup.tsx
+old-admin-backup.js

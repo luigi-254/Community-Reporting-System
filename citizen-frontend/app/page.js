@@ -1,6 +1,6 @@
+
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 const API_BASE_URL = (
@@ -58,7 +58,7 @@ const allowedImageTypes = [
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
-
+// Load the official Kisii County boundary.
 let kisiiBoundaryPromise = null;
 
 function pointInRing(longitude, latitude, ring) {
@@ -118,7 +118,9 @@ function pointIsInsideKisii(latitude, longitude, geoJson) {
   let geometries = [];
 
   if (geoJson?.type === "FeatureCollection") {
-    geometries = (geoJson.features || []).map((feature) => feature.geometry);
+    geometries = (geoJson.features || []).map(
+      (feature) => feature.geometry
+    );
   } else if (geoJson?.type === "Feature") {
     geometries = [geoJson.geometry];
   } else if (geoJson) {
@@ -197,7 +199,9 @@ async function fetchMyReports(accessToken) {
 function resolveMediaUrl(path) {
   if (!path) return "";
 
-  if (/^https?:\/\//i.test(path)) return path;
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
 
   return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
@@ -211,7 +215,9 @@ function formatDate(value) {
 
   const date = new Date(`${value}T00:00:00`);
 
-  if (Number.isNaN(date.getTime())) return value;
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
 
   return date.toLocaleDateString("en-KE", {
     day: "numeric",
@@ -298,9 +304,10 @@ export default function CitizenDashboard() {
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [formError, setFormError] = useState("");
   const [gpsCoordinates, setGpsCoordinates] = useState(null);
-  const [gpsBusy, setGpsBusy] = useState(false);
-  const [gpsStatus, setGpsStatus] = useState("");
+const [gpsBusy, setGpsBusy] = useState(false);
+const [gpsStatus, setGpsStatus] = useState("");
 
+  // Live camera state.
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [cameraStream, setCameraStream] = useState(null);
@@ -308,6 +315,7 @@ export default function CitizenDashboard() {
   const videoRef = useRef(null);
   const cameraStreamRef = useRef(null);
 
+  // Restore an existing login when the page opens.
   useEffect(() => {
     let cancelled = false;
 
@@ -340,15 +348,25 @@ export default function CitizenDashboard() {
 
         try {
           const savedReports = await fetchMyReports(savedToken);
-          if (!cancelled) setReports(savedReports);
+
+          if (!cancelled) {
+            setReports(savedReports);
+          }
         } catch (error) {
-          if (!cancelled) setReportsError(error.message);
+          if (!cancelled) {
+            setReportsError(error.message);
+          }
         }
       } catch {
         window.localStorage.removeItem(TOKEN_KEY);
-        if (!cancelled) setAuthNotice("Please sign in to continue.");
+
+        if (!cancelled) {
+          setAuthNotice("Please sign in to continue.");
+        }
       } finally {
-        if (!cancelled) setSessionReady(true);
+        if (!cancelled) {
+          setSessionReady(true);
+        }
       }
     }
 
@@ -359,6 +377,7 @@ export default function CitizenDashboard() {
     };
   }, []);
 
+  // Attach the live camera stream to the preview.
   useEffect(() => {
     if (!cameraOpen || !cameraStream || !videoRef.current) {
       return;
@@ -381,6 +400,7 @@ export default function CitizenDashboard() {
     };
   }, [cameraOpen, cameraStream]);
 
+  // Stop camera hardware if the component is removed.
   useEffect(() => {
     return () => {
       cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -410,6 +430,7 @@ export default function CitizenDashboard() {
     }
 
     window.localStorage.setItem(TOKEN_KEY, accessToken);
+
     setToken(accessToken);
     setUser(account);
     setActivePage("Overview");
@@ -529,7 +550,10 @@ export default function CitizenDashboard() {
         throw new Error("Please register again to request a verification code.");
       }
 
-      const body = { email: pendingVerification.email, type: "EMAIL" };
+      const body = {
+        email: pendingVerification.email,
+        type: "EMAIL",
+      };
 
       if (verificationCode.trim()) {
         body.code = verificationCode.trim();
@@ -578,10 +602,11 @@ export default function CitizenDashboard() {
         body: JSON.stringify({}),
       });
     } catch {
-      // ignore logout errors
+      // Clear the local session even if the logout request fails.
     }
 
     window.localStorage.removeItem(TOKEN_KEY);
+
     setToken("");
     setUser(null);
     setReports([]);
@@ -602,6 +627,7 @@ export default function CitizenDashboard() {
     setReportsError("");
   }
 
+  // Add images selected from the gallery or produced by the camera.
   function addSelectedFiles(newFiles) {
     if (newFiles.length === 0) return;
 
@@ -616,7 +642,9 @@ export default function CitizenDashboard() {
       return;
     }
 
-    const oversizedFile = newFiles.find((file) => file.size > MAX_FILE_SIZE);
+    const oversizedFile = newFiles.find(
+      (file) => file.size > MAX_FILE_SIZE
+    );
 
     if (oversizedFile) {
       setFormError(
@@ -639,7 +667,10 @@ export default function CitizenDashboard() {
   function handleFileSelection(event) {
     const input = event.currentTarget;
     const files = Array.from(input.files || []);
+
+    // Allow users to select the same photo again if needed.
     input.value = "";
+
     addSelectedFiles(files);
   }
 
@@ -650,6 +681,7 @@ export default function CitizenDashboard() {
     setFormError("");
   }
 
+  // Open the real camera rather than opening File Explorer.
   async function openCamera() {
     setCameraError("");
 
@@ -666,13 +698,16 @@ export default function CitizenDashboard() {
       return;
     }
 
+    // Stop any previous stream before requesting a new one.
     cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
     cameraStreamRef.current = null;
     setCameraStream(null);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        video: {
+          facingMode: { ideal: "environment" },
+        },
         audio: false,
       });
 
@@ -704,25 +739,31 @@ export default function CitizenDashboard() {
       setCameraOpen(true);
     }
   }
-
+  // Close the camera and release camera hardware.
   function closeCamera() {
     cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
     cameraStreamRef.current = null;
 
-    if (videoRef.current) videoRef.current.srcObject = null;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
 
     setCameraStream(null);
     setCameraOpen(false);
     setCameraError("");
   }
 
+  // Get the current GPS position and verify it against Kisii County.
   function getDeviceCoordinates() {
     setGpsCoordinates(null);
     setGpsStatus("Getting GPS coordinates...");
 
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        const error = new Error("GPS is not supported by this browser.");
+        const error = new Error(
+          "GPS is not supported by this browser."
+        );
+
         setGpsStatus(error.message);
         reject(error);
         return;
@@ -761,10 +802,12 @@ export default function CitizenDashboard() {
             resolve(coords);
           } catch (error) {
             setGpsCoordinates(null);
+
             const message =
               error instanceof Error
                 ? error.message
                 : "Could not verify your GPS location.";
+
             setGpsStatus(message);
             reject(new Error(message));
           }
@@ -790,6 +833,7 @@ export default function CitizenDashboard() {
     });
   }
 
+  // Capture GPS manually when reporting an issue, including gallery photos.
   async function captureReportLocation() {
     setGpsBusy(true);
     setFormError("");
@@ -797,12 +841,13 @@ export default function CitizenDashboard() {
     try {
       await getDeviceCoordinates();
     } catch {
-      // reason shown in gpsStatus
+      // The reason for failure is displayed in gpsStatus.
     } finally {
       setGpsBusy(false);
     }
   }
 
+  // Take a photo only after GPS has been verified.
   async function capturePhoto() {
     if (selectedFiles.length >= MAX_FILES) {
       setFormError(`You can attach a maximum of ${MAX_FILES} photos.`);
@@ -819,7 +864,9 @@ export default function CitizenDashboard() {
       const video = videoRef.current;
 
       if (!video || !video.videoWidth || !video.videoHeight) {
-        throw new Error("The camera is still starting. Please try again.");
+        throw new Error(
+          "The camera is still starting. Please try again."
+        );
       }
 
       const canvas = document.createElement("canvas");
@@ -829,7 +876,9 @@ export default function CitizenDashboard() {
       const context = canvas.getContext("2d");
 
       if (!context) {
-        throw new Error("Could not capture the photo. Please try again.");
+        throw new Error(
+          "Could not capture the photo. Please try again."
+        );
       }
 
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -841,6 +890,7 @@ export default function CitizenDashboard() {
               reject(new Error("Could not create the photo."));
               return;
             }
+
             resolve(createdBlob);
           },
           "image/jpeg",
@@ -848,10 +898,14 @@ export default function CitizenDashboard() {
         );
       });
 
-      const file = new File([blob], `community-photo-${Date.now()}.jpg`, {
-        type: "image/jpeg",
-        lastModified: Date.now(),
-      });
+      const file = new File(
+        [blob],
+        `community-photo-${Date.now()}.jpg`,
+        {
+          type: "image/jpeg",
+          lastModified: Date.now(),
+        }
+      );
 
       if (file.size > MAX_FILE_SIZE) {
         throw new Error("The photo exceeds the 15 MB limit.");
@@ -870,6 +924,7 @@ export default function CitizenDashboard() {
     }
   }
 
+  // Submit a report together with the verified GPS coordinates.
   async function handleSubmitReport(event) {
     event.preventDefault();
     setFormError("");
@@ -895,7 +950,9 @@ export default function CitizenDashboard() {
       setFormError(
         "Capture and verify the issue's GPS location inside Kisii County before submitting."
       );
-      setGpsStatus("A verified Kisii County GPS location is required.");
+      setGpsStatus(
+        "A verified Kisii County GPS location is required."
+      );
       return;
     }
 
@@ -903,14 +960,23 @@ export default function CitizenDashboard() {
 
     try {
       const formData = new FormData();
+
       formData.append("title", form.title.trim());
       formData.append("category", form.category);
       formData.append("location", form.location.trim());
       formData.append("description", form.description.trim());
       formData.append("priority", "MEDIUM");
       formData.append("isAnonymous", String(form.isAnonymous));
-      formData.append("latitude", String(gpsCoordinates.latitude));
-      formData.append("longitude", String(gpsCoordinates.longitude));
+
+      formData.append(
+        "latitude",
+        String(gpsCoordinates.latitude)
+      );
+
+      formData.append(
+        "longitude",
+        String(gpsCoordinates.longitude)
+      );
 
       selectedFiles.forEach((file) => {
         formData.append("media", file);
@@ -928,8 +994,11 @@ export default function CitizenDashboard() {
       setSelectedFiles([]);
       setGpsCoordinates(null);
       setGpsStatus("");
+
       setActivePage("My Reports");
-      setMessage(response.message || "Your report was submitted successfully.");
+      setMessage(
+        response.message || "Your report was submitted successfully."
+      );
 
       try {
         const latestReports = await fetchMyReports(token);
@@ -946,7 +1015,6 @@ export default function CitizenDashboard() {
       setIsSubmittingReport(false);
     }
   }
-
   const pendingCount = reports.filter((report) =>
     ["Pending", "Submitted", "Under review"].includes(report.status)
   ).length;
@@ -974,6 +1042,7 @@ export default function CitizenDashboard() {
     return matchesSearch && matchesStatus;
   });
 
+  // Initial session loading screen.
   if (!sessionReady) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f7f7f2] px-6 text-[#243329]">
@@ -981,13 +1050,18 @@ export default function CitizenDashboard() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center bg-[#244637] text-lg font-bold tracking-wider text-white">
             CR
           </div>
-          <h1 className="mt-6 text-xl font-semibold">Community Reporting</h1>
-          <p className="mt-2 text-sm text-[#687468]">Checking your session...</p>
+          <h1 className="mt-6 text-xl font-semibold">
+            Community Reporting
+          </h1>
+          <p className="mt-2 text-sm text-[#687468]">
+            Checking your session...
+          </p>
         </div>
       </main>
     );
   }
 
+  // Login, registration, and email verification screens.
   if (!token || !user) {
     return (
       <main className="min-h-screen bg-[#f7f7f2] text-[#243329] lg:grid lg:grid-cols-2">
@@ -999,7 +1073,9 @@ export default function CitizenDashboard() {
               </div>
               <div>
                 <p className="font-semibold">Community Reporting</p>
-                <p className="mt-1 text-xs text-[#c4d3bf]">Citizen Portal</p>
+                <p className="mt-1 text-xs text-[#c4d3bf]">
+                  Citizen Portal
+                </p>
               </div>
             </div>
 
@@ -1011,7 +1087,8 @@ export default function CitizenDashboard() {
                 Your community. Your voice. Clear follow-up.
               </h1>
               <p className="mt-6 max-w-md text-sm leading-7 text-[#d5dfd2] sm:text-base">
-                Sign in to report local issues, keep track of your submissions, and review their progress.
+                Sign in to report local issues, keep track of your
+                submissions, and review their progress.
               </p>
             </div>
           </div>
@@ -1052,17 +1129,21 @@ export default function CitizenDashboard() {
               </div>
             )}
 
-            {authMode === "verify" && pendingVerification?.developmentCode && (
-              <div className="mb-5 border border-[#cbd6c8] bg-[#eff1e9] p-4 text-sm text-[#344338]">
-                <p className="font-semibold">Development verification code</p>
-                <p className="mt-2 font-mono text-lg tracking-widest">
-                  {pendingVerification.developmentCode}
-                </p>
-                <p className="mt-2 text-xs leading-5 text-[#687468]">
-                  This code is returned by the backend in development mode. In production, use the code delivered to your email.
-                </p>
-              </div>
-            )}
+            {authMode === "verify" &&
+              pendingVerification?.developmentCode && (
+                <div className="mb-5 border border-[#cbd6c8] bg-[#eff1e9] p-4 text-sm text-[#344338]">
+                  <p className="font-semibold">
+                    Development verification code
+                  </p>
+                  <p className="mt-2 font-mono text-lg tracking-widest">
+                    {pendingVerification.developmentCode}
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-[#687468]">
+                    This code is returned by the backend in development mode.
+                    In production, use the code delivered to your email.
+                  </p>
+                </div>
+              )}
 
             {authError && (
               <div
@@ -1076,7 +1157,10 @@ export default function CitizenDashboard() {
             {authMode === "verify" ? (
               <form onSubmit={handleVerify} className="space-y-5">
                 <div>
-                  <label htmlFor="verification-code" className="mb-2 block text-sm font-semibold">
+                  <label
+                    htmlFor="verification-code"
+                    className="mb-2 block text-sm font-semibold"
+                  >
                     Email verification code
                   </label>
                   <input
@@ -1085,7 +1169,9 @@ export default function CitizenDashboard() {
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     value={verificationCode}
-                    onChange={(event) => setVerificationCode(event.target.value)}
+                    onChange={(event) =>
+                      setVerificationCode(event.target.value)
+                    }
                     required={!pendingVerification?.verificationToken}
                     placeholder="Enter verification code"
                     className="w-full border border-[#cbd6c8] bg-white px-4 py-3 outline-none focus:border-[#55745c]"
@@ -1116,7 +1202,10 @@ export default function CitizenDashboard() {
             ) : authMode === "register" ? (
               <form onSubmit={handleRegister} className="space-y-4">
                 <div>
-                  <label htmlFor="register-name" className="mb-2 block text-sm font-semibold">
+                  <label
+                    htmlFor="register-name"
+                    className="mb-2 block text-sm font-semibold"
+                  >
                     Full name
                   </label>
                   <input
@@ -1134,7 +1223,10 @@ export default function CitizenDashboard() {
                 </div>
 
                 <div>
-                  <label htmlFor="register-email" className="mb-2 block text-sm font-semibold">
+                  <label
+                    htmlFor="register-email"
+                    className="mb-2 block text-sm font-semibold"
+                  >
                     Email address
                   </label>
                   <input
@@ -1150,8 +1242,14 @@ export default function CitizenDashboard() {
                 </div>
 
                 <div>
-                  <label htmlFor="register-phone" className="mb-2 block text-sm font-semibold">
-                    Phone number <span className="font-normal text-[#7a8378]">(optional)</span>
+                  <label
+                    htmlFor="register-phone"
+                    className="mb-2 block text-sm font-semibold"
+                  >
+                    Phone number{" "}
+                    <span className="font-normal text-[#7a8378]">
+                      (optional)
+                    </span>
                   </label>
                   <input
                     id="register-phone"
@@ -1165,7 +1263,10 @@ export default function CitizenDashboard() {
                 </div>
 
                 <div>
-                  <label htmlFor="register-password" className="mb-2 block text-sm font-semibold">
+                  <label
+                    htmlFor="register-password"
+                    className="mb-2 block text-sm font-semibold"
+                  >
                     Password
                   </label>
                   <input
@@ -1179,11 +1280,16 @@ export default function CitizenDashboard() {
                     onChange={(event) => setAuthPassword(event.target.value)}
                     className="w-full border border-[#cbd6c8] bg-white px-4 py-3 outline-none focus:border-[#55745c]"
                   />
-                  <p className="mt-2 text-xs text-[#7a8378]">Use at least 6 characters.</p>
+                  <p className="mt-2 text-xs text-[#7a8378]">
+                    Use at least 6 characters.
+                  </p>
                 </div>
 
                 <div>
-                  <label htmlFor="register-confirm-password" className="mb-2 block text-sm font-semibold">
+                  <label
+                    htmlFor="register-confirm-password"
+                    className="mb-2 block text-sm font-semibold"
+                  >
                     Confirm password
                   </label>
                   <input
@@ -1192,7 +1298,9 @@ export default function CitizenDashboard() {
                     autoComplete="new-password"
                     required
                     value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    onChange={(event) =>
+                      setConfirmPassword(event.target.value)
+                    }
                     className="w-full border border-[#cbd6c8] bg-white px-4 py-3 outline-none focus:border-[#55745c]"
                   />
                 </div>
@@ -1223,7 +1331,10 @@ export default function CitizenDashboard() {
             ) : (
               <form onSubmit={handleLogin} className="space-y-5">
                 <div>
-                  <label htmlFor="login-email" className="mb-2 block text-sm font-semibold">
+                  <label
+                    htmlFor="login-email"
+                    className="mb-2 block text-sm font-semibold"
+                  >
                     Email address
                   </label>
                   <input
@@ -1239,7 +1350,10 @@ export default function CitizenDashboard() {
                 </div>
 
                 <div>
-                  <label htmlFor="login-password" className="mb-2 block text-sm font-semibold">
+                  <label
+                    htmlFor="login-password"
+                    className="mb-2 block text-sm font-semibold"
+                  >
                     Password
                   </label>
                   <input
@@ -1279,7 +1393,9 @@ export default function CitizenDashboard() {
             )}
 
             <p className="mt-8 border-t border-[#dce2d8] pt-5 text-xs leading-5 text-[#7a8378]">
-              Use an account registered through this project&apos;s backend. Sample accounts from the dashboard do not work unless they also exist in the backend.
+              Use an account registered through this project&apos;s backend.
+              Sample accounts from the dashboard do not work unless they
+              also exist in the backend.
             </p>
           </div>
         </section>
@@ -1287,7 +1403,12 @@ export default function CitizenDashboard() {
     );
   }
 
-  const navigation = ["Overview", "Report an Issue", "My Reports", "My Profile"];
+  const navigation = [
+    "Overview",
+    "Report an Issue",
+    "My Reports",
+    "My Profile",
+  ];
 
   return (
     <main className="min-h-screen bg-[#f7f7f2] text-[#243329]">
@@ -1343,7 +1464,9 @@ export default function CitizenDashboard() {
 
         <div className="mt-auto border-t border-white/15 p-5">
           <p className="text-xs text-[#bdcdbd]">Signed in as</p>
-          <p className="mt-1 break-words text-sm font-semibold">{user.name || user.email}</p>
+          <p className="mt-1 break-words text-sm font-semibold">
+            {user.name || user.email}
+          </p>
           <button
             type="button"
             onClick={handleLogout}
@@ -1373,8 +1496,12 @@ export default function CitizenDashboard() {
           </div>
 
           <div className="hidden text-right sm:block">
-            <p className="text-sm font-medium">{user.name || user.email}</p>
-            <p className="mt-1 text-xs text-[#7a8378]">{user.email}</p>
+            <p className="text-sm font-medium">
+              {user.name || user.email}
+            </p>
+            <p className="mt-1 text-xs text-[#7a8378]">
+              {user.email}
+            </p>
           </div>
         </header>
 
@@ -1401,12 +1528,17 @@ export default function CitizenDashboard() {
               className="mb-6 border-l-4 border-[#9c654d] bg-[#f5e9df] p-4 text-sm leading-6 text-[#70452f]"
             >
               Could not retrieve your reports: {reportsError}
-              <button type="button" onClick={() => refreshReports()} className="ml-3 font-semibold underline">
+              <button
+                type="button"
+                onClick={() => refreshReports()}
+                className="ml-3 font-semibold underline"
+              >
                 Retry
               </button>
             </div>
           )}
 
+          {/* Overview */}
           {activePage === "Overview" && (
             <>
               <section className="border-b border-[#dce2d8] pb-7">
@@ -1420,7 +1552,8 @@ export default function CitizenDashboard() {
                       Welcome, {String(user.name || "Citizen").split(" ")[0]}.
                     </h2>
                     <p className="mt-3 max-w-2xl text-sm leading-7 text-[#687468] sm:text-base">
-                      Report problems in your community and follow the progress of the issues you have submitted.
+                      Report problems in your community and follow the
+                      progress of the issues you have submitted.
                     </p>
                   </div>
 
@@ -1441,7 +1574,10 @@ export default function CitizenDashboard() {
                   { label: "In Progress", value: inProgressCount },
                   { label: "Resolved", value: resolvedCount },
                 ].map((stat) => (
-                  <div key={stat.label} className="border border-[#dce2d8] bg-[#fdfdf9] p-5">
+                  <div
+                    key={stat.label}
+                    className="border border-[#dce2d8] bg-[#fdfdf9] p-5"
+                  >
                     <p className="text-sm text-[#687468]">{stat.label}</p>
                     <p className="mt-4 text-3xl font-semibold tabular-nums text-[#244637]">
                       {reportsLoading ? "—" : stat.value}
@@ -1454,7 +1590,9 @@ export default function CitizenDashboard() {
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] px-5 py-5">
                   <div>
                     <h3 className="font-semibold">Recent Reports</h3>
-                    <p className="mt-1 text-sm text-[#687468]">Reports retrieved from your account.</p>
+                    <p className="mt-1 text-sm text-[#687468]">
+                      Reports retrieved from your account.
+                    </p>
                   </div>
 
                   <button
@@ -1470,10 +1608,14 @@ export default function CitizenDashboard() {
                 </div>
 
                 {reportsLoading ? (
-                  <p className="p-6 text-sm text-[#687468]">Loading your reports...</p>
+                  <p className="p-6 text-sm text-[#687468]">
+                    Loading your reports...
+                  </p>
                 ) : reports.length === 0 ? (
                   <div className="p-7">
-                    <h4 className="font-medium">No reports submitted yet</h4>
+                    <h4 className="font-medium">
+                      No reports submitted yet
+                    </h4>
                     <p className="mt-2 max-w-md text-sm leading-6 text-[#687468]">
                       Submit your first community issue to begin tracking it.
                     </p>
@@ -1488,17 +1630,25 @@ export default function CitizenDashboard() {
                 ) : (
                   <div className="divide-y divide-[#e5e9e1]">
                     {reports.slice(0, 4).map((report) => (
-                      <div key={report.id} className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
+                      <div
+                        key={report.id}
+                        className="flex flex-wrap items-start justify-between gap-3 px-5 py-4"
+                      >
                         <div className="min-w-0">
                           <p className="font-medium">{report.title}</p>
                           <p className="mt-1 text-xs text-[#7a8378]">
                             {report.id} · {report.location || "Location not specified"}
                           </p>
-                          <p className="mt-2 text-xs text-[#687468]">{formatDate(report.date)}</p>
+                          <p className="mt-2 text-xs text-[#687468]">
+                            {formatDate(report.date)}
+                          </p>
                         </div>
 
                         <span
-                          className={`shrink-0 px-3 py-1.5 text-xs font-semibold ${statusStyles[report.status] || statusStyles.Submitted}`}
+                          className={`shrink-0 px-3 py-1.5 text-xs font-semibold ${
+                            statusStyles[report.status] ||
+                            statusStyles.Submitted
+                          }`}
                         >
                           {report.status}
                         </span>
@@ -1510,6 +1660,7 @@ export default function CitizenDashboard() {
             </>
           )}
 
+          {/* Report form */}
           {activePage === "Report an Issue" && (
             <section className="mx-auto max-w-3xl">
               <div className="mb-7">
@@ -1520,20 +1671,30 @@ export default function CitizenDashboard() {
                   Report a community issue
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-[#687468]">
-                  Describe the problem and where it happened. Photos help authorities understand the issue.
+                  Describe the problem and where it happened. Photos help
+                  authorities understand the issue.
                 </p>
               </div>
 
-              <form onSubmit={handleSubmitReport} className="border border-[#dce2d8] bg-[#fdfdf9] p-5 sm:p-8">
+              <form
+                onSubmit={handleSubmitReport}
+                className="border border-[#dce2d8] bg-[#fdfdf9] p-5 sm:p-8"
+              >
                 {formError && (
-                  <div role="alert" className="mb-5 border-l-4 border-[#9c654d] bg-[#f5e9df] p-4 text-sm leading-6 text-[#70452f]">
+                  <div
+                    role="alert"
+                    className="mb-5 border-l-4 border-[#9c654d] bg-[#f5e9df] p-4 text-sm leading-6 text-[#70452f]"
+                  >
                     {formError}
                   </div>
                 )}
 
                 <div className="space-y-5">
                   <div>
-                    <label htmlFor="report-title" className="mb-2 block text-sm font-semibold">
+                    <label
+                      htmlFor="report-title"
+                      className="mb-2 block text-sm font-semibold"
+                    >
                       Issue title *
                     </label>
                     <input
@@ -1542,30 +1703,42 @@ export default function CitizenDashboard() {
                       minLength={3}
                       maxLength={150}
                       value={form.title}
-                      onChange={(event) => setForm({ ...form, title: event.target.value })}
+                      onChange={(event) =>
+                        setForm({ ...form, title: event.target.value })
+                      }
                       placeholder="e.g. Pothole near the market entrance"
                       className="w-full border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none placeholder:text-[#8a9488] focus:border-[#55745c]"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="report-category" className="mb-2 block text-sm font-semibold">
+                    <label
+                      htmlFor="report-category"
+                      className="mb-2 block text-sm font-semibold"
+                    >
                       Issue category *
                     </label>
                     <select
                       id="report-category"
                       value={form.category}
-                      onChange={(event) => setForm({ ...form, category: event.target.value })}
+                      onChange={(event) =>
+                        setForm({ ...form, category: event.target.value })
+                      }
                       className="w-full border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none focus:border-[#55745c]"
                     >
                       {categories.map((category) => (
-                        <option key={category} value={category}>{category}</option>
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label htmlFor="report-location" className="mb-2 block text-sm font-semibold">
+                    <label
+                      htmlFor="report-location"
+                      className="mb-2 block text-sm font-semibold"
+                    >
                       Location *
                     </label>
                     <input
@@ -1573,43 +1746,56 @@ export default function CitizenDashboard() {
                       required
                       maxLength={200}
                       value={form.location}
-                      onChange={(event) => setForm({ ...form, location: event.target.value })}
+                      onChange={(event) =>
+                        setForm({ ...form, location: event.target.value })
+                      }
                       placeholder="Town, estate, road, or nearby landmark"
                       className="w-full border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none placeholder:text-[#8a9488] focus:border-[#55745c]"
                     />
                     <div className="mt-3 border border-[#dce2d8] bg-[#f7f7f2] p-4">
-                      <p className="text-sm font-semibold text-[#244637]">GPS Location — Kisii County</p>
-                      <p className="mt-1 text-xs leading-5 text-[#687468]">
-                        Stand near the reported problem and capture your current GPS location. Only locations inside Kisii County are accepted.
-                      </p>
+  <p className="text-sm font-semibold text-[#244637]">
+    GPS Location — Kisii County
+  </p>
 
-                      <button
-                        type="button"
-                        onClick={captureReportLocation}
-                        disabled={gpsBusy}
-                        className="mt-3 border border-[#244637] px-4 py-2.5 text-sm font-semibold text-[#244637] hover:bg-[#eff1e9] disabled:opacity-60"
-                      >
-                        {gpsBusy ? "Getting GPS location..." : "Capture GPS Location"}
-                      </button>
+  <p className="mt-1 text-xs leading-5 text-[#687468]">
+    Stand near the reported problem and capture your current GPS location.
+    Only locations inside Kisii County are accepted.
+  </p>
 
-                      <p className="mt-3 text-xs leading-5 text-[#687468]" role="status" aria-live="polite">
-                        {gpsStatus || "No GPS location captured yet."}
-                      </p>
+  <button
+    type="button"
+    onClick={captureReportLocation}
+    disabled={gpsBusy}
+    className="mt-3 border border-[#244637] px-4 py-2.5 text-sm font-semibold text-[#244637] hover:bg-[#eff1e9] disabled:opacity-60"
+  >
+    {gpsBusy ? "Getting GPS location..." : "Capture GPS Location"}
+  </button>
 
-                      {gpsCoordinates && (
-                        <p className="mt-2 break-words font-mono text-xs text-[#344338]">
-                          Latitude: {gpsCoordinates.latitude.toFixed(6)}
-                          <br />
-                          Longitude: {gpsCoordinates.longitude.toFixed(6)}
-                          <br />
-                          Accuracy: approximately {Math.round(gpsCoordinates.accuracy)} metres
-                        </p>
-                      )}
-                    </div>
+  <p
+    className="mt-3 text-xs leading-5 text-[#687468]"
+    role="status"
+    aria-live="polite"
+  >
+    {gpsStatus || "No GPS location captured yet."}
+  </p>
+
+  {gpsCoordinates && (
+    <p className="mt-2 break-words font-mono text-xs text-[#344338]">
+      Latitude: {gpsCoordinates.latitude.toFixed(6)}
+      <br />
+      Longitude: {gpsCoordinates.longitude.toFixed(6)}
+      <br />
+      Accuracy: approximately {Math.round(gpsCoordinates.accuracy)} metres
+    </p>
+  )}
+</div>
                   </div>
 
                   <div>
-                    <label htmlFor="report-description" className="mb-2 block text-sm font-semibold">
+                    <label
+                      htmlFor="report-description"
+                      className="mb-2 block text-sm font-semibold"
+                    >
                       Description *
                     </label>
                     <textarea
@@ -1620,21 +1806,28 @@ export default function CitizenDashboard() {
                       rows={5}
                       value={form.description}
                       onChange={(event) =>
-                        setForm({ ...form, description: event.target.value })
+                        setForm({
+                          ...form,
+                          description: event.target.value,
+                        })
                       }
                       placeholder="Describe the condition of the issue and how it affects the community..."
                       className="w-full resize-y border border-[#cbd6c8] bg-white px-4 py-3 text-sm leading-6 outline-none placeholder:text-[#8a9488] focus:border-[#55745c]"
                     />
                   </div>
 
+                  {/* Take photo directly or select existing photos */}
                   <div>
                     <p className="mb-2 block text-sm font-semibold">
                       Add photo evidence
-                      <span className="ml-2 font-normal text-[#7a8378]">(optional)</span>
+                      <span className="ml-2 font-normal text-[#7a8378]">
+                        (optional)
+                      </span>
                     </p>
 
                     <p className="mb-4 text-sm leading-6 text-[#687468]">
-                      Use your camera to photograph the issue or choose existing photos from your device.
+                      Use your camera to photograph the issue or choose
+                      existing photos from your device.
                     </p>
 
                     <div className="flex flex-wrap gap-3">
@@ -1642,7 +1835,7 @@ export default function CitizenDashboard() {
                         type="button"
                         onClick={openCamera}
                         disabled={selectedFiles.length >= MAX_FILES}
-                        className="inline-flex items-center gap-3 bg-[#244637] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#19372a] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex items-center gap-3 bg-[#244637] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#19372a] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <CameraIcon />
                         <span>Take Photo</span>
@@ -1650,7 +1843,9 @@ export default function CitizenDashboard() {
 
                       <label
                         className={`inline-flex items-center gap-3 border border-[#cbd6c8] bg-white px-5 py-3.5 text-sm font-semibold text-[#244637] transition hover:bg-[#eff1e9] ${
-                          selectedFiles.length >= MAX_FILES ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                          selectedFiles.length >= MAX_FILES
+                            ? "cursor-not-allowed opacity-50"
+                            : "cursor-pointer"
                         }`}
                       >
                         <input
@@ -1668,7 +1863,8 @@ export default function CitizenDashboard() {
                     </div>
 
                     <p className="mt-3 text-xs leading-5 text-[#7a8378]">
-                      Up to 5 photos in total, each up to 15 MB. Supported formats: JPEG, PNG, WebP, and GIF.
+                      Up to 5 photos in total, each up to 15 MB. Supported
+                      formats: JPEG, PNG, WebP, and GIF.
                     </p>
 
                     {selectedFiles.length > 0 && (
@@ -1684,8 +1880,12 @@ export default function CitizenDashboard() {
                               className="flex min-w-0 items-center justify-between gap-3 border border-[#dce2d8] bg-white p-3"
                             >
                               <div className="min-w-0">
-                                <p className="break-all text-sm font-medium">{file.name}</p>
-                                <p className="mt-1 text-xs text-[#7a8378]">{formatFileSize(file.size)}</p>
+                                <p className="break-all text-sm font-medium">
+                                  {file.name}
+                                </p>
+                                <p className="mt-1 text-xs text-[#7a8378]">
+                                  {formatFileSize(file.size)}
+                                </p>
                               </div>
 
                               <button
@@ -1708,12 +1908,17 @@ export default function CitizenDashboard() {
                       type="checkbox"
                       checked={form.isAnonymous}
                       onChange={(event) =>
-                        setForm({ ...form, isAnonymous: event.target.checked })
+                        setForm({
+                          ...form,
+                          isAnonymous: event.target.checked,
+                        })
                       }
                       className="mt-1 accent-[#244637]"
                     />
                     <span>
-                      <span className="font-semibold">Submit anonymously</span>
+                      <span className="font-semibold">
+                        Submit anonymously
+                      </span>
                       <span className="mt-1 block text-xs text-[#7a8378]">
                         You must still sign in to submit a report.
                       </span>
@@ -1727,7 +1932,9 @@ export default function CitizenDashboard() {
                     disabled={isSubmittingReport}
                     className="bg-[#244637] px-5 py-3 text-sm font-semibold text-white hover:bg-[#19372a] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isSubmittingReport ? "Submitting report..." : "Submit Report"}
+                    {isSubmittingReport
+                      ? "Submitting report..."
+                      : "Submit Report"}
                   </button>
 
                   <button
@@ -1746,6 +1953,7 @@ export default function CitizenDashboard() {
             </section>
           )}
 
+          {/* My reports */}
           {activePage === "My Reports" && (
             <section>
               <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
@@ -1753,7 +1961,9 @@ export default function CitizenDashboard() {
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#55745c]">
                     Your submissions
                   </p>
-                  <h2 className="mt-3 text-3xl font-semibold tracking-tight">My Reports</h2>
+                  <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+                    My Reports
+                  </h2>
                   <p className="mt-3 text-sm leading-7 text-[#687468]">
                     Reports retrieved from your signed-in citizen account.
                   </p>
@@ -1795,7 +2005,9 @@ export default function CitizenDashboard() {
                     "Rejected",
                     "Escalated",
                   ].map((status) => (
-                    <option key={status} value={status}>{status}</option>
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1807,10 +2019,14 @@ export default function CitizenDashboard() {
               ) : filteredReports.length === 0 ? (
                 <div className="border border-[#dce2d8] bg-[#fdfdf9] p-8">
                   <h3 className="font-semibold">
-                    {reports.length === 0 ? "You have not submitted any reports yet." : "No reports match your search."}
+                    {reports.length === 0
+                      ? "You have not submitted any reports yet."
+                      : "No reports match your search."}
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-[#687468]">
-                    {reports.length === 0 ? "When you submit a community issue, it will appear here." : "Try a different search term or status filter."}
+                    {reports.length === 0
+                      ? "When you submit a community issue, it will appear here."
+                      : "Try a different search term or status filter."}
                   </p>
 
                   {reports.length === 0 && (
@@ -1826,20 +2042,29 @@ export default function CitizenDashboard() {
               ) : (
                 <div className="space-y-4">
                   {filteredReports.map((report) => (
-                    <article key={report.id} className="border border-[#dce2d8] bg-[#fdfdf9] p-5 sm:p-6">
+                    <article
+                      key={report.id}
+                      className="border border-[#dce2d8] bg-[#fdfdf9] p-5 sm:p-6"
+                    >
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="min-w-0">
                           <p className="text-xs font-semibold uppercase tracking-wide text-[#55745c]">
                             {report.id}
                           </p>
-                          <h3 className="mt-2 text-lg font-semibold">{report.title}</h3>
+                          <h3 className="mt-2 text-lg font-semibold">
+                            {report.title}
+                          </h3>
                           <p className="mt-2 text-sm text-[#687468]">
-                            {report.category} · {report.location || "Location not specified"}
+                            {report.category} ·{" "}
+                            {report.location || "Location not specified"}
                           </p>
                         </div>
 
                         <span
-                          className={`shrink-0 px-3 py-1.5 text-xs font-semibold ${statusStyles[report.status] || statusStyles.Submitted}`}
+                          className={`shrink-0 px-3 py-1.5 text-xs font-semibold ${
+                            statusStyles[report.status] ||
+                            statusStyles.Submitted
+                          }`}
                         >
                           {report.status}
                         </span>
@@ -1853,7 +2078,9 @@ export default function CitizenDashboard() {
 
                       {report.mediaUrls.length > 0 && (
                         <div className="mt-5 border-t border-[#e5e9e1] pt-5">
-                          <h4 className="mb-3 text-sm font-semibold">Attachments</h4>
+                          <h4 className="mb-3 text-sm font-semibold">
+                            Attachments
+                          </h4>
 
                           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                             {report.mediaUrls.map((media, index) => {
@@ -1868,12 +2095,9 @@ export default function CitizenDashboard() {
                                   className="block overflow-hidden border border-[#dce2d8] bg-[#eff1e9]"
                                 >
                                   {isImageUrl(media) ? (
-                                    <Image
+                                    <img
                                       src={url}
                                       alt={`Attachment ${index + 1} for ${report.title}`}
-                                      width={800}
-                                      height={600}
-                                      unoptimized
                                       className="h-36 w-full object-cover"
                                     />
                                   ) : (
@@ -1901,13 +2125,16 @@ export default function CitizenDashboard() {
             </section>
           )}
 
+          {/* Profile */}
           {activePage === "My Profile" && (
             <section className="max-w-3xl">
               <div className="mb-7">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#55745c]">
                   Account
                 </p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight">My Profile</h2>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+                  My Profile
+                </h2>
               </div>
 
               <div className="border border-[#dce2d8] bg-[#fdfdf9] p-6 sm:p-8">
@@ -1922,25 +2149,41 @@ export default function CitizenDashboard() {
                   </div>
 
                   <div>
-                    <h3 className="font-semibold">{user.name || "Citizen"}</h3>
-                    <p className="mt-1 text-sm text-[#687468]">{user.email}</p>
+                    <h3 className="font-semibold">
+                      {user.name || "Citizen"}
+                    </h3>
+                    <p className="mt-1 text-sm text-[#687468]">
+                      {user.email}
+                    </p>
                   </div>
                 </div>
 
                 <dl className="mt-6 space-y-5">
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-[#7a8378]">Account role</dt>
-                    <dd className="mt-2 text-sm font-medium">{user.role || "CITIZEN"}</dd>
+                    <dt className="text-xs uppercase tracking-wide text-[#7a8378]">
+                      Account role
+                    </dt>
+                    <dd className="mt-2 text-sm font-medium">
+                      {user.role || "CITIZEN"}
+                    </dd>
                   </div>
 
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-[#7a8378]">Reports submitted</dt>
-                    <dd className="mt-2 text-sm font-medium">{reports.length}</dd>
+                    <dt className="text-xs uppercase tracking-wide text-[#7a8378]">
+                      Reports submitted
+                    </dt>
+                    <dd className="mt-2 text-sm font-medium">
+                      {reports.length}
+                    </dd>
                   </div>
 
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-[#7a8378]">Account verification</dt>
-                    <dd className="mt-2 text-sm font-medium">{user.isVerified ? "Verified" : "Not verified"}</dd>
+                    <dt className="text-xs uppercase tracking-wide text-[#7a8378]">
+                      Account verification
+                    </dt>
+                    <dd className="mt-2 text-sm font-medium">
+                      {user.isVerified ? "Verified" : "Not verified"}
+                    </dd>
                   </div>
                 </dl>
 
@@ -1964,11 +2207,14 @@ export default function CitizenDashboard() {
         </footer>
       </div>
 
+      {/* Live camera modal */}
       {cameraOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
           onClick={(event) => {
-            if (event.target === event.currentTarget) closeCamera();
+            if (event.target === event.currentTarget) {
+              closeCamera();
+            }
           }}
         >
           <section
@@ -1979,7 +2225,10 @@ export default function CitizenDashboard() {
           >
             <div className="flex items-center justify-between gap-4 border-b border-[#dce2d8] px-5 py-4">
               <div>
-                <h2 id="camera-title" className="text-lg font-semibold text-[#243329]">
+                <h2
+                  id="camera-title"
+                  className="text-lg font-semibold text-[#243329]"
+                >
                   Take a Photo
                 </h2>
                 <p className="mt-1 text-sm text-[#687468]">
@@ -1999,7 +2248,9 @@ export default function CitizenDashboard() {
 
             {cameraError ? (
               <div role="alert" className="p-6">
-                <p className="text-sm leading-6 text-[#80513d]">{cameraError}</p>
+                <p className="text-sm leading-6 text-[#80513d]">
+                  {cameraError}
+                </p>
 
                 <button
                   type="button"
@@ -2029,15 +2280,15 @@ export default function CitizenDashboard() {
               </button>
 
               {!cameraError && (
-                <button
-                  type="button"
-                  onClick={capturePhoto}
-                  disabled={gpsBusy}
-                  className="inline-flex items-center gap-2 bg-[#244637] px-5 py-3 text-sm font-semibold text-white hover:bg-[#19372a] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <CameraIcon />
-                  {gpsBusy ? "Getting GPS..." : "Capture Photo"}
-                </button>
+               <button
+  type="button"
+  onClick={capturePhoto}
+  disabled={gpsBusy}
+  className="inline-flex items-center gap-2 bg-[#244637] px-5 py-3 text-sm font-semibold text-white hover:bg-[#19372a] disabled:cursor-not-allowed disabled:opacity-60"
+>
+  <CameraIcon />
+  {gpsBusy ? "Getting GPS..." : "Capture Photo"}
+</button>
               )}
             </div>
           </section>
