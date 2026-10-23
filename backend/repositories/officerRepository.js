@@ -39,6 +39,10 @@ const officerRepository = {
           },
         }).then(withoutPassword);
       } catch (error) {
+        if (error.code === 'P2002' || error.message?.includes('Unique constraint')) {
+          const existing = await this.findOfficerByEmail(officer.email);
+          if (existing) return existing;
+        }
         console.warn('[DB] Prisma createOfficer failed, falling back to memory:', error.message);
       }
     }

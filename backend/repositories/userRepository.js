@@ -111,6 +111,10 @@ export const userRepository = {
           },
         });
       } catch (err) {
+        if (err.code === 'P2002' || err.message?.includes('Unique constraint')) {
+          const existing = await this.findUserByEmail(newUser.email);
+          if (existing) return existing;
+        }
         console.warn('[DB] Prisma createUser failed, using memory store:', err.message);
       }
     }

@@ -1,234 +1,221 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { reports } from "../data/reports";
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { reports as initialReports } from "../../data/reports";
 
-export default function AdminDashboard() {
-  const router = useRouter();
-  const [activePage, setActivePage] = useState("Dashboard");
+const statusOptions = [
+  "All",
+  "Pending",
+  "In Progress",
+  "Resolved",
+];
 
-  const totalReports = reports.length;
+export default function ReportsPage() {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
 
-  const pendingReports = reports.filter(
+  const filteredReports = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return initialReports.filter((report) => {
+      const matchesQuery =
+        !query ||
+        [
+          report.id,
+          report.issue,
+          report.category,
+          report.location,
+          report.reportedBy,
+          report.description,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query));
+
+      const matchesStatus =
+        statusFilter === "All" || report.status === statusFilter;
+
+      return matchesQuery && matchesStatus;
+    });
+  }, [search, statusFilter]);
+
+  const pendingReports = initialReports.filter(
     (report) => report.status === "Pending"
   ).length;
-
-  const inProgressReports = reports.filter(
+  const inProgressReports = initialReports.filter(
     (report) => report.status === "In Progress"
   ).length;
-
-  const resolvedReports = reports.filter(
+  const resolvedReports = initialReports.filter(
     (report) => report.status === "Resolved"
   ).length;
 
-  const handleNavigation = (page) => {
-    setActivePage(page);
-
-    if (page === "Dashboard") {
-      return;
-    }
-
-    if (page === "Reports") {
-      router.push("/reports");
-      return;
-    }
-
-    if (page === "Users") {
-      router.push("/users");
-      return;
-    }
-
-    if (page === "Statistics") {
-      router.push("/statistics");
-      return;
-    }
-
-    if (page === "Settings") {
-      router.push("/settings");
-      return;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 text-white min-h-screen p-6">
-        <div className="mb-10">
-          <h1 className="text-xl font-bold">Community Reports</h1>
-          <p className="text-sm text-gray-400 mt-1">Admin Panel</p>
-        </div>
+    <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
+      <header className="border-b border-[#dce2d8] bg-[#173d2d] px-5 py-6 text-white md:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">
+              Community Reporting System
+            </p>
+            <h1 className="mt-2 text-2xl font-bold md:text-3xl">
+              Community Reports
+            </h1>
+            <p className="mt-2 text-sm text-emerald-100">
+              Review citizen-submitted issues and their current status.
+            </p>
+          </div>
 
-        <nav className="space-y-2" aria-label="Sidebar navigation">
-          {[
-            "Dashboard",
-            "Reports",
-            "Users",
-            "Statistics",
-            "Settings",
-          ].map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => handleNavigation(item)}
-              aria-current={activePage === item ? "page" : undefined}
-              className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium ${
-                activePage === item
-                  ? "bg-white text-gray-900"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}
-            >
-              {item}
-            </button>
-          ))}
-        </nav>
-
-        <div className="mt-10 border-t border-gray-700 pt-6">
-          <button
-            type="button"
-            aria-label="Log out of the admin dashboard"
-            className="w-full text-left px-4 py-3 rounded-lg text-sm text-gray-300 hover:bg-gray-800"
-            onClick={() => alert("Logout functionality will be added later.")}
+          <Link
+            href="/"
+            className="inline-flex items-center rounded-lg bg-[#f4f0dc] px-4 py-2.5 text-sm font-semibold text-[#173d2d] transition hover:bg-white"
           >
-            Logout
-          </button>
+            Back to Dashboard
+          </Link>
         </div>
-      </aside>
+      </header>
 
-      {/* Main Content */}
-      <main className="flex-1">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Admin Dashboard</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Community issue reporting management system
-              </p>
-            </div>
-
-            <div className="text-right">
-              <p className="text-sm font-medium">Administrator</p>
-              <p className="text-xs text-gray-500">Government Officer</p>
-            </div>
-          </div>
-        </header>
-
-        <div className="p-8">
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <p className="text-sm text-gray-500">Total Reports</p>
-              <p className="text-3xl font-bold mt-2">{totalReports}</p>
-              <p className="text-xs text-gray-500 mt-2">
-                All community reports
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <p className="text-sm text-gray-500">Pending</p>
-              <p className="text-3xl font-bold text-yellow-600 mt-2">
-                {pendingReports}
-              </p>
-              <p className="text-xs text-gray-500 mt-2">Awaiting action</p>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <p className="text-sm text-gray-500">In Progress</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">
-                {inProgressReports}
-              </p>
-              <p className="text-xs text-gray-500 mt-2">
-                Currently being handled
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <p className="text-sm text-gray-500">Resolved</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">
-                {resolvedReports}
-              </p>
-              <p className="text-xs text-gray-500 mt-2">
-                Successfully resolved
-              </p>
-            </div>
+      <main className="mx-auto max-w-7xl space-y-6 p-5 md:p-8">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-[#dce2d8] bg-white p-5 shadow-sm">
+            <p className="text-sm text-gray-500">Total Reports</p>
+            <p className="mt-3 text-3xl font-bold text-[#173d2d]">
+              {initialReports.length}
+            </p>
           </div>
 
-          {/* Recent Reports */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold">Recent Reports</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  Latest issues submitted by citizens
-                </p>
-              </div>
+          <div className="rounded-xl border border-[#dce2d8] bg-white p-5 shadow-sm">
+            <p className="text-sm text-gray-500">Pending</p>
+            <p className="mt-3 text-3xl font-bold text-amber-600">
+              {pendingReports}
+            </p>
+          </div>
 
-              <button
-                type="button"
-                onClick={() => handleNavigation("Reports")}
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
+          <div className="rounded-xl border border-[#dce2d8] bg-white p-5 shadow-sm">
+            <p className="text-sm text-gray-500">In Progress</p>
+            <p className="mt-3 text-3xl font-bold text-blue-600">
+              {inProgressReports}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-[#dce2d8] bg-white p-5 shadow-sm">
+            <p className="text-sm text-gray-500">Resolved</p>
+            <p className="mt-3 text-3xl font-bold text-emerald-600">
+              {resolvedReports}
+            </p>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-[#dce2d8] bg-white p-5 shadow-sm md:p-6">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div className="flex-1">
+              <label
+                htmlFor="report-search"
+                className="mb-2 block text-sm font-semibold text-gray-700"
               >
-                View All Reports
-              </button>
+                Search Reports
+              </label>
+              <input
+                id="report-search"
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search ID, issue, category, citizen or location..."
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-[#35654b] focus:ring-2 focus:ring-[#35654b]/20"
+              />
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-6 py-4 font-semibold">
-                      Report ID
-                    </th>
-                    <th className="text-left px-6 py-4 font-semibold">
-                      Issue
-                    </th>
-                    <th className="text-left px-6 py-4 font-semibold">
-                      Location
-                    </th>
-                    <th className="text-left px-6 py-4 font-semibold">
-                      Status
-                    </th>
-                    <th className="text-left px-6 py-4 font-semibold">
-                      Date
-                    </th>
-                  </tr>
-                </thead>
+            <div className="w-full md:w-60">
+              <label
+                htmlFor="status-filter"
+                className="mb-2 block text-sm font-semibold text-gray-700"
+              >
+                Filter by Status
+              </label>
+              <select
+                id="status-filter"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none focus:border-[#35654b] focus:ring-2 focus:ring-[#35654b]/20"
+              >
+                {statusOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
 
-                <tbody>
-                  {reports.map((report) => (
+        <section className="overflow-hidden rounded-xl border border-[#e4e1d5] bg-white shadow-sm">
+          <div className="border-b border-[#e4e1d5] px-5 py-5 md:px-6">
+            <h2 className="text-lg font-bold text-[#173d2d]">Report Register</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Showing {filteredReports.length} of {initialReports.length} reports.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[850px] text-left text-sm">
+              <thead className="bg-[#f5f4ec] text-gray-600">
+                <tr>
+                  <th className="px-5 py-4 font-semibold">Report ID</th>
+                  <th className="px-5 py-4 font-semibold">Issue</th>
+                  <th className="px-5 py-4 font-semibold">Category</th>
+                  <th className="px-5 py-4 font-semibold">Location</th>
+                  <th className="px-5 py-4 font-semibold">Status</th>
+                  <th className="px-5 py-4 font-semibold">Date</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredReports.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-12 text-center text-gray-500">
+                      No reports match the current filter.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredReports.map((report) => (
                     <tr
                       key={report.id}
-                      className="border-b border-gray-100 last:border-0 hover:bg-gray-50"
+                      className="border-t border-gray-100 transition hover:bg-[#fafaf5]"
                     >
-                      <td className="px-6 py-4 font-medium">{report.id}</td>
-                      <td className="px-6 py-4">{report.issue}</td>
-                      <td className="px-6 py-4 text-gray-600">
+                      <td className="px-5 py-4 font-semibold text-[#24543b]">
+                        {report.id}
+                      </td>
+                      <td className="max-w-xs px-5 py-4 font-medium text-gray-900">
+                        {report.issue}
+                      </td>
+                      <td className="px-5 py-4 text-gray-600">
+                        {report.category}
+                      </td>
+                      <td className="max-w-xs px-5 py-4 text-gray-600">
                         {report.location}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <span
-                          className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                          className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${
                             report.status === "Pending"
-                              ? "bg-yellow-100 text-yellow-800"
+                              ? "bg-amber-100 text-amber-800"
                               : report.status === "In Progress"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-green-100 text-green-800"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-emerald-100 text-emerald-800"
                           }`}
                         >
                           {report.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-600">
+                      <td className="whitespace-nowrap px-5 py-4 text-gray-600">
                         {report.date}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </section>
       </main>
     </div>
   );
