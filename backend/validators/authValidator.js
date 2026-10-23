@@ -13,7 +13,7 @@ export const registerSchema = z.object({
     .string()
     .min(6, 'Password must be at least 6 characters long')
     .max(100),
-  role: z.enum(['CITIZEN', 'OFFICER', 'ADMIN', 'SUPER_ADMIN']).optional().default('CITIZEN'),
+ 
   county: z.string().trim().max(100).optional(),
   subCounty: z.string().trim().max(100).optional(),
   ward: z.string().trim().max(100).optional(),
