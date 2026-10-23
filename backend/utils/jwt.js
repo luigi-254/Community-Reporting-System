@@ -1,8 +1,22 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
-export const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-access-token-key-change-in-production';
-export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'super-secret-refresh-token-key-change-in-production';
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set in production');
+  }
+  console.warn('WARNING: JWT_SECRET not set, using insecure default for development');
+}
+
+if (!process.env.JWT_REFRESH_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_REFRESH_SECRET must be set in production');
+  }
+  console.warn('WARNING: JWT_REFRESH_SECRET not set, using insecure default for development');
+}
+
+export const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-super-secret-access-token-key-change-in-production';
+export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-only-super-secret-refresh-token-key-change-in-production';
 export const ACCESS_TOKEN_EXPIRY = process.env.JWT_EXPIRES_IN || '15m';
 export const REFRESH_TOKEN_EXPIRY = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 

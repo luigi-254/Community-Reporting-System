@@ -1,4 +1,9 @@
 import db from '../config/db.js';
+import { isValidTransition, recordStatusHistory, getStatusHistory } from '../services/statusWorkflow.js';
+import { applyRoutingRules } from '../services/routingEngine.js';
+import { notifyUser, notifyReportStatus } from '../services/notifyService.js';
+import { findPossibleDuplicates } from '../services/duplicateDetection.js';
+import { canAccessReport, scopeReportQuery } from '../services/jurisdiction.js';
 
 const sanitizeReport = (report, currentUser = null) => {
   if (!report) return null;
@@ -78,11 +83,54 @@ export const createReport = async (req, res, next) => {
       departmentId: departmentId || null,
     });
 
+    const routedReport = await applyRoutingRules(newReport);
+
+    await recordStatusHistory({
+      reportId: newReport.id,
+      fromStatus: null,
+      toStatus: 'SUBMITTED',
+      notes: 'Report submitted',
+      actorId: req.user.id,
+    });
+
+    if (routedReport.status !== newReport.status) {
+      await recordStatusHistory({
+        reportId: newReport.id,
+        fromStatus: 'SUBMITTED',
+        toStatus: routedReport.status,
+        notes: 'Auto-routed to officer',
+        actorId: req.user.id,
+      });
+    }
+
+    await notifyUser(
+      newReport.reporterId,
+      'Report submitted',
+      'Your report was submitted successfully and is awaiting review.',
+      'INFO'
+    );
+
+    await db.createAuditLog({
+      actorId: req.user.id,
+      action: 'REPORT_CREATED',
+      entityType: 'REPORT',
+      entityId: newReport.id,
+      newValue: { status: routedReport.status, category: newReport.category },
+    });
+
+    const possibleDuplicates = await findPossibleDuplicates({
+      title,
+      category,
+      ward,
+      excludeId: newReport.id,
+    });
+
     return res.status(201).json({
       status: 'success',
       message: 'Report submitted successfully. Authorities will review it shortly.',
       data: {
-        report: sanitizeReport(newReport, req.user),
+        report: sanitizeReport(routedReport, req.user),
+        possibleDuplicates,
       },
     });
   } catch (error) {
@@ -102,7 +150,7 @@ export const getReports = async (req, res, next) => {
       ward,
     } = req.query;
 
-    const data = await db.findReports({
+    const data = await db.findReports(scopeReportQuery(req.user, {
       page,
       limit,
       sortBy,
@@ -111,7 +159,7 @@ export const getReports = async (req, res, next) => {
       priority,
       category,
       ward,
-    });
+    }));
 
     data.reports = data.reports.map((r) => sanitizeReport(r, req.user));
 
@@ -141,6 +189,25 @@ export const getReport = async (req, res, next) => {
       data: {
         report: sanitizeReport(report, req.user),
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getReportHistory = async (req, res, next) => {
+  try {
+    const report = await db.findReportById(req.params.id);
+    if (!report) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Report not found.',
+      });
+    }
+    const history = await getStatusHistory(req.params.id);
+    return res.status(200).json({
+      status: 'success',
+      data: { history },
     });
   } catch (error) {
     next(error);
@@ -322,6 +389,20 @@ export const changeStatus = async (req, res, next) => {
       });
     }
 
+    if (!canAccessReport(req.user, existing)) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Report is outside your jurisdiction.',
+      });
+    }
+
+    if (!isValidTransition(existing.status, status)) {
+      return res.status(400).json({
+        status: 'error',
+        message: `Invalid status transition from '${existing.status}' to '${status}'.`,
+      });
+    }
+
     const isResolving = status === 'RESOLVED';
     const finalResolutionNotes = resolutionNotes || notes;
 
@@ -338,6 +419,25 @@ export const changeStatus = async (req, res, next) => {
     };
 
     const updated = await db.updateReport(id, updatePayload);
+
+    await recordStatusHistory({
+      reportId: id,
+      fromStatus: existing.status,
+      toStatus: status,
+      notes: finalResolutionNotes,
+      actorId: req.user.id,
+    });
+
+    await notifyReportStatus(updated, status, finalResolutionNotes);
+
+    await db.createAuditLog({
+      actorId: req.user.id,
+      action: 'REPORT_STATUS_CHANGED',
+      entityType: 'REPORT',
+      entityId: id,
+      previousValue: { status: existing.status },
+      newValue: { status },
+    });
 
     return res.status(200).json({
       status: 'success',
@@ -440,6 +540,24 @@ export const rejectResolution = async (req, res, next) => {
       status: 'IN_PROGRESS',
       resolutionStatus: 'REJECTED',
       rejectionReason,
+    });
+
+    await recordStatusHistory({
+      reportId: id,
+      fromStatus: existing.status,
+      toStatus: 'IN_PROGRESS',
+      notes: `Resolution rejected: ${rejectionReason}`,
+      actorId: req.user.id,
+    });
+    await notifyReportStatus(updated, 'IN_PROGRESS', `Resolution rejected: ${rejectionReason}`);
+
+    await db.createAuditLog({
+      actorId: req.user.id,
+      action: 'REPORT_RESOLUTION_REJECTED',
+      entityType: 'REPORT',
+      entityId: id,
+      previousValue: { status: existing.status },
+      newValue: { status: 'IN_PROGRESS', rejectionReason },
     });
 
     return res.status(200).json({

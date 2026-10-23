@@ -106,12 +106,16 @@ async function runReportTests() {
     const createdReportId = createRes.body.data.report.id;
 
     // 2. GET /api/reports - getReports
-    const listRes = await request('GET', '/api/reports');
+    const listRes = await request('GET', '/api/reports', null, {
+      Authorization: `Bearer ${citizenToken}`,
+    });
     console.log('✓ 2. getReports (GET /api/reports):', listRes.status, `Total: ${listRes.body.data?.total}`);
     if (listRes.status !== 200 || !listRes.body.data?.reports?.length) throw new Error('getReports failed');
 
     // 3. GET /api/reports/:id - getReport
-    const getRes = await request('GET', `/api/reports/${createdReportId}`);
+    const getRes = await request('GET', `/api/reports/${createdReportId}`, null, {
+      Authorization: `Bearer ${citizenToken}`,
+    });
     console.log('✓ 3. getReport (GET /api/reports/:id):', getRes.status, getRes.body.data?.report?.title);
     if (getRes.status !== 200) throw new Error('getReport failed');
 
@@ -208,14 +212,30 @@ async function runReportTests() {
     if (acceptRes.status !== 200 || acceptRes.body.data?.report?.resolutionStatus !== 'ACCEPTED') throw new Error('acceptResolution failed');
 
     // 10. GET /api/reports/search - searchReports
-    const searchRes = await request('GET', '/api/reports/search?q=Argwings');
+    const searchRes = await request('GET', '/api/reports/search?q=Argwings', null, {
+      Authorization: `Bearer ${citizenToken}`,
+    });
     console.log('✓ 9. searchReports (GET /api/reports/search?q=Argwings):', searchRes.status, `Found: ${searchRes.body.data?.total}`);
     if (searchRes.status !== 200 || searchRes.body.data?.total < 1) throw new Error('searchReports failed');
 
     // 11. GET /api/reports/filter - filterReports
-    const filterRes = await request('GET', '/api/reports/filter?status=RESOLVED&ward=Kilimani');
+    const filterRes = await request('GET', '/api/reports/filter?status=RESOLVED&ward=Kilimani', null, {
+      Authorization: `Bearer ${citizenToken}`,
+    });
     console.log('✓ 10. filterReports (GET /api/reports/filter):', filterRes.status, `Filtered: ${filterRes.body.data?.total}`);
     if (filterRes.status !== 200 || filterRes.body.data?.total < 1) throw new Error('filterReports failed');
+
+    // 11b. duplicate detection flags a similar open report
+    const dupRes = await request('POST', '/api/reports', {
+      title: 'Major Pothole on Argwings Kodhek Road',
+      description: 'Same pothole reported again while still open.',
+      category: 'Roads & Infrastructure',
+      priority: 'HIGH',
+      ward: 'Kilimani Ward',
+      county: 'Nairobi',
+    }, { Authorization: `Bearer ${citizenToken}` });
+    console.log('✓ 11b. duplicate detection:', dupRes.status, `Matches: ${dupRes.body.data?.possibleDuplicates?.length}`);
+    if (dupRes.status !== 201 || (dupRes.body.data?.possibleDuplicates?.length ?? 0) < 1) throw new Error('duplicate detection failed');
 
     // 12. Create another report to test deleteReport
     const tempReport = await request('POST', '/api/reports', {
@@ -234,6 +254,35 @@ async function runReportTests() {
     });
     console.log('✓ 11. deleteReport (DELETE /api/reports/:id):', deleteRes.status, deleteRes.body.message);
     if (deleteRes.status !== 200) throw new Error('deleteReport failed');
+
+    // 12. GET /api/reports/:id/history - status history is logged
+    const historyRes = await request('GET', `/api/reports/${createdReportId}/history`, null, {
+      Authorization: `Bearer ${citizenToken}`,
+    });
+    console.log('✓ 12. getReportHistory:', historyRes.status, `Entries: ${historyRes.body.data?.history?.length}`);
+    if (historyRes.status !== 200 || (historyRes.body.data?.history?.length ?? 0) < 3) throw new Error('status history failed');
+
+    // 13. invalid status transition is rejected
+    const badRes = await request('PATCH', `/api/reports/${createdReportId}/status`, { status: 'IN_PROGRESS' }, {
+      Authorization: `Bearer ${officerToken}`,
+    });
+    console.log('✓ 13. invalid transition rejected:', badRes.status, badRes.body?.message);
+    if (badRes.status !== 400) throw new Error('invalid transition was not rejected');
+
+    // 14. ward-scoped officer cannot act on another ward's report
+    const otherOfficer = await db.createUser({
+      name: 'Other Ward Officer',
+      email: 'other.officer@example.com',
+      password: 'hashedpassword',
+      role: 'OFFICER',
+      ward: 'Other Ward',
+    });
+    const otherToken = generateAccessToken({ id: otherOfficer.id, email: otherOfficer.email, role: otherOfficer.role });
+    const forbidden = await request('PATCH', `/api/reports/${createdReportId}/status`, { status: 'CLOSED' }, {
+      Authorization: `Bearer ${otherToken}`,
+    });
+    console.log('✓ 14. jurisdiction enforced:', forbidden.status, forbidden.body?.message);
+    if (forbidden.status !== 403) throw new Error('jurisdiction scoping failed');
 
     console.log('\n======================================================');
     console.log('ALL 11 REPORT ACTIONS AND ROUTES VERIFIED SUCCESSFULLY!');

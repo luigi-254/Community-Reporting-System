@@ -28,6 +28,11 @@ const server = app.listen(port, async () => {
     if ((await request('GET', `/api/escalations/${escalationId}`, null, token)).status !== 200) throw new Error('getEscalation failed');
     if ((await request('PATCH', `/api/escalations/${escalationId}/resolve`, { resolutionNotes: 'Reviewed and assigned for action.' }, token)).status !== 200) throw new Error('resolveEscalation failed');
 
+    const overdue = await request('GET', '/api/escalations/overdue', null, token);
+    if (overdue.status !== 200 || !Array.isArray(overdue.body.data?.overdue)) throw new Error('getOverdueReports failed');
+    const auto = await request('POST', '/api/escalations/auto-escalate', null, token);
+    if (auto.status !== 200 || !Array.isArray(auto.body.data?.escalations)) throw new Error('autoEscalateOverdue failed');
+
     for (const endpoint of ['overview', 'reports', 'categories', 'departments', 'wards', 'performance', 'escalations']) {
       const result = await request('GET', `/api/dashboard/${endpoint}`, null, token);
       if (result.status !== 200) throw new Error(`dashboard ${endpoint} failed`);
