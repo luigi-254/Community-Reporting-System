@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -2095,9 +2096,12 @@ const [gpsStatus, setGpsStatus] = useState("");
                                   className="block overflow-hidden border border-[#dce2d8] bg-[#eff1e9]"
                                 >
                                   {isImageUrl(media) ? (
-                                    <img
+                                    <Image
                                       src={url}
                                       alt={`Attachment ${index + 1} for ${report.title}`}
+                                      width={480}
+                                      height={240}
+                                      unoptimized
                                       className="h-36 w-full object-cover"
                                     />
                                   ) : (

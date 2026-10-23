@@ -35,13 +35,20 @@ export default function GovernmentMap() {
     { className: "overflow-hidden rounded-xl border border-gray-200 bg-white" },
     createElement(
       "div",
-      { className: "flex min-h-16 items-center justify-between gap-4 p-4" },
-      createElement("p", { className: "text-sm text-gray-600", role: "status" }, message),
+      {
+        className:
+          "flex min-h-16 flex-wrap items-center justify-between gap-4 p-4 sm:flex-nowrap",
+      },
+      createElement(
+        "p",
+        { className: "min-w-0 flex-1 text-sm text-gray-600", role: "status" },
+        message
+      ),
       createElement(
         "button",
         {
           className:
-            "shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+            "min-h-11 shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
           onClick: showMyLocation,
           type: "button",
         },
@@ -50,7 +57,7 @@ export default function GovernmentMap() {
     ),
     mapUrl
       ? createElement("iframe", {
-          className: "h-[440px] w-full border-0",
+          className: "h-[360px] w-full border-0 sm:h-[440px]",
           src: mapUrl,
           title: "OpenStreetMap showing your location",
           loading: "lazy",
@@ -59,7 +66,7 @@ export default function GovernmentMap() {
           "div",
           {
             className:
-              "flex h-[440px] items-center justify-center bg-gray-100 text-sm text-gray-500",
+              "flex h-[360px] items-center justify-center bg-gray-100 text-center text-sm text-gray-500 sm:h-[440px]",
           },
           "The map will appear here after you choose a location."
         )
