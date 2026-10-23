@@ -38,6 +38,23 @@ const server = app.listen(port, async () => {
     const rule = await request('POST', '/api/routing-rules', { name: 'Roads rule', category: 'ROADS', officerId: officer.id }, token);
     if (rule.status !== 201) throw new Error('createRoutingRule failed');
     const ruleId = rule.body.data.rule.id;
+
+    const reporterToken = generateAccessToken({ id: reporter.id, email: reporter.email, role: reporter.role });
+    const autoRoute = await request('POST', '/api/reports', {
+      title: 'Auto-routed pothole',
+      description: 'Routing engine test report.',
+      category: 'ROADS',
+    }, reporterToken);
+    if (autoRoute.status !== 201) throw new Error('autoRoute create failed');
+    const routed = await request('GET', `/api/reports/${autoRoute.body.data.report.id}`, null, reporterToken);
+    if (
+      routed.status !== 200 ||
+      routed.body.data.report.status !== 'ASSIGNED' ||
+      routed.body.data.report.assignedOfficerId !== officer.id
+    ) {
+      throw new Error('auto-routing failed');
+    }
+
     if ((await request('GET', '/api/routing-rules', null, token)).status !== 200) throw new Error('getRoutingRules failed');
     if ((await request('GET', `/api/routing-rules/${ruleId}`, null, token)).status !== 200) throw new Error('getRoutingRule failed');
     if ((await request('PUT', `/api/routing-rules/${ruleId}`, { isActive: false }, token)).status !== 200) throw new Error('updateRoutingRule failed');

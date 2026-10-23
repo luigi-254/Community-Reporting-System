@@ -40,7 +40,7 @@ app.use(compression());
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use('/uploads', express.static(path.resolve('uploads')));
+// File serving moved to authenticated endpoint for security
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));

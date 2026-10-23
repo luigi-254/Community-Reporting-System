@@ -101,8 +101,6 @@ export const register = async (req, res, next) => {
     });
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
-    const isDev = process.env.NODE_ENV !== 'production';
-
     return res.status(201).json({
       status: 'success',
       message: 'Account registered successfully. A verification code has been sent.',
@@ -110,10 +108,6 @@ export const register = async (req, res, next) => {
         user: sanitizeUser(newUser),
         accessToken,
         refreshToken,
-        ...(isDev && {
-          verificationCode,
-          verificationToken,
-        }),
       },
     });
   } catch (error) {
@@ -363,16 +357,9 @@ export const forgotPassword = async (req, res, next) => {
       });
     }
 
-    const isDev = process.env.NODE_ENV !== 'production';
     return res.status(200).json({
       status: 'success',
       message: 'If the provided account exists, a password reset link or code has been sent.',
-      ...(isDev && resetToken && {
-        dev: {
-          resetToken,
-          resetCode,
-        },
-      }),
     });
   } catch (error) {
     next(error);

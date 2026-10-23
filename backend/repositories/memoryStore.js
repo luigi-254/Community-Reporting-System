@@ -16,6 +16,7 @@ export const memoryStore = {
   notifications: new Map(),
   escalations: new Map(),
   auditLogs: new Map(),
+  statusHistories: new Map(),
 };
 
 export default memoryStore;

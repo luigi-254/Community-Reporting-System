@@ -4,6 +4,7 @@ import {
   createReport,
   getReports,
   getReport,
+  getReportHistory,
   getMyReports,
   updateReport,
   deleteReport,
@@ -54,9 +55,9 @@ const deleteRoute = (path, ...handlers) => {
 };
 
 getRoute('/me', authenticate, getMyReports);
-getRoute('/search', searchReports);
-getRoute('/filter', filterReports);
-getRoute('/', getReports);
+getRoute('/search', authenticate, searchReports);
+getRoute('/filter', authenticate, filterReports);
+getRoute('/', authenticate, getReports);
 postRoute(
   '/',
   authenticate,
@@ -64,7 +65,8 @@ postRoute(
   validate(createReportSchema),
   createReport
 );
-getRoute('/:id', getReport);
+getRoute('/:id/history', authenticate, getReportHistory);
+getRoute('/:id', authenticate, getReport);
 putRoute(
   '/:id',
   authenticate,

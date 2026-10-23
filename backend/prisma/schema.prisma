@@ -1,15 +1,29 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
 enum Role {
   CITIZEN
   OFFICER
+  FIELD_OFFICER
+  TECHNICAL_SUPERVISOR
+  TECHNICAL_HEAD
+  CHIEF_OFFICER
+  CECM
+  GOVERNOR
+  WARD_ADMIN
+  SUBCOUNTY_ADMIN
+  DISASTER_MANAGER
+  ENFORCEMENT_OFFICER
+  DEPARTMENTAL_ADMIN
   ADMIN
   SUPER_ADMIN
 }
@@ -20,11 +34,24 @@ enum VerificationType {
 }
 
 enum ReportStatus {
+  DRAFT
   SUBMITTED
   UNDER_REVIEW
+  NEEDS_MORE_INFO
+  VERIFIED
+  ASSIGNED
+  ACKNOWLEDGED
+  INSPECTION_IN_PROGRESS
   IN_PROGRESS
+  AWAITING_EXTERNAL_AGENCY
+  RESOLUTION_SUBMITTED
+  AWAITING_CITIZEN_VERIFICATION
   RESOLVED
+  CLOSED
+  REOPENED
   REJECTED
+  DUPLICATE
+  CANCELLED
   ESCALATED
 }
 
@@ -33,40 +60,112 @@ enum ReportPriority {
   MEDIUM
   HIGH
   URGENT
+  CRITICAL
 }
 
 enum ResolutionStatus {
   PENDING
   ACCEPTED
   REJECTED
+  PARTIAL
 }
 
-model User {
-  id                  String               @id @default(uuid())
-  name                String
-  email               String               @unique
-  phone               String?              @unique
-  password            String
-  role                Role                 @default(CITIZEN)
-  isVerified          Boolean              @default(false)
-  emailVerified       Boolean              @default(false)
-  phoneVerified       Boolean              @default(false)
-  isActive            Boolean              @default(true)
-  county              String?
-  subCounty           String?
-  ward                String?
-  address             String?
-  avatarUrl           String?
-  departmentId        String?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+enum VerificationOutcome {
+  CONFIRMED
+  REJECTED
+  PARTIAL
+  TIMED_OUT
+}
 
-  refreshTokens       RefreshToken[]
+enum EscalationStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  ACKNOWLEDGED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  REASSIGNED
+}
+
+enum FollowUpType {
+  NOTE
+  FLAG_INACTIVITY
+  FLAG_ROUTING
+  FLAG_DEADLINE
+  ESCALATION_REQUEST
+}
+
+enum OfficialType {
+  GOVERNOR
+  CECM
+  CHIEF_OFFICER
+  TECHNICAL_HEAD
+  MP
+  MCA
+  OTHER
+}
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+model User {
+  id                    String               @id @default(uuid())
+  name                  String
+  email                 String               @unique
+  phone                 String?              @unique
+  password              String
+  role                  Role                 @default(CITIZEN)
+  isVerified            Boolean              @default(false)
+  emailVerified         Boolean              @default(false)
+  phoneVerified         Boolean              @default(false)
+  isActive              Boolean              @default(true)
+  county                String?
+  subCounty             String?
+  ward                  String?
+  countyId              String?
+  subCountyId           String?
+  wardId                String?
+  address               String?
+  avatarUrl             String?
+  departmentId          String?
+  department            Department?         @relation("UserDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  refreshTokens        RefreshToken[]
   verificationTokens  VerificationToken[]
   passwordResetTokens PasswordResetToken[]
-  submittedReports    Report[]             @relation("UserSubmittedReports")
-  assignedReports     Report[]             @relation("OfficerAssignedReports")
+  submittedReports     Report[]            @relation("UserSubmittedReports")
+  assignedReports      Report[]            @relation("OfficerAssignedReports")
+  statusChanges        ReportStatusHistory[] @relation("StatusHistoryActor")
+  assignmentsGiven     Assignment[]        @relation("AssignmentAssignedBy")
+  assignmentsReceived Assignment[]        @relation("AssignmentOfficer")
+  inspections          FieldInspection[] @relation("OfficerOfInspection")
+  workUpdates          WorkUpdate[]       @relation("OfficerOfWorkUpdate")
+  resolutions          ResolutionSubmission[] @relation("ResolverOfResolution")
+  verifications        CitizenVerification[] @relation("OfficerOfVerification")
+  followUps            ReportFollowUp[]   @relation("CreatorOfFollowUp")
+  internalNotes        InternalNote[]     @relation("AuthorOfInternalNote")
+  notifications        Notification[]     @relation("NotificationToUser")
+  notificationPrefs   UserNotificationPreference[] @relation("PreferenceOfUser")
+  auditLogs            AuditLog[]          @relation("AuditActor")
+  organizationalAssignments OrganizationalAssignment[] @relation("OrgAssignmentUser")
+  escalationsRaised    Escalation[]        @relation("EscalationRaisedBy")
+  escalationsResolved  Escalation[]        @relation("EscalationResolvedBy")
+  routingRules         RoutingRule[]       @relation("RoutingRuleOfficer")
+  slaPoliciesCreated  SlaPolicy[]         @relation("SlaPolicyCreator")
+  officials           Official[]          @relation("OfficialOfUser")
 
+  @@index([wardId])
+  @@index([subCountyId])
+  @@index([countyId])
+  @@index([departmentId])
   @@map("users")
 }
 
@@ -81,6 +180,13 @@ model Department {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  users        User[]        @relation("UserDepartment")
+  categories   Category[]   @relation("DepartmentCategory")
+  reports      Report[]     @relation("DepartmentReport")
+  routingRules RoutingRule[] @relation("DepartmentRoutingRule")
+  officials    Official[]   @relation("DepartmentOfficial")
+  positions    OrganizationalPosition[] @relation("DepartmentPosition")
+
   @@map("departments")
 }
 
@@ -91,6 +197,7 @@ model County {
   slug        String      @unique
   isActive    Boolean     @default(true)
   subCounties SubCounty[]
+  reports     Report[]    @relation("ReportCounty")
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -105,6 +212,7 @@ model SubCounty {
   code      String?
   isActive  Boolean  @default(true)
   wards     Ward[]
+  reports   Report[] @relation("ReportSubCounty")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -120,6 +228,7 @@ model Ward {
   name        String
   code        String?
   isActive    Boolean   @default(true)
+  reports     Report[]  @relation("ReportWard")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -174,13 +283,17 @@ model Category {
   code          String        @unique
   description   String?
   icon          String?
+  displayOrder  Int           @default(0)
   isActive      Boolean       @default(true)
   departmentId  String?
+  department    Department?   @relation("DepartmentCategory", fields: [departmentId], references: [id], onDelete: SetNull)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   subcategories Subcategory[]
+  reports       Report[]      @relation("CategoryReports")
 
+  @@index([departmentId])
   @@map("categories")
 }
 
@@ -189,14 +302,19 @@ model Subcategory {
   categoryId      String
   category        Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   name            String
-  code            String?
+  code            String?        @unique
   description     String?
+  isOther         Boolean        @default(false)
+  displayOrder    Int            @default(0)
   defaultPriority ReportPriority @default(MEDIUM)
   slaHours        Int            @default(48)
   isActive        Boolean        @default(true)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
+  reports         Report[]      @relation("SubcategoryReports")
+
+  @@unique([categoryId, name])
   @@index([categoryId])
   @@map("subcategories")
 }
@@ -213,18 +331,29 @@ model Report {
   county              String?
   subCounty           String?
   ward                String?
+  countyId            String?
+  countyRef           County?           @relation("ReportCounty", fields: [countyId], references: [id], onDelete: SetNull)
+  subCountyId         String?
+  subCountyRef        SubCounty?        @relation("ReportSubCounty", fields: [subCountyId], references: [id], onDelete: SetNull)
+  wardId              String?
+  wardRef             Ward?             @relation("ReportWard", fields: [wardId], references: [id], onDelete: SetNull)
+  categoryId          String?
+  categoryRef         Category?         @relation("CategoryReports", fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategoryId       String?
+  subcategoryRef      Subcategory?      @relation("SubcategoryReports", fields: [subcategoryId], references: [id], onDelete: SetNull)
+  departmentId        String?
   latitude            Float?
   longitude           Float?
   mediaUrls           String[]          @default([])
   isAnonymous         Boolean           @default(false)
+  referenceCode       String?           @unique
 
   reporterId          String
   reporter            User              @relation("UserSubmittedReports", fields: [reporterId], references: [id], onDelete: Cascade)
-
   assignedOfficerId   String?
   assignedOfficer     User?             @relation("OfficerAssignedReports", fields: [assignedOfficerId], references: [id], onDelete: SetNull)
+  department          Department?       @relation("DepartmentReport", fields: [departmentId], references: [id], onDelete: SetNull)
 
-  departmentId        String?
   resolutionNotes     String?
   resolutionMediaUrls String[]          @default([])
   resolvedAt          DateTime?
@@ -235,22 +364,42 @@ model Report {
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
+  statusHistories     ReportStatusHistory[] @relation("HistoryOfReport")
+  assignments         Assignment[]        @relation("AssignmentOfReport")
+  inspections         FieldInspection[]  @relation("InspectionOfReport")
+  workUpdates         WorkUpdate[]        @relation("WorkUpdateOfReport")
+  resolutions         ResolutionSubmission[] @relation("ResolutionOfReport")
+  verifications       CitizenVerification[] @relation("VerificationOfReport")
+  followUps           ReportFollowUp[]   @relation("FollowUpOfReport")
+  internalNotes       InternalNote[]     @relation("InternalNoteOfReport")
+  escalations         Escalation[]        @relation("EscalationOfReport")
+  attachments         ReportAttachment[]  @relation("AttachmentOfReport")
+  duplicates          DuplicateLink[]    @relation("DuplicateLinkOfReport")
+  duplicateOfLinks    DuplicateLink[]    @relation("DuplicateOfReport")
   @@index([status])
   @@index([category])
+  @@index([categoryId])
   @@index([reporterId])
   @@index([assignedOfficerId])
+  @@index([wardId])
   @@index([ward])
+  @@index([countyId])
+  @@index([subCountyId])
   @@map("reports")
 }
 
 model Assignment {
-  id           String   @id @default(uuid())
+  id           String           @id @default(uuid())
   reportId     String
+  report       Report           @relation("AssignmentOfReport", fields: [reportId], references: [id], onDelete: Cascade)
   officerId    String
+  officer      User             @relation("AssignmentOfficer", fields: [officerId], references: [id], onDelete: Cascade)
   assignedById String?
+  assignedBy   User?            @relation("AssignmentAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
   reason       String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  status       AssignmentStatus @default(ASSIGNED)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   @@index([reportId])
   @@index([officerId])
@@ -264,7 +413,9 @@ model RoutingRule {
   subCategory  String?
   county       String?
   departmentId String?
+  department   Department?   @relation("DepartmentRoutingRule", fields: [departmentId], references: [id], onDelete: SetNull)
   officerId    String?
+  officer      User?          @relation("RoutingRuleOfficer", fields: [officerId], references: [id], onDelete: SetNull)
   priority     ReportPriority?
   isActive     Boolean        @default(true)
   createdAt    DateTime       @default(now())
@@ -276,14 +427,17 @@ model RoutingRule {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  title     String
-  message   String
-  type      String   @default("INFO")
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation("NotificationToUser", fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  message    String
+  type       String   @default("INFO")
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  deliveries NotificationDelivery[] @relation("DeliveryOfNotification")
 
   @@index([userId, isRead])
   @@map("notifications")
@@ -292,11 +446,14 @@ model Notification {
 model Escalation {
   id              String   @id @default(uuid())
   reportId        String
+  report          Report   @relation("EscalationOfReport", fields: [reportId], references: [id], onDelete: Cascade)
   reason          String
   priority        ReportPriority @default(HIGH)
-  status          String   @default("OPEN")
+  status          EscalationStatus @default(OPEN)
   escalatedById   String?
+  escalatedBy     User?    @relation("EscalationRaisedBy", fields: [escalatedById], references: [id], onDelete: SetNull)
   resolvedById    String?
+  resolvedBy      User?    @relation("EscalationResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
   resolutionNotes String?
   resolvedAt      DateTime?
   createdAt       DateTime @default(now())
@@ -309,6 +466,7 @@ model Escalation {
 model AuditLog {
   id            String   @id @default(uuid())
   actorId       String?
+  actor         User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
   action        String
   entityType    String
   entityId      String
@@ -319,4 +477,246 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([actorId])
   @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Operational / workflow support models
+// ---------------------------------------------------------------------------
+
+model ReportStatusHistory {
+  id         String   @id @default(uuid())
+  reportId   String
+  report     Report   @relation("HistoryOfReport", fields: [reportId], references: [id], onDelete: Cascade)
+  fromStatus String?
+  toStatus   ReportStatus
+  notes      String?
+  actorId    String?
+  actor      User?    @relation("StatusHistoryActor", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@index([reportId, createdAt])
+  @@map("report_status_history")
+}
+
+model FieldInspection {
+  id          String   @id @default(uuid())
+  reportId    String
+  report      Report   @relation("InspectionOfReport", fields: [reportId], references: [id], onDelete: Cascade)
+  officerId   String
+  officer     User     @relation("OfficerOfInspection", fields: [officerId], references: [id], onDelete: Cascade)
+  findings    String?
+  actionTaken String?
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([reportId])
+  @@map("field_inspections")
+}
+
+model WorkUpdate {
+  id         String   @id @default(uuid())
+  reportId   String
+  report     Report   @relation("WorkUpdateOfReport", fields: [reportId], references: [id], onDelete: Cascade)
+  officerId   String
+  officer     User     @relation("OfficerOfWorkUpdate", fields: [officerId], references: [id], onDelete: Cascade)
+  note        String
+  status      String   @default("IN_PROGRESS")
+  createdAt   DateTime @default(now())
+
+  @@index([reportId])
+  @@map("work_updates")
+}
+
+model ResolutionSubmission {
+  id            String            @id @default(uuid())
+  reportId      String
+  report        Report            @relation("ResolutionOfReport", fields: [reportId], references: [id], onDelete: Cascade)
+  submittedById String
+  submittedBy  User              @relation("ResolverOfResolution", fields: [submittedById], references: [id], onDelete: Cascade)
+  status        ResolutionStatus @default(PENDING)
+  notes         String?
+  mediaUrls     String[]          @default([])
+  resolvedAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([reportId])
+  @@map("resolution_submissions")
+}
+
+model CitizenVerification {
+  id         String             @id @default(uuid())
+  reportId    String
+  report      Report             @relation("VerificationOfReport", fields: [reportId], references: [id], onDelete: Cascade)
+  officerId    String?
+  officer      User?             @relation("OfficerOfVerification", fields: [officerId], references: [id], onDelete: SetNull)
+  outcome      VerificationOutcome @default(CONFIRMED)
+  evidence     String?
+  notes        String?
+  createdAt    DateTime           @default(now())
+
+  @@index([reportId])
+  @@map("citizen_verifications")
+}
+
+model ReportFollowUp {
+  id          String     @id @default(uuid())
+  reportId    String
+  report      Report     @relation("FollowUpOfReport", fields: [reportId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User       @relation("CreatorOfFollowUp", fields: [createdById], references: [id], onDelete: Cascade)
+  type        FollowUpType @default(NOTE)
+  note        String
+  createdAt   DateTime   @default(now())
+
+  @@index([reportId])
+  @@map("report_follow_ups")
+}
+
+model InternalNote {
+  id         String   @id @default(uuid())
+  reportId   String
+  report     Report   @relation("InternalNoteOfReport", fields: [reportId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation("AuthorOfInternalNote", fields: [authorId], references: [id], onDelete: Cascade)
+  note       String
+  visibility String  @default("INTERNAL")
+  createdAt  DateTime @default(now())
+
+  @@index([reportId])
+  @@map("internal_notes")
+}
+
+model NotificationDelivery {
+  id              String   @id @default(uuid())
+  notificationId String
+  notification   Notification @relation("DeliveryOfNotification", fields: [notificationId], references: [id], onDelete: Cascade)
+  channel        String   @default("IN_APP")
+  recipientId    String?
+  status         String   @default("QUEUED")
+  payload        Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([notificationId])
+  @@map("notification_deliveries")
+}
+
+model UserNotificationPreference {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation("PreferenceOfUser", fields: [userId], references: [id], onDelete: Cascade)
+  channel    String   @default("IN_APP")
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, channel])
+  @@map("user_notification_preferences")
+}
+
+model SlaPolicy {
+  id                 String   @id @default(uuid())
+  code               String   @unique
+  name               String
+  targetHours        Int      @default(48)
+  escalateToOfficialId String?
+  escalateToOfficial Official? @relation("EscalationTargetOfSla", fields: [escalateToOfficialId], references: [id], onDelete: SetNull)
+  createdById        String?
+  createdBy          User?    @relation("SlaPolicyCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("sla_policies")
+}
+
+model Official {
+  id           String      @id @default(uuid())
+  departmentId String?
+  department   Department? @relation("DepartmentOfficial", fields: [departmentId], references: [id], onDelete: SetNull)
+  name         String
+  officialType OfficialType @default(OTHER)
+  positionId   String?
+  position     OrganizationalPosition? @relation("PositionOfOfficial", fields: [positionId], references: [id], onDelete: SetNull)
+  userId       String?
+  user         User?       @relation("OfficialOfUser", fields: [userId], references: [id], onDelete: SetNull)
+  county       String?
+  subCounty    String?
+  ward         String?
+  isActive     Boolean    @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  slaPolicies   SlaPolicy[]          @relation("EscalationTargetOfSla")
+
+  @@index([departmentId])
+  @@index([positionId])
+  @@index([county, subCounty, ward])
+  @@map("officials")
+}
+
+model OrganizationalPosition {
+  id           String   @id @default(uuid())
+  departmentId String?
+  department   Department? @relation("DepartmentPosition", fields: [departmentId], references: [id], onDelete: SetNull)
+  code         String   @unique
+  name         String
+  level        Int      @default(1)
+  reportsToPositionId String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  officials    Official[] @relation("PositionOfOfficial")
+  assignments OrganizationalAssignment[] @relation("PositionOfOrgAssignment")
+
+  @@index([departmentId])
+  @@map("organizational_positions")
+}
+
+model OrganizationalAssignment {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation("OrgAssignmentUser", fields: [userId], references: [id], onDelete: Cascade)
+  positionId  String?
+  position    OrganizationalPosition? @relation("PositionOfOrgAssignment", fields: [positionId], references: [id], onDelete: SetNull)
+  countyId    String?
+  subCountyId String?
+  wardId      String?
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  isActive    Boolean  @default(true)
+
+  @@index([userId])
+  @@map("organizational_assignments")
+}
+
+model DuplicateLink {
+  id           String   @id @default(uuid())
+  reportId     String
+  report       Report   @relation("DuplicateLinkOfReport", fields: [reportId], references: [id], onDelete: Cascade)
+  duplicateOfId String?
+  duplicateOf   Report?  @relation("DuplicateOfReport", fields: [duplicateOfId], references: [id], onDelete: SetNull)
+  reason       String?
+  createdAt    DateTime @default(now())
+
+  @@index([reportId])
+  @@index([duplicateOfId])
+  @@map("duplicate_links")
+}
+
+model ReportAttachment {
+  id         String   @id @default(uuid())
+  reportId   String
+  report     Report   @relation("AttachmentOfReport", fields: [reportId], references: [id], onDelete: Cascade)
+  url        String
+  name       String?
+  mimeType   String?
+  sizeBytes Int?
+  createdAt  DateTime @default(now())
+
+  @@index([reportId])
+  @@map("report_attachments")
 }

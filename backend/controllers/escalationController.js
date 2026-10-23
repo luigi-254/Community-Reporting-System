@@ -1,4 +1,5 @@
 import db from '../config/db.js';
+import { findOverdueReports } from '../services/slaService.js';
 
 export const getEscalatedReports = async (req, res, next) => {
   try {
@@ -12,6 +13,17 @@ export const getEscalation = async (req, res, next) => {
     const escalation = await db.findEscalationById(req.params.id);
     if (!escalation) return res.status(404).json({ status: 'error', message: 'Escalation not found.' });
     return res.status(200).json({ status: 'success', data: { escalation } });
+  } catch (error) { next(error); }
+};
+
+export const getOverdueReports = async (req, res, next) => {
+  try {
+    const overdue = await findOverdueReports();
+    return res.status(200).json({
+      status: 'success',
+      total: overdue.length,
+      data: { overdue },
+    });
   } catch (error) { next(error); }
 };
 
@@ -36,6 +48,33 @@ export const manuallyEscalate = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+export const autoEscalateOverdue = async (req, res, next) => {
+  try {
+    const overdue = await findOverdueReports();
+    const created = [];
+    for (const item of overdue) {
+      if (await db.findEscalationByReportId(item.report.id)) continue;
+      const escalation = await db.createEscalation({
+        reportId: item.report.id,
+        reason: `SLA overdue by ${item.hoursOverdue} hour(s)`,
+        priority: 'HIGH',
+        escalatedById: req.user.id,
+      });
+      await db.updateReport(item.report.id, { status: 'ESCALATED' });
+      await db.createAuditLog({
+        actorId: req.user.id,
+        action: 'AUTO_ESCALATE_OVERDUE',
+        entityType: 'REPORT',
+        entityId: item.report.id,
+        previousValue: { status: item.report.status },
+        newValue: { status: 'ESCALATED', escalationId: escalation.id },
+      });
+      created.push(escalation);
+    }
+    return res.status(200).json({ status: 'success', total: created.length, data: { escalations: created } });
+  } catch (error) { next(error); }
+};
+
 export const resolveEscalation = async (req, res, next) => {
   try {
     const existing = await db.findEscalationById(req.params.id);
@@ -54,4 +93,4 @@ export const resolveEscalation = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-export default { getEscalatedReports, getEscalation, manuallyEscalate, resolveEscalation };
+export default { getEscalatedReports, getEscalation, getOverdueReports, autoEscalateOverdue, manuallyEscalate, resolveEscalation };

@@ -4,6 +4,7 @@ process.env.NODE_ENV = 'test';
 process.env.PORT = '5055';
 
 import app from '../index.js';
+import { memoryStore } from '../repositories/memoryStore.js';
 
 let server;
 
@@ -74,7 +75,10 @@ async function runTests() {
     console.log('✓ POST /api/auth/register:', regRes.status, regRes.body.message);
     if (regRes.status !== 201) throw new Error('Registration failed');
 
-    const verificationCode = regRes.body.data.verificationCode;
+    const verificationRecord = [...memoryStore.verificationTokens.values()].find(
+      (v) => v.identifier === 'citizen.john@example.com'
+    );
+    const verificationCode = verificationRecord?.code;
     let accessToken = regRes.body.data.accessToken;
     let refreshToken = regRes.body.data.refreshToken;
 
@@ -113,9 +117,12 @@ async function runTests() {
     });
     console.log('✓ POST /api/auth/forgot-password:', forgotRes.status, forgotRes.body.message);
     if (forgotRes.status !== 200) throw new Error('Forgot password failed');
-    const resetToken = forgotRes.body.dev?.resetToken;
+    const resetRecord = [...memoryStore.passwordResetTokens.values()].find(
+      (r) => r.userId
+    ) || [...memoryStore.passwordResetTokens.values()][0];
+    const resetTokenValue = resetRecord?.token;
     const resetRes = await request('POST', '/api/auth/reset-password', {
-      token: resetToken,
+      token: resetTokenValue,
       newPassword: 'BrandNewPassword456!',
     });
     console.log('✓ POST /api/auth/reset-password:', resetRes.status, resetRes.body.message);
