@@ -65,17 +65,24 @@ async function runTests() {
     const testId = Date.now();
     const testEmail = `citizen.${testId}@example.com`;
     const testPhone = `+2547${String(testId).slice(-8)}`;
-    const registerPayload = {
-      name: 'John Doe Citizen',
-      email: testEmail,
-      phone: testPhone,
-      password: 'StrongPassword123!',
-      role: 'CITIZEN',
-      ward: 'Central Ward',
-    };
+   const registerPayload = {
+  name: 'John Doe Citizen',
+  email: testEmail,
+  phone: testPhone,
+  password: 'StrongPassword123!',
+  role: 'OFFICER',
+  ward: 'Central Ward',
+};
     const regRes = await request('POST', '/api/auth/register', registerPayload);
     console.log('✓ POST /api/auth/register:', regRes.status, regRes.body.message);
     if (regRes.status !== 201) throw new Error('Registration failed');
+if (regRes.body?.data?.user?.role !== 'CITIZEN') {
+  throw new Error(
+    `Security failure: public registration created role "${regRes.body?.data?.user?.role}" instead of CITIZEN`
+  );
+}
+
+console.log('✓ Public registration cannot assign the OFFICER role');
 
     const verificationCode = regRes.body.data.verificationCode;
     let accessToken = regRes.body.data.accessToken;
