@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# MtaaFix Citizen Portal
 
-## Getting Started
+This Next.js app hosts the public MtaaFix landing page and shared sign-in and
+citizen registration pages. The existing citizen reporting workspace is at
+`/dashboard`; successful sign-in routes each account to the correct dashboard.
 
-First, run the development server:
+## Local apps
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Run each app from its own directory in a separate terminal:
+
+| App | Local URL |
+| --- | --- |
+| Admin dashboard | `http://localhost:3000` |
+| Government dashboard | `http://localhost:3001` |
+| Citizen portal | `http://localhost:3002` |
+| Backend API | `http://localhost:5000` |
+
+Run a Next.js app on its assigned port with:
+
+```powershell
+npm run dev -- --port 3002
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy `.env.example` to `.env.local` and set the public API and dashboard URLs
+for your environment. `NEXT_PUBLIC_SUPPORT_EMAIL` is optional. These values
+are public browser configuration, not secrets.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Authentication database migration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The backend uses the existing PostgreSQL database. The auth handoff adds an
+append-only, short-lived token table; it does not replace or delete user data.
+Before deploying the updated backend, run these commands from `backend`:
 
-## Learn More
+```powershell
+npx prisma generate
+npx prisma migrate deploy
+```
 
-To learn more about Next.js, take a look at the following resources:
+Set the backend `CLIENT_URL` to the comma-separated origins of the deployed
+portal and dashboards. Set each app's `NEXT_PUBLIC_API_URL` and
+`NEXT_PUBLIC_CITIZEN_APP_URL`; set the portal's `NEXT_PUBLIC_ADMIN_APP_URL`
+and `NEXT_PUBLIC_GOVERNMENT_APP_URL` to the actual dashboard URLs.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The single-use handoff code is placed in a URL fragment, exchanged with the
+backend, expires after one minute, and is stored only as a hash on the server.
+Public registration always creates a citizen account. Administrator-created
+officer accounts continue to use the existing backend management workflow.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Checks
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```powershell
+npm run lint
+npm run build
+```
