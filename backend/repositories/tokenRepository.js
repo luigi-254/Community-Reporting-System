@@ -3,6 +3,60 @@ import { getPrismaClient, checkIsPrisma } from './client.js';
 import { memoryStore } from './memoryStore.js';
 
 export const tokenRepository = {
+  async createAuthHandoff({ codeHash, userId, expiresAt }) {
+    const record = {
+      codeHash,
+      userId,
+      expiresAt,
+      consumedAt: null,
+      createdAt: new Date(),
+    };
+
+    if (checkIsPrisma()) {
+      await getPrismaClient().authHandoff.deleteMany({
+        where: { expiresAt: { lt: new Date() } },
+      });
+      return getPrismaClient().authHandoff.create({
+        data: { codeHash, userId, expiresAt },
+      });
+    }
+
+    for (const [storedHash, handoff] of memoryStore.authHandoffs.entries()) {
+      if (handoff.expiresAt < new Date()) {
+        memoryStore.authHandoffs.delete(storedHash);
+      }
+    }
+    memoryStore.authHandoffs.set(codeHash, record);
+    return record;
+  },
+
+  async consumeAuthHandoff(codeHash, now = new Date()) {
+    if (checkIsPrisma()) {
+      const result = await getPrismaClient().authHandoff.updateMany({
+        where: {
+          codeHash,
+          consumedAt: null,
+          expiresAt: { gt: now },
+        },
+        data: { consumedAt: now },
+      });
+
+      if (result.count !== 1) return null;
+
+      return getPrismaClient().authHandoff.findUnique({
+        where: { codeHash },
+        include: { user: true },
+      });
+    }
+
+    const record = memoryStore.authHandoffs.get(codeHash);
+    if (!record || record.consumedAt || record.expiresAt <= now) return null;
+
+    record.consumedAt = now;
+    const user = memoryStore.users.get(record.userId);
+    return { ...record, user: user ? { ...user } : null };
+  },
+
   async createRefreshToken({ token, userId, expiresAt }) {
     const id = uuidv4();
     const record = { id, token, userId, expiresAt, revokedAt: null, createdAt: new Date() };

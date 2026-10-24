@@ -13,7 +13,6 @@ export const registerSchema = z.object({
     .string()
     .min(6, 'Password must be at least 6 characters long')
     .max(100),
-  role: z.enum(['CITIZEN', 'OFFICER', 'ADMIN', 'SUPER_ADMIN']).optional().default('CITIZEN'),
   county: z.string().trim().max(100).optional(),
   subCounty: z.string().trim().max(100).optional(),
   ward: z.string().trim().max(100).optional(),
@@ -70,6 +69,10 @@ export const resetPasswordSchema = z.object({
   confirmPassword: z.string().optional(),
 });
 
+export const authHandoffSchema = z.object({
+  code: z.string().trim().min(32).max(128),
+});
+
 export default {
   registerSchema,
   loginSchema,
@@ -77,4 +80,5 @@ export default {
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  authHandoffSchema,
 };

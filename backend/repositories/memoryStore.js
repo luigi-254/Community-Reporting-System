@@ -2,6 +2,7 @@
 export const memoryStore = {
   users: new Map(),
   refreshTokens: new Map(),
+  authHandoffs: new Map(),
   verificationTokens: new Map(),
   passwordResetTokens: new Map(),
   reports: new Map(),
