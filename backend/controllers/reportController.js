@@ -89,6 +89,53 @@ export const createReport = async (req, res, next) => {
     next(error);
   }
 };
+
+export const createGuestReport = async (req, res, next) => {
+  try {
+    const {
+      title,
+      description,
+      category,
+      subCategory,
+      priority = 'MEDIUM',
+      location,
+      county,
+      subCounty,
+      ward,
+      latitude,
+      longitude,
+    } = req.body;
+
+    const newReport = await db.createReport({
+      title,
+      description,
+      category,
+      subCategory,
+      priority,
+      status: 'SUBMITTED',
+      location,
+      county,
+      subCounty,
+      ward,
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
+      mediaUrls: [],
+      isAnonymous: true,
+      reporterId: null,
+    });
+
+    return res.status(201).json({
+      status: 'success',
+      message: 'Your anonymous report was submitted successfully.',
+      data: {
+        report: sanitizeReport(newReport),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getReports = async (req, res, next) => {
   try {
     const {

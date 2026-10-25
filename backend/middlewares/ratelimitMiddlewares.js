@@ -22,7 +22,19 @@ export const sensitiveAuthLimiter = rateLimit({
   },
 });
 
+export const guestReportLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 'error',
+    message: 'Too many reports from this network. Please try again in 15 minutes.',
+  },
+});
+
 export default {
   authLimiter,
   sensitiveAuthLimiter,
+  guestReportLimiter,
 };

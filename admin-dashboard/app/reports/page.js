@@ -143,7 +143,7 @@ function normalizeReport(report) {
         reporter.name ||
         reporter.fullName ||
         reporter.email,
-      "Citizen"
+      report.isAnonymous ? "Anonymous resident" : "Citizen"
     ),
     description: getText(report.description, "No description provided"),
     mediaUrls: Array.isArray(report.mediaUrls)

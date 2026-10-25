@@ -198,7 +198,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/sign-in"
+                href="/report-issue"
                 className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#187a58] px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#126448] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#187a58]"
               >
                 Report an Issue
@@ -208,9 +208,12 @@ export default function HomePage() {
                 href="/create-account"
                 className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#c8d9cf] bg-white px-6 py-3 text-sm font-semibold text-[#31584b] transition hover:border-[#187a58] hover:bg-[#f8fbf9]"
               >
-                Get Started
+                Create an Account
               </Link>
             </div>
+            <p className="mt-3 text-sm text-[#53675d]">
+              No account needed to submit an anonymous report.
+            </p>
             <div className="mt-8 flex items-center gap-3 text-sm text-[#53675d]">
               <span className="flex -space-x-2" aria-hidden="true">
                 <span className="h-8 w-8 rounded-full border-2 border-[#f2f7f3] bg-[#b8d7c3]" />

@@ -3,6 +3,9 @@
 This Next.js app hosts the public MtaaFix landing page and shared sign-in and
 citizen registration pages. The existing citizen reporting workspace is at
 `/dashboard`; successful sign-in routes each account to the correct dashboard.
+Residents can also submit an anonymous issue report from the landing page
+without creating an account. Guest reports do not collect contact details and
+cannot be tracked from a citizen account.
 
 ## Local apps
 
@@ -45,6 +48,9 @@ The single-use handoff code is placed in a URL fragment, exchanged with the
 backend, expires after one minute, and is stored only as a hash on the server.
 Public registration always creates a citizen account. Administrator-created
 officer accounts continue to use the existing backend management workflow.
+The guest reporting migration makes the report's user association optional;
+run `npx prisma migrate deploy` from `backend` before deploying code that
+accepts anonymous reports.
 
 ## Checks
 

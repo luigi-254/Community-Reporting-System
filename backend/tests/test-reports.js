@@ -86,6 +86,24 @@ async function runReportTests() {
       role: officer.role,
     });
 
+    // Guest reports can be submitted without authentication or personal details.
+    const guestRes = await request('POST', '/api/reports/guest', {
+      title: 'Blocked storm drain by the community hall',
+      description: 'The drain is blocked and water is pooling across the walkway.',
+      category: 'Drainage',
+      location: 'Outside the community hall',
+      name: 'Should not be stored',
+      email: 'should-not-be-stored@example.com',
+    });
+    if (
+      guestRes.status !== 201 ||
+      guestRes.body.data?.report?.reporterId !== null ||
+      guestRes.body.data?.report?.isAnonymous !== true ||
+      guestRes.body.data?.report?.name !== undefined
+    ) {
+      throw new Error('Anonymous guest report submission failed');
+    }
+
     // 1. POST /api/reports - createReport
     const reportData = {
       title: 'Major Pothole on Argwings Kodhek Road',
