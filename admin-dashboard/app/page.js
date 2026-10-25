@@ -120,7 +120,7 @@ function normalizeReport(report, index) {
       report.reporterName ||
       reporter.name ||
       reporter.email ||
-      "Citizen",
+      (report.isAnonymous ? "Anonymous resident" : "Citizen"),
     description: report.description || "",
   };
 }

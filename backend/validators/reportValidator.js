@@ -22,6 +22,19 @@ export const createReportSchema = z.object({
   mediaUrls: z.array(z.string().url()).optional(),
 });
 
+export const createGuestReportSchema = createReportSchema.extend({
+  description: z
+    .string()
+    .trim()
+    .min(10, 'Description must be at least 10 characters')
+    .max(5000, 'Description must be 5000 characters or fewer'),
+  location: z
+    .string()
+    .trim()
+    .min(3, 'Location must be at least 3 characters')
+    .max(200, 'Location must be 200 characters or fewer'),
+});
+
 export const updateReportSchema = z.object({
   title: z.string().trim().min(3).max(150).optional(),
   description: z.string().trim().min(10).optional(),

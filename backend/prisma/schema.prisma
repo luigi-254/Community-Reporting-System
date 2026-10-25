@@ -232,8 +232,8 @@ model Report {
   mediaUrls           String[]          @default([])
   isAnonymous         Boolean           @default(false)
 
-  reporterId          String
-  reporter            User              @relation("UserSubmittedReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reporterId          String?
+  reporter            User?             @relation("UserSubmittedReports", fields: [reporterId], references: [id], onDelete: Cascade)
 
   assignedOfficerId   String?
   assignedOfficer     User?             @relation("OfficerAssignedReports", fields: [assignedOfficerId], references: [id], onDelete: SetNull)
