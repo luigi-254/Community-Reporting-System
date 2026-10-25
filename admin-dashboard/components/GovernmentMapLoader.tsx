@@ -11,9 +11,12 @@ const GovernmentMap = dynamic(
     loading: () =>
       createElement(
         "div",
-        { className: "flex h-[500px] items-center justify-center rounded-xl bg-gray-100" },
-        "Loading GIS map..."
-      ),
+      {
+        className:
+          "flex h-[360px] items-center justify-center rounded-xl bg-gray-100 sm:h-[440px]",
+      },
+      "Loading GIS map..."
+    ),
   }
 );
 

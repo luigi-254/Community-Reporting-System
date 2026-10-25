@@ -3,6 +3,8 @@ import express from 'express';
 import {
   register,
   login,
+  createAuthHandoff,
+  exchangeAuthHandoff,
   logout,
   verify,
   refreshToken,
@@ -25,6 +27,7 @@ import {
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  authHandoffSchema,
 } from '../validators/authValidator.js';
 
 const router = express.Router();
@@ -41,6 +44,13 @@ const getWithFallback = (path, ...handlers) => {
 
 postWithFallback('/register', authLimiter, validate(registerSchema), register);
 postWithFallback('/login', sensitiveAuthLimiter, validate(loginSchema), login);
+postWithFallback('/handoff', sensitiveAuthLimiter, authenticate, createAuthHandoff);
+postWithFallback(
+  '/handoff/exchange',
+  sensitiveAuthLimiter,
+  validate(authHandoffSchema),
+  exchangeAuthHandoff
+);
 postWithFallback('/logout', logout);
 postWithFallback('/verify', authLimiter, validate(verifySchema), verify);
 postWithFallback('/refresh', validate(refreshTokenSchema), refreshToken);

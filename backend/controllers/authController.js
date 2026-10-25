@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'node:crypto';
 import db from '../config/db.js';
 import {
   generateAccessToken,
@@ -22,15 +23,15 @@ export const sanitizeUser = (user) => {
 export const register = async (req, res, next) => {
   try {
     const {
-  name,
-  email,
-  phone,
-  password,
-  county,
-  subCounty,
-  ward,
-  address,
-} = req.body;
+      name,
+      email,
+      phone,
+      password,
+      county,
+      subCounty,
+      ward,
+      address,
+    } = req.body;
     const existingByEmail = await db.findUserByEmail(email);
     if (existingByEmail) {
       return res.status(409).json({
@@ -48,7 +49,6 @@ export const register = async (req, res, next) => {
         });
       }
     }
-
 
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -118,6 +118,69 @@ export const register = async (req, res, next) => {
     next(error);
   }
 };
+
+export const createAuthHandoff = async (req, res, next) => {
+  try {
+    const code = randomBytes(32).toString('base64url');
+    const codeHash = createHash('sha256').update(code).digest('hex');
+    const expiresAt = new Date(Date.now() + 60 * 1000);
+
+    await db.createAuthHandoff({
+      codeHash,
+      userId: req.user.id,
+      expiresAt,
+    });
+
+    return res.status(201).json({
+      status: 'success',
+      data: { code, expiresAt },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const exchangeAuthHandoff = async (req, res, next) => {
+  try {
+    const codeHash = createHash('sha256').update(req.body.code).digest('hex');
+    const handoff = await db.consumeAuthHandoff(codeHash);
+    const user = handoff?.user;
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'This sign-in link is invalid or has expired. Please sign in again.',
+      });
+    }
+
+    const tokenPayload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    const accessToken = generateAccessToken(tokenPayload);
+    const refreshToken = generateRefreshToken(tokenPayload);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await db.createRefreshToken({
+      token: refreshToken,
+      userId: user.id,
+      expiresAt,
+    });
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        user: sanitizeUser(user),
+        accessToken,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const login = async (req, res, next) => {
   try {
     const { email, phone, identifier, password } = req.body;
