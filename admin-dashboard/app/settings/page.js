@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function SettingsPage() {
   const [notifications, setNotifications] = useState(true);
@@ -9,203 +9,173 @@ export default function SettingsPage() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900">
-      {/* Header */}
-      <header className="bg-slate-900 border-b border-slate-800 px-8 py-6 text-white">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
+      <header className="border-b border-[#dce2d8] bg-[#173d2d] px-5 py-6 text-white md:px-8">
+        <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">
-              Settings
-            </h1>
-
-            <p className="text-sm text-gray-400 mt-1">
-              Manage your admin dashboard settings
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">
+              Community Reporting System
+            </p>
+            <h1 className="mt-2 text-2xl font-bold md:text-3xl">Settings</h1>
+            <p className="mt-2 text-sm text-emerald-100">
+              Manage your admin dashboard settings.
             </p>
           </div>
 
           <Link
             href="/"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+            className="inline-flex items-center rounded-lg bg-[#f4f0dc] px-4 py-2.5 text-sm font-semibold text-[#173d2d] transition hover:bg-white"
           >
             Back to Dashboard
           </Link>
         </div>
       </header>
 
-      {/* Main */}
-      <main className="p-8">
-        <div className="max-w-4xl space-y-6">
-
-          {/* Profile Settings */}
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold">
-              Administrator Profile
-            </h2>
-
-            <p className="text-sm text-gray-500 mt-1 mb-6">
-              Information about the administrator account
+      <main className="mx-auto max-w-5xl p-5 md:p-8">
+        <div className="space-y-6">
+          <section className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-[#173d2d]">Administrator Profile</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Information about the administrator account.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
+            <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label htmlFor="full-name" className="mb-2 block text-sm font-medium">
                   Full Name
                 </label>
-
                 <input
+                  id="full-name"
                   type="text"
                   defaultValue="System Administrator"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#35654b] focus:ring-2 focus:ring-[#35654b]/20"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label htmlFor="email-address" className="mb-2 block text-sm font-medium">
                   Email Address
                 </label>
-
                 <input
+                  id="email-address"
                   type="email"
                   defaultValue="admin@communityreporting.com"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#35654b] focus:ring-2 focus:ring-[#35654b]/20"
                 />
               </div>
-
             </div>
           </section>
 
-          {/* Notification Settings */}
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold">
-              Notifications
-            </h2>
-
-            <p className="text-sm text-gray-500 mt-1 mb-6">
-              Control how the system sends notifications
+          <section className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-[#173d2d]">Notifications</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Control how the system sends notifications.
             </p>
 
-            <div className="space-y-5">
-
-              <div className="flex items-center justify-between">
+            <div className="mt-6 space-y-5">
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="font-medium">
-                    Dashboard Notifications
-                  </p>
-
+                  <p className="font-medium">Dashboard Notifications</p>
                   <p className="text-sm text-gray-500">
-                    Receive notifications about new reports
+                    Receive notifications about new reports.
                   </p>
                 </div>
 
                 <button
-                  onClick={() =>
-                    setNotifications(!notifications)
-                  }
-                  className={`w-12 h-6 rounded-full ${
+                  type="button"
+                  aria-label={
                     notifications
-                      ? "bg-blue-600"
-                      : "bg-gray-300"
+                      ? "Turn dashboard notifications off"
+                      : "Turn dashboard notifications on"
+                  }
+                  aria-pressed={notifications}
+                  onClick={() => setNotifications((value) => !value)}
+                  className={`h-6 w-12 rounded-full ${
+                    notifications ? "bg-green-500" : "bg-gray-300"
                   }`}
                 >
                   <span
-                    className={`block w-5 h-5 bg-white rounded-full transition-transform ${
-                      notifications
-                        ? "translate-x-6"
-                        : "translate-x-1"
+                    className={`block h-5 w-5 rounded-full bg-white transition-transform ${
+                      notifications ? "translate-x-6" : "translate-x-1"
                     }`}
-                  ></span>
+                  />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="font-medium">
-                    Email Alerts
-                  </p>
-
+                  <p className="font-medium">Email Alerts</p>
                   <p className="text-sm text-gray-500">
-                    Receive important system updates by email
+                    Receive important system updates by email.
                   </p>
                 </div>
 
                 <button
-                  onClick={() =>
-                    setEmailAlerts(!emailAlerts)
+                  type="button"
+                  aria-label={
+                    emailAlerts ? "Turn email alerts off" : "Turn email alerts on"
                   }
-                  className={`w-12 h-6 rounded-full ${
-                    emailAlerts
-                      ? "bg-blue-600"
-                      : "bg-gray-300"
+                  aria-pressed={emailAlerts}
+                  onClick={() => setEmailAlerts((value) => !value)}
+                  className={`h-6 w-12 rounded-full ${
+                    emailAlerts ? "bg-green-500" : "bg-gray-300"
                   }`}
                 >
                   <span
-                    className={`block w-5 h-5 bg-white rounded-full transition-transform ${
-                      emailAlerts
-                        ? "translate-x-6"
-                        : "translate-x-1"
+                    className={`block h-5 w-5 rounded-full bg-white transition-transform ${
+                      emailAlerts ? "translate-x-6" : "translate-x-1"
                     }`}
-                  ></span>
+                  />
                 </button>
               </div>
-
             </div>
           </section>
 
-          {/* System Settings */}
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold">
-              System Settings
-            </h2>
-
-            <p className="text-sm text-gray-500 mt-1 mb-6">
-              Configure general system behaviour
+          <section className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-[#173d2d]">System Settings</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Configure general system behavior.
             </p>
 
-            <div className="flex items-center justify-between">
+            <div className="mt-6 flex items-center justify-between gap-4">
               <div>
-                <p className="font-medium">
-                  Maintenance Mode
-                </p>
-
+                <p className="font-medium">Maintenance Mode</p>
                 <p className="text-sm text-gray-500">
-                  Temporarily restrict access while maintenance is being performed
+                  Temporarily restrict access while maintenance is being performed.
                 </p>
               </div>
 
               <button
-                onClick={() =>
-                  setMaintenanceMode(!maintenanceMode)
-                }
-                className={`w-12 h-6 rounded-full ${
+                type="button"
+                aria-label={
                   maintenanceMode
-                    ? "bg-blue-600"
-                    : "bg-gray-300"
+                    ? "Turn maintenance mode off"
+                    : "Turn maintenance mode on"
+                }
+                aria-pressed={maintenanceMode}
+                onClick={() => setMaintenanceMode((value) => !value)}
+                className={`h-6 w-12 rounded-full ${
+                  maintenanceMode ? "bg-green-500" : "bg-gray-300"
                 }`}
               >
                 <span
-                  className={`block w-5 h-5 bg-white rounded-full transition-transform ${
-                    maintenanceMode
-                      ? "translate-x-6"
-                      : "translate-x-1"
+                  className={`block h-5 w-5 rounded-full bg-white transition-transform ${
+                    maintenanceMode ? "translate-x-6" : "translate-x-1"
                   }`}
-                ></span>
+                />
               </button>
             </div>
           </section>
 
-          {/* Save */}
           <div className="flex justify-end">
             <button
-              onClick={() =>
-                alert("Settings saved successfully.")
-              }
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              type="button"
+              onClick={() => alert("Settings saved successfully.")}
+              className="rounded-lg bg-[#173d2d] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#103126]"
             >
               Save Settings
             </button>
           </div>
-
         </div>
       </main>
     </div>
