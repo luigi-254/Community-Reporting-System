@@ -1,7 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+import { getPrismaClient } from '../repositories/client.js';
 import { COUNTY_NAMES, NAIROBI_SUBCOUNTIES } from '../repositories/locationRepository.js';
 
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
+
+if (!prisma) {
+  throw new Error('DATABASE_URL is required to seed the database.');
+}
 
 try {
   for (const [index, name] of COUNTY_NAMES.entries()) {

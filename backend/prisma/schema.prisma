@@ -1,6 +1,5 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -62,6 +61,7 @@ model User {
   updatedAt           DateTime             @updatedAt
 
   refreshTokens       RefreshToken[]
+  authHandoffs        AuthHandoff[]
   verificationTokens  VerificationToken[]
   passwordResetTokens PasswordResetToken[]
   submittedReports    Report[]             @relation("UserSubmittedReports")
@@ -141,6 +141,20 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+model AuthHandoff {
+  id         String    @id @default(uuid())
+  codeHash   String    @unique
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_handoffs")
+}
+
 model VerificationToken {
   id         String           @id @default(uuid())
   token      String           @unique
@@ -218,8 +232,8 @@ model Report {
   mediaUrls           String[]          @default([])
   isAnonymous         Boolean           @default(false)
 
-  reporterId          String
-  reporter            User              @relation("UserSubmittedReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reporterId          String?
+  reporter            User?             @relation("UserSubmittedReports", fields: [reporterId], references: [id], onDelete: Cascade)
 
   assignedOfficerId   String?
   assignedOfficer     User?             @relation("OfficerAssignedReports", fields: [assignedOfficerId], references: [id], onDelete: SetNull)

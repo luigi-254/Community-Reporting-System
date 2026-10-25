@@ -1,0 +1,1 @@
+ALTER TABLE "reports" ALTER COLUMN "reporterId" DROP NOT NULL;

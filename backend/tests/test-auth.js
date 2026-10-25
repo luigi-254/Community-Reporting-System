@@ -2,8 +2,9 @@ import http from 'http';
 
 process.env.NODE_ENV = 'test';
 process.env.PORT = '5055';
+process.env.DATABASE_URL = '';
 
-import app from '../index.js';
+const { default: app } = await import('../index.js');
 
 let server;
 
@@ -61,28 +62,33 @@ async function runTests() {
     const healthRes = await request('GET', '/health');
     console.log('✓ GET /health:', healthRes.status, healthRes.body.status);
 
+    const invalidRegRes = await request('POST', '/api/auth/register', {
+      name: 'A',
+      email: 'not-an-email',
+      password: '123',
+    });
+    if (invalidRegRes.status !== 400) {
+      throw new Error('Invalid registration data must be rejected');
+    }
+
     // 1. POST /api/auth/register
     const testId = Date.now();
     const testEmail = `citizen.${testId}@example.com`;
     const testPhone = `+2547${String(testId).slice(-8)}`;
-   const registerPayload = {
-  name: 'John Doe Citizen',
-  email: testEmail,
-  phone: testPhone,
-  password: 'StrongPassword123!',
-  role: 'OFFICER',
-  ward: 'Central Ward',
-};
+    const registerPayload = {
+      name: 'John Doe Citizen',
+      email: testEmail,
+      phone: testPhone,
+      password: 'StrongPassword123!',
+      role: 'OFFICER',
+      ward: 'Central Ward',
+    };
     const regRes = await request('POST', '/api/auth/register', registerPayload);
     console.log('✓ POST /api/auth/register:', regRes.status, regRes.body.message);
     if (regRes.status !== 201) throw new Error('Registration failed');
-if (regRes.body?.data?.user?.role !== 'CITIZEN') {
-  throw new Error(
-    `Security failure: public registration created role "${regRes.body?.data?.user?.role}" instead of CITIZEN`
-  );
-}
-
-console.log('✓ Public registration cannot assign the OFFICER role');
+    if (regRes.body.data.user.role !== 'CITIZEN') {
+      throw new Error('Public registration must assign the CITIZEN role');
+    }
 
     const verificationCode = regRes.body.data.verificationCode;
     let accessToken = regRes.body.data.accessToken;
@@ -104,6 +110,45 @@ console.log('✓ Public registration cannot assign the OFFICER role');
 
     accessToken = loginRes.body.data.accessToken;
     refreshToken = loginRes.body.data.refreshToken;
+
+    const handoffRes = await request('POST', '/api/auth/handoff', null, {
+      Authorization: `Bearer ${accessToken}`,
+    });
+    if (handoffRes.status !== 201 || !handoffRes.body.data?.code) {
+      throw new Error('Authenticated handoff code creation failed');
+    }
+
+    const exchangeRes = await request('POST', '/api/auth/handoff/exchange', {
+      code: handoffRes.body.data.code,
+    });
+    if (
+      exchangeRes.status !== 200 ||
+      !exchangeRes.body.data?.accessToken ||
+      exchangeRes.body.data.user.role !== 'CITIZEN'
+    ) {
+      throw new Error('Handoff code exchange failed');
+    }
+
+    const reusedHandoffRes = await request('POST', '/api/auth/handoff/exchange', {
+      code: handoffRes.body.data.code,
+    });
+    if (reusedHandoffRes.status !== 401) {
+      throw new Error('A handoff code must only be usable once');
+    }
+
+    const unauthenticatedHandoffRes = await request('POST', '/api/auth/handoff');
+    if (unauthenticatedHandoffRes.status !== 401) {
+      throw new Error('Unauthenticated handoff creation must be rejected');
+    }
+
+    const invalidLoginRes = await request('POST', '/api/auth/login', {
+      identifier: testEmail,
+      password: 'incorrect-password',
+    });
+    if (invalidLoginRes.status !== 401) {
+      throw new Error('Invalid credentials must be rejected');
+    }
+
     const meRes = await request('GET', '/api/auth/me', null, {
       Authorization: `Bearer ${accessToken}`,
     });

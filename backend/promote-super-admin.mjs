@@ -1,9 +1,13 @@
-import { PrismaClient } from "@prisma/client";
+import { getPrismaClient } from "./repositories/client.js";
 
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 const targetEmail = "ethanellahmatara@gmail.com";
 
 async function main() {
+  if (!prisma) {
+    throw new Error("DATABASE_URL is required to update the administrator role.");
+  }
+
   const existingUser = await prisma.user.findUnique({
     where: {
       email: targetEmail,
@@ -51,5 +55,7 @@ try {
   console.error("Unable to update the administrator role:", error.message);
   process.exitCode = 1;
 } finally {
-  await prisma.$disconnect();
+  if (prisma) {
+    await prisma.$disconnect();
+  }
 }
