@@ -92,7 +92,7 @@ async function runTests() {
     }
 
     const verificationRecord = [...memoryStore.verificationTokens.values()].find(
-      (v) => v.identifier === 'citizen.john@example.com'
+      (v) => v.identifier === testEmail
     );
     const verificationCode = verificationRecord?.code;
     let accessToken = regRes.body.data.accessToken;

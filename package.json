@@ -1,0 +1,13 @@
+{
+  "name": "mtaa-fix",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Root development launcher for the MTAA Fix applications",
+  "scripts": {
+    "predev": "node scripts/check-dev-ports.mjs",
+    "dev": "concurrently --kill-others --names \"backend,citizen-frontend,admin-dashboard,government-frontend\" --prefix \"[{name}]\" --prefix-colors \"blue,green,yellow,magenta\" \"npm --prefix backend run dev\" \"npm --prefix citizen-frontend run dev -- --port 3000\" \"npm --prefix admin-dashboard run dev -- --port 3001\" \"npm --prefix government-frontend run dev -- --port 3002\""
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}
