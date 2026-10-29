@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../lib/auth-context";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -127,6 +128,7 @@ function normalizeReport(report, index) {
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const { logout } = useAuth();
 
   const [activePage, setActivePage] = useState("Dashboard");
   const [reports, setReports] = useState([]);
@@ -332,6 +334,16 @@ export default function AdminDashboard() {
           <p className="text-xs leading-5 text-emerald-100">
             Community issue monitoring and administration
           </p>
+          <button
+            type="button"
+            className="mt-4 w-full rounded-lg bg-white/10 px-4 py-2.5 text-left text-sm font-medium text-emerald-50 hover:bg-white/20"
+            onClick={async () => {
+              await logout();
+              router.replace("/login");
+            }}
+          >
+            Logout
+          </button>
         </div>
       </aside>
 

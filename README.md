@@ -88,7 +88,7 @@ NODE_ENV=development
 DATABASE_URL="postgresql://postgres:password@localhost:5432/community_reporting?schema=public"
 JWT_SECRET=your_access_token_secret
 JWT_REFRESH_SECRET=your_refresh_token_secret
-CLIENT_URL=http://localhost:3000
+CLIENT_URL=http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:5173
 ```
 
 **Database Initialization:**
@@ -114,6 +114,29 @@ npm run dev
 - **Citizen Frontend:** `http://localhost:3000` (default)
 - **Admin Dashboard:** `http://localhost:3001` (configure port in package.json or env)
 - **Government Frontend:** `http://localhost:3002` (configure port in package.json or env)
+
+### 3. Run All Applications Together (Repository Root)
+
+After the per-application dependencies are installed, install the root launcher dependency once:
+
+```bash
+npm install
+```
+
+Start all four applications from the repository root:
+
+```bash
+npm run dev
+```
+
+This starts:
+
+- **Backend:** `http://localhost:5000`
+- **Citizen Frontend:** `http://localhost:3000`
+- **Admin Dashboard:** `http://localhost:3001`
+- **Government Frontend:** `http://localhost:3002`
+
+Press `Ctrl+C` to stop all four applications. The launcher checks ports 3000, 3001, 3002, and 5000 before starting and aborts with a clear message if any port is already in use; it does not change application port configuration automatically. For database-backed backend behavior, complete the backend setup in Step 1 first.
 
 ## 🧪 Testing & Quality Assurance
 

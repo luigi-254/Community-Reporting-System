@@ -10,14 +10,29 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!getToken()) {
-      setLoading(false);
-      return;
+    let cancelled = false;
+
+    async function loadUser() {
+      if (!getToken()) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await apiFetch('/api/auth/me');
+        if (!cancelled) setUser(res.data.user);
+      } catch {
+        setToken(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-    apiFetch('/api/auth/me')
-      .then((res) => setUser(res.data.user))
-      .catch(() => setToken(null))
-      .finally(() => setLoading(false));
+
+    loadUser();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = async (email, password) => {
