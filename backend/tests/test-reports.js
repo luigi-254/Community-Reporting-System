@@ -60,9 +60,10 @@ async function runReportTests() {
 
   try {
     // 0. Seed a citizen user and an officer user
+    const testId = Date.now();
     const citizen = await db.createUser({
       name: 'Alice Citizen',
-      email: 'alice.citizen@example.com',
+      email: `alice.${testId}@example.com`,
       password: 'hashedpassword',
       role: 'CITIZEN',
       ward: 'Kilimani Ward',
@@ -75,7 +76,7 @@ async function runReportTests() {
 
     const officer = await db.createUser({
       name: 'Officer Bob',
-      email: 'bob.officer@example.com',
+      email: `bob.${testId}@example.com`,
       password: 'hashedpassword',
       role: 'OFFICER',
     });
@@ -84,6 +85,24 @@ async function runReportTests() {
       email: officer.email,
       role: officer.role,
     });
+
+    // Guest reports can be submitted without authentication or personal details.
+    const guestRes = await request('POST', '/api/reports/guest', {
+      title: 'Blocked storm drain by the community hall',
+      description: 'The drain is blocked and water is pooling across the walkway.',
+      category: 'Drainage',
+      location: 'Outside the community hall',
+      name: 'Should not be stored',
+      email: 'should-not-be-stored@example.com',
+    });
+    if (
+      guestRes.status !== 201 ||
+      guestRes.body.data?.report?.reporterId !== null ||
+      guestRes.body.data?.report?.isAnonymous !== true ||
+      guestRes.body.data?.report?.name !== undefined
+    ) {
+      throw new Error('Anonymous guest report submission failed');
+    }
 
     // 1. POST /api/reports - createReport
     const reportData = {

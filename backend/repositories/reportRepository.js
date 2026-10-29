@@ -43,7 +43,7 @@ export const reportRepository = {
       longitude: typeof data.longitude === 'number' ? data.longitude : null,
       mediaUrls: Array.isArray(data.mediaUrls) ? data.mediaUrls : [],
       isAnonymous: Boolean(data.isAnonymous),
-      reporterId: data.reporterId,
+      reporterId: data.reporterId || null,
       assignedOfficerId: data.assignedOfficerId || null,
       departmentId: data.departmentId || null,
       resolutionNotes: data.resolutionNotes || null,
@@ -70,6 +70,7 @@ export const reportRepository = {
           },
         });
       } catch (err) {
+        if (!data.reporterId) throw err;
         console.warn('[DB] Prisma createReport failed, falling back to memory:', err.message);
       }
     }
