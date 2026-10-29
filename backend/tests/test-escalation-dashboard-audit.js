@@ -16,8 +16,9 @@ const request = (method, path, body, token) => new Promise((resolve, reject) => 
 
 const server = app.listen(port, async () => {
   try {
-    const admin = await db.createUser({ name: 'Escalation Admin', email: 'escalation-admin@example.com', password: 'hashed', role: 'ADMIN' });
-    const reporter = await db.createUser({ name: 'Escalation Reporter', email: 'escalation-reporter@example.com', password: 'hashed', role: 'CITIZEN' });
+    const testId = Date.now();
+    const admin = await db.createUser({ name: 'Escalation Admin', email: `escalation-admin-${testId}@example.com`, password: 'hashed', role: 'ADMIN' });
+    const reporter = await db.createUser({ name: 'Escalation Reporter', email: `escalation-reporter-${testId}@example.com`, password: 'hashed', role: 'CITIZEN' });
     const token = generateAccessToken({ id: admin.id, email: admin.email, role: admin.role });
     const report = await db.createReport({ title: 'Escalation test', description: 'A report for escalation.', category: 'ROADS', reporterId: reporter.id });
 

@@ -20,6 +20,7 @@ import notificationRoutes from './routes/notificationroutes.js';
 import escalationRoutes from './routes/escalationroutes.js';
 import dashboardRoutes from './routes/dashboardroutes.js';
 import auditLogRoutes from './routes/auditlogroutes.js';
+
 import {
   notFoundHandler,
   errorHandler,
@@ -29,22 +30,94 @@ dotenv.config();
 
 const app = express();
 
+// --------------------------------------------------
+// SECURITY AND CORS CONFIGURATION
+// --------------------------------------------------
+
 app.use(helmet());
+
+
+const configuredOrigins = (process.env.CLIENT_URL || "")
+  .split(",")
+  .map((origin) => {
+    const trimmed = origin.trim();
+    if (!trimmed) return null;
+
+    try {
+      return new URL(trimmed).origin;
+    } catch {
+      return trimmed.replace(/\/+$/, "");
+    }
+  })
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || ['http://localhost:5173', 'http://localhost:3000'],
+    origin: (origin, callback) => {
+      // Allow requests without an Origin header.
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Read explicitly configured frontend origins.
+      const configuredOrigins = (process.env.CLIENT_URL || "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      if (configuredOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // During local development, allow Next.js frontends
+      // on localhost, including ports 3000, 3001 and 3002.
+      try {
+        const url = new URL(origin);
+
+        if (
+          process.env.NODE_ENV !== "production" &&
+          url.protocol === "http:" &&
+          ["localhost", "127.0.0.1"].includes(url.hostname)
+        ) {
+          return callback(null, true);
+        }
+      } catch {
+        // Reject an invalid origin below.
+      }
+
+      return callback(
+        new Error(`Origin not allowed by CORS: ${origin}`)
+      );
+    },
     credentials: true,
   })
 );
+
+// --------------------------------------------------
+// GENERAL MIDDLEWARE
+// --------------------------------------------------
+
 app.use(compression());
 app.use(cookieParser());
+
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-// File serving moved to authenticated endpoint for security
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '10mb',
+  })
+);
+
+// Serve uploaded report images and other media.
+app.use('/uploads', express.static(path.resolve('uploads')));
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
+
+// --------------------------------------------------
+// HEALTH CHECK
+// --------------------------------------------------
 
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -54,7 +127,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Root API index
+// --------------------------------------------------
+// API INFORMATION
+// --------------------------------------------------
+
 app.get('/', (req, res) => {
   res.status(200).json({
     status: 'success',
@@ -79,7 +155,10 @@ app.get('/', (req, res) => {
   });
 });
 
-// Mount Routes
+// --------------------------------------------------
+// API ROUTES
+// --------------------------------------------------
+
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -93,18 +172,32 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/escalations', escalationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+
+// --------------------------------------------------
+// ERROR HANDLING
+// --------------------------------------------------
+
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// --------------------------------------------------
+// START SERVER
+// --------------------------------------------------
 
 const PORT = process.env.PORT || 5000;
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
-    console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-    console.log(`Auth endpoints available at http://localhost:${PORT}/api/auth`);
-    console.log(`Report endpoints available at http://localhost:${PORT}/api/reports`);
-    console.log(`Category endpoints available at http://localhost:${PORT}/api/categories`);
-    console.log(`Subcategory endpoints available at http://localhost:${PORT}/api/subcategories`);
+    console.log(
+      `Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`
+    );
+
+    console.log(`API base URL: http://localhost:${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
+    console.log(`Auth endpoints: http://localhost:${PORT}/api/auth`);
+    console.log(`Report endpoints: http://localhost:${PORT}/api/reports`);
+    console.log(`Category endpoints: http://localhost:${PORT}/api/categories`);
+    console.log(`Subcategory endpoints: http://localhost:${PORT}/api/subcategories`);
   });
 }
 

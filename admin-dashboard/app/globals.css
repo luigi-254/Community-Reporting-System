@@ -1,17 +1,463 @@
+
+/* =========================================
+   COMMUNITY REPORTING SYSTEM
+   Global Forest Green + Cream Theme
+   ========================================= */
 @import "tailwindcss";
-
 :root {
-  --background: #f3f4f6;
-  --foreground: #111827;
+  --cream: #f7f7f2;
+  --surface: #fdfdf9;
+  --surface-muted: #eff1e9;
+  --forest: #244637;
+  --forest-dark: #19372a;
+  --forest-light: #55745c;
+  --sage: #dce5d8;
+  --sage-border: #cbd6c8;
+  --ink: #243329;
+  --muted: #687468;
+  --line: #dce2d8;
 }
 
-html {
-  background-color: var(--background);
+@layer base {
+  html {
+    background: var(--cream);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--cream);
+    color: var(--ink);
+  }
+
+  /* Theme defaults stay below Tailwind utilities in the cascade. */
+  .bg-white {
+    background-color: var(--surface);
+  }
+
+  .bg-gray-50,
+  .bg-slate-50 {
+    background-color: var(--surface-muted);
+  }
+
+  .bg-gray-100 {
+    background-color: var(--cream);
+  }
+
+  .bg-gray-200,
+  .bg-slate-200 {
+    background-color: #e5e9e1;
+  }
+
+  .bg-slate-900,
+  .bg-slate-950,
+  .bg-blue-600,
+  .bg-blue-700,
+  .bg-blue-800,
+  .bg-emerald-600,
+  .bg-emerald-700 {
+    background-color: var(--forest);
+  }
+
+  .bg-green-600 {
+    background-color: var(--forest-light);
+  }
+
+  [class~="hover:bg-blue-700"]:hover,
+  [class~="hover:bg-blue-800"]:hover,
+  [class~="hover:bg-emerald-700"]:hover,
+  [class~="hover:bg-green-700"]:hover,
+  [class~="hover:bg-slate-800"]:hover {
+    background-color: var(--forest-dark);
+  }
+
+  [class~="hover:bg-blue-50"]:hover,
+  [class~="hover:bg-gray-50"]:hover {
+    background-color: var(--surface-muted);
+  }
+
+  .text-gray-800,
+  .text-slate-800,
+  .text-slate-900,
+  .text-gray-900 {
+    color: var(--ink);
+  }
+
+  .text-gray-600,
+  .text-gray-500,
+  .text-slate-600,
+  .text-slate-500 {
+    color: var(--muted);
+  }
+
+  .text-blue-600,
+  .text-blue-700,
+  .text-blue-800,
+  .text-emerald-600,
+  .text-emerald-700,
+  .text-green-700,
+  .text-indigo-700 {
+    color: var(--forest);
+  }
+
+  .text-slate-300,
+  .text-slate-400,
+  .text-gray-400 {
+    color: #bac5b7;
+  }
+
+  .border-gray-100,
+  .border-gray-200,
+  .border-gray-300,
+  .border-slate-200,
+  .border-slate-300 {
+    border-color: var(--line);
+  }
+
+  .border-blue-600,
+  .border-blue-700 {
+    border-color: var(--forest);
+  }
+
+  .border-slate-700 {
+    border-color: #476553;
+  }
+
+  .bg-blue-50,
+  .bg-indigo-50 {
+    background-color: #e6ece3;
+  }
+
+  .bg-amber-50,
+  .bg-amber-100 {
+    background-color: #f0ebd9;
+  }
+
+  .bg-blue-100 {
+    background-color: #e2e9df;
+  }
+
+  .bg-green-50,
+  .bg-green-100 {
+    background-color: #dce8d8;
+  }
+
+  .text-amber-800 {
+    color: #66572f;
+  }
+
+  .text-blue-800,
+  .text-blue-900 {
+    color: var(--forest);
+  }
+
+  .text-green-800 {
+    color: #31543a;
+  }
+
+  input,
+  select,
+  textarea {
+    accent-color: var(--forest);
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    --tw-ring-color: var(--forest-light);
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--forest-light);
+    outline-offset: 3px;
+  }
+
+  thead {
+    background-color: var(--surface-muted);
+  }
+
+  ::selection {
+    background: #dce5d8;
+    color: var(--forest-dark);
+  }
 }
 
-body {
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* =========================================
+   GOVERNMENT DASHBOARD — PREMIUM UI
+   Scoped styles: does not redesign other pages
+   ========================================= */
+
+.government-dashboard {
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at top right, rgba(220, 229, 216, 0.45), transparent 38%),
+    var(--cream);
+}
+
+.government-dashboard > aside {
+  position: relative;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #19372a 0%, #244637 58%, #315640 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 8px 0 30px rgba(25, 55, 42, 0.08);
+}
+
+.government-dashboard > aside h1 {
+  letter-spacing: -0.045em;
+  line-height: 1.2;
+}
+
+.government-dashboard > aside nav button {
+  min-height: 46px;
+  border: 1px solid transparent;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.government-dashboard > aside nav button:hover {
+  transform: translateX(3px);
+}
+
+.government-dashboard > aside nav button[aria-current="page"] {
+  background: #dce5d8 !important;
+  color: #19372a !important;
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  font-weight: 700;
+}
+
+.government-dashboard > main {
+  box-sizing: border-box;
+  flex: 1 1 0%;
+  min-width: 0;
+  padding: clamp(18px, 3vw, 40px);
+}
+
+.government-dashboard > main > header {
+  padding: 0 0 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.government-dashboard > main > header h2 {
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+}
+
+.government-dashboard > main > header > div:first-child p {
+  max-width: 650px;
+  line-height: 1.7;
+}
+
+.government-dashboard > main > header button,
+.government-dashboard > main > header span {
+  border-radius: 999px;
+}
+
+.government-dashboard > main > header button {
+  min-height: 42px;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.government-dashboard > main > header button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(36, 70, 55, 0.1);
+}
+
+/* Statistics cards */
+.government-dashboard > main > div.grid > div {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface) !important;
+  box-shadow: 0 4px 18px rgba(36, 51, 41, 0.045);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.government-dashboard > main > div.grid > div:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(36, 51, 41, 0.09);
+}
+
+.government-dashboard > main > div.grid > div::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--forest-light);
+  content: "";
+}
+
+.government-dashboard > main > div.grid > div:nth-child(2)::before {
+  background: #bd9450;
+}
+
+.government-dashboard > main > div.grid > div:nth-child(3)::before {
+  background: #6685a5;
+}
+
+.government-dashboard > main > div.grid > div:nth-child(4)::before {
+  background: #638568;
+}
+
+.government-dashboard > main > div.grid > div > p:last-child {
+  font-size: clamp(27px, 3vw, 35px);
+  letter-spacing: -0.04em;
+}
+
+/* Main panels and report sections */
+.government-dashboard > main section {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface) !important;
+  box-shadow: 0 5px 22px rgba(36, 51, 41, 0.045);
+}
+
+.government-dashboard > main section h3 {
+  letter-spacing: -0.025em;
+}
+
+.government-dashboard > main section button {
+  transition: filter 160ms ease, transform 160ms ease;
+}
+
+.government-dashboard > main section button:hover {
+  filter: brightness(0.97);
+}
+
+.government-dashboard > main section input,
+.government-dashboard > main section select {
+  min-height: 43px;
+  border-radius: 10px;
+}
+
+.government-dashboard > main section input:focus,
+.government-dashboard > main section select:focus {
+  border-color: var(--forest-light);
+  box-shadow: 0 0 0 3px rgba(85, 116, 92, 0.14);
+}
+
+/* Recent report items */
+.government-dashboard > main section .space-y-3 > div {
+  min-width: 0;
+  border-radius: 12px;
+  border-color: var(--line);
+  background: #fff;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.government-dashboard > main section .space-y-3 > div:hover {
+  border-color: var(--sage-border);
+  background: #fafbf7;
+}
+
+.government-dashboard > main section .space-y-3 > div > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Reports table */
+.government-dashboard table {
+  border-spacing: 0;
+}
+
+.government-dashboard table thead {
+  background: #edf1e9 !important;
+}
+
+.government-dashboard table th {
+  padding-top: 15px;
+  padding-bottom: 15px;
+  color: #4c5e50;
+  font-size: 11px;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.government-dashboard table td {
+  padding-top: 15px;
+  padding-bottom: 15px;
+  vertical-align: middle;
+}
+
+.government-dashboard table tbody tr {
+  transition: background 150ms ease;
+}
+
+.government-dashboard table tbody tr:hover {
+  background: #f2f5ee !important;
+}
+
+/* GIS map frame */
+.government-dashboard section:has(> h3) {
+  scroll-margin-top: 24px;
+}
+
+/* Report details modal */
+.government-dashboard [role="dialog"] > div {
+  border: 1px solid rgba(220, 226, 216, 0.8);
+  border-radius: 20px;
+}
+
+.government-dashboard [role="dialog"] h3 {
+  letter-spacing: -0.035em;
+}
+
+/* Clear keyboard focus */
+.government-dashboard button:focus-visible,
+.government-dashboard a:focus-visible,
+.government-dashboard input:focus-visible,
+.government-dashboard select:focus-visible {
+  outline: 3px solid #8da98e;
+  outline-offset: 3px;
+}
+
+.government-dashboard button {
+  min-height: 42px;
+}
+
+/* Smaller screens */
+@media (min-width: 768px) {
+  .government-dashboard > aside {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .government-dashboard > aside {
+    min-height: auto;
+  }
+
+  .government-dashboard > aside nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .government-dashboard > aside nav button {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .government-dashboard > main > header h2 {
+    font-size: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .government-dashboard *,
+  .government-dashboard *::before,
+  .government-dashboard *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

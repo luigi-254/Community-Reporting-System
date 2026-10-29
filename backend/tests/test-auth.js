@@ -2,9 +2,10 @@ import http from 'http';
 
 process.env.NODE_ENV = 'test';
 process.env.PORT = '5055';
+process.env.DATABASE_URL = '';
 
-import app from '../index.js';
-import { memoryStore } from '../repositories/memoryStore.js';
+const { default: app } = await import('../index.js');
+const { memoryStore } = await import('../repositories/memoryStore.js');
 
 let server;
 
@@ -62,18 +63,33 @@ async function runTests() {
     const healthRes = await request('GET', '/health');
     console.log('✓ GET /health:', healthRes.status, healthRes.body.status);
 
+    const invalidRegRes = await request('POST', '/api/auth/register', {
+      name: 'A',
+      email: 'not-an-email',
+      password: '123',
+    });
+    if (invalidRegRes.status !== 400) {
+      throw new Error('Invalid registration data must be rejected');
+    }
+
     // 1. POST /api/auth/register
+    const testId = Date.now();
+    const testEmail = `citizen.${testId}@example.com`;
+    const testPhone = `+2547${String(testId).slice(-8)}`;
     const registerPayload = {
       name: 'John Doe Citizen',
-      email: 'citizen.john@example.com',
-      phone: '+254712345678',
+      email: testEmail,
+      phone: testPhone,
       password: 'StrongPassword123!',
-      role: 'CITIZEN',
+      role: 'OFFICER',
       ward: 'Central Ward',
     };
     const regRes = await request('POST', '/api/auth/register', registerPayload);
     console.log('✓ POST /api/auth/register:', regRes.status, regRes.body.message);
     if (regRes.status !== 201) throw new Error('Registration failed');
+    if (regRes.body.data.user.role !== 'CITIZEN') {
+      throw new Error('Public registration must assign the CITIZEN role');
+    }
 
     const verificationRecord = [...memoryStore.verificationTokens.values()].find(
       (v) => v.identifier === 'citizen.john@example.com'
@@ -83,14 +99,14 @@ async function runTests() {
     let refreshToken = regRes.body.data.refreshToken;
 
     const verifyRes = await request('POST', '/api/auth/verify', {
-      identifier: 'citizen.john@example.com',
+      identifier: testEmail,
       code: verificationCode,
     });
     console.log('✓ POST /api/auth/verify:', verifyRes.status, verifyRes.body.message);
     if (verifyRes.status !== 200) throw new Error('Verification failed');
 
     const loginRes = await request('POST', '/api/auth/login', {
-      identifier: 'citizen.john@example.com',
+      identifier: testEmail,
       password: 'StrongPassword123!',
     });
     console.log('✓ POST /api/auth/login:', loginRes.status, loginRes.body.message);
@@ -98,6 +114,45 @@ async function runTests() {
 
     accessToken = loginRes.body.data.accessToken;
     refreshToken = loginRes.body.data.refreshToken;
+
+    const handoffRes = await request('POST', '/api/auth/handoff', null, {
+      Authorization: `Bearer ${accessToken}`,
+    });
+    if (handoffRes.status !== 201 || !handoffRes.body.data?.code) {
+      throw new Error('Authenticated handoff code creation failed');
+    }
+
+    const exchangeRes = await request('POST', '/api/auth/handoff/exchange', {
+      code: handoffRes.body.data.code,
+    });
+    if (
+      exchangeRes.status !== 200 ||
+      !exchangeRes.body.data?.accessToken ||
+      exchangeRes.body.data.user.role !== 'CITIZEN'
+    ) {
+      throw new Error('Handoff code exchange failed');
+    }
+
+    const reusedHandoffRes = await request('POST', '/api/auth/handoff/exchange', {
+      code: handoffRes.body.data.code,
+    });
+    if (reusedHandoffRes.status !== 401) {
+      throw new Error('A handoff code must only be usable once');
+    }
+
+    const unauthenticatedHandoffRes = await request('POST', '/api/auth/handoff');
+    if (unauthenticatedHandoffRes.status !== 401) {
+      throw new Error('Unauthenticated handoff creation must be rejected');
+    }
+
+    const invalidLoginRes = await request('POST', '/api/auth/login', {
+      identifier: testEmail,
+      password: 'incorrect-password',
+    });
+    if (invalidLoginRes.status !== 401) {
+      throw new Error('Invalid credentials must be rejected');
+    }
+
     const meRes = await request('GET', '/api/auth/me', null, {
       Authorization: `Bearer ${accessToken}`,
     });
@@ -113,7 +168,7 @@ async function runTests() {
     accessToken = refreshRes.body.data.accessToken;
     refreshToken = refreshRes.body.data.refreshToken;
     const forgotRes = await request('POST', '/api/auth/forgot-password', {
-      identifier: 'citizen.john@example.com',
+      identifier: testEmail,
     });
     console.log('✓ POST /api/auth/forgot-password:', forgotRes.status, forgotRes.body.message);
     if (forgotRes.status !== 200) throw new Error('Forgot password failed');
@@ -130,7 +185,7 @@ async function runTests() {
 
     // Test login with new password
     const newLoginRes = await request('POST', '/api/auth/login', {
-      identifier: 'citizen.john@example.com',
+      identifier: testEmail,
       password: 'BrandNewPassword456!',
     });
     console.log('✓ POST /api/auth/login (with new password):', newLoginRes.status, newLoginRes.body.message);

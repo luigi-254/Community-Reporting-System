@@ -2,6 +2,7 @@ import express from 'express';
 
 import {
   createReport,
+  createGuestReport,
   getReports,
   getReport,
   getReportHistory,
@@ -19,9 +20,11 @@ import { authenticate } from '../middlewares/authMiddleware.js';
 import { authorizeRoles } from '../middlewares/roleMiddlewares.js';
 import { validate } from '../middlewares/validateMiddlewares.js';
 import { uploadMedia } from '../middlewares/uploadMiddlewares.js';
+import { guestReportLimiter } from '../middlewares/ratelimitMiddlewares.js';
 
 import {
   createReportSchema,
+  createGuestReportSchema,
   updateReportSchema,
   changeStatusSchema,
   acceptResolutionSchema,
@@ -58,6 +61,12 @@ getRoute('/me', authenticate, getMyReports);
 getRoute('/search', authenticate, searchReports);
 getRoute('/filter', authenticate, filterReports);
 getRoute('/', authenticate, getReports);
+postRoute(
+  '/guest',
+  guestReportLimiter,
+  validate(createGuestReportSchema),
+  createGuestReport
+);
 postRoute(
   '/',
   authenticate,
