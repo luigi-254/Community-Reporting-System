@@ -246,7 +246,7 @@ export default function UsersPage() {
         {error && (
           <div
             role="alert"
-            className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            className="mb-6 rounded-lg border border-[#f1c9c2] bg-[#fff3f0] p-4 text-sm text-[#8b392f]"
           >
             {error}
           </div>
@@ -255,7 +255,7 @@ export default function UsersPage() {
         {success && (
           <div
             role="status"
-            className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+            className="mb-6 rounded-lg border border-[#cfe2d5] bg-[#f1f8f3] p-4 text-sm text-[#31584b]"
           >
             {success}
           </div>
@@ -482,8 +482,8 @@ export default function UsersPage() {
                         <span
                           className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                             officer.isActive === false
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-green-100 text-green-800"
+                              ? "bg-[#f0ebd9] text-[#66572f]"
+                              : "bg-[#dce8d8] text-[#244637]"
                           }`}
                         >
                           {officer.isActive === false ? "Inactive" : "Active"}

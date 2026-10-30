@@ -16,6 +16,49 @@
   --ink: #243329;
   --muted: #687468;
   --line: #dce2d8;
+
+  /* MTAA Fix design tokens — Citizen Dashboard is the single source of truth */
+  --mtaa-brand: #187a58;
+  --mtaa-brand-hover: #126448;
+  --mtaa-brand-dark: #244637;
+  --mtaa-brand-dark-hover: #19372a;
+  --mtaa-ink: #173c32;
+  --mtaa-ink-dark: #243329;
+  --mtaa-text-secondary: #53675d;
+  --mtaa-text-muted: #687468;
+  --mtaa-bg: #ffffff;
+  --mtaa-bg-cream: #f7f7f2;
+  --mtaa-surface: #fdfdf9;
+  --mtaa-surface-muted: #eff1e9;
+  --mtaa-border: #e8eee9;
+  --mtaa-border-light: #cddbd1;
+  --mtaa-border-mid: #cbd6c8;
+  --mtaa-border-strong: #dce2d8;
+  --mtaa-success-bg: #e5f3eb;
+  --mtaa-success-text: #187a58;
+  --mtaa-error-bg: #fff3f0;
+  --mtaa-error-border: #f1c9c2;
+  --mtaa-error-text: #8b392f;
+  --mtaa-notice-bg: #f1f8f3;
+  --mtaa-notice-border: #cfe2d5;
+  --mtaa-notice-text: #31584b;
+  --mtaa-focus: #187a58;
+
+  /* Status badge tokens */
+  --mtaa-status-submitted-bg: #e6ece3;
+  --mtaa-status-submitted-text: #31543a;
+  --mtaa-status-pending-bg: #f0ebd9;
+  --mtaa-status-pending-text: #66572f;
+  --mtaa-status-under-review-bg: #e4e8dd;
+  --mtaa-status-under-review-text: #344338;
+  --mtaa-status-in-progress-bg: #dce8d8;
+  --mtaa-status-in-progress-text: #244637;
+  --mtaa-status-resolved-bg: #dce8d8;
+  --mtaa-status-resolved-text: #244637;
+  --mtaa-status-rejected-bg: #f2e2dc;
+  --mtaa-status-rejected-text: #7d4435;
+  --mtaa-status-escalated-bg: #f0ebd9;
+  --mtaa-status-escalated-text: #66572f;
 }
 
 @layer base {

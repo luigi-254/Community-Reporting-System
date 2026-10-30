@@ -102,7 +102,7 @@ export default function AdminLoginPage() {
         {error && (
           <div
             role="alert"
-            className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            className="mt-5 rounded-lg border border-[#f1c9c2] bg-[#fff3f0] p-4 text-sm text-[#8b392f]"
           >
             {error}
           </div>

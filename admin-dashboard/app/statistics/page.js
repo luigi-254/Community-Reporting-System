@@ -241,25 +241,25 @@ export default function StatisticsPage() {
       label: "Total Reports",
       value: totalFromApi,
       detail: "All reports recorded by the API",
-      color: "text-[#24543b]",
+      color: "text-[#173c32]",
     },
     {
       label: "Pending",
       value: stats.pending,
       detail: "Submitted or under review",
-      color: "text-amber-700",
+      color: "text-[#66572f]",
     },
     {
       label: "In Progress",
       value: stats.inProgress,
       detail: "Currently being handled",
-      color: "text-blue-700",
+      color: "text-[#244637]",
     },
     {
       label: "Resolved",
       value: stats.resolved,
       detail: "Marked as resolved",
-      color: "text-emerald-700",
+      color: "text-[#244637]",
     },
   ];
 
@@ -274,11 +274,11 @@ export default function StatisticsPage() {
 
   const renderBreakdown = (entries, total, emptyMessage) => {
     if (loading) {
-      return <p className="text-sm text-gray-500">Loading statistics...</p>;
+      return <p className="text-sm text-[#687468]">Loading statistics...</p>;
     }
 
     if (entries.length === 0) {
-      return <p className="text-sm text-gray-500">{emptyMessage}</p>;
+      return <p className="text-sm text-[#687468]">{emptyMessage}</p>;
     }
 
     return (
@@ -290,15 +290,15 @@ export default function StatisticsPage() {
           return (
             <div key={label}>
               <div className="mb-2 flex items-center justify-between gap-3">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-[#687468]">
                   {label}
                 </span>
-                <span className="whitespace-nowrap text-sm text-gray-500">
+                <span className="whitespace-nowrap text-sm text-[#687468]">
                   {count} ({percentage}%)
                 </span>
               </div>
 
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#eff1e9]">
                 <div
                   className="h-full rounded-full bg-[#568066] transition-all"
                   style={{ width: `${percentage}%` }}
@@ -312,17 +312,17 @@ export default function StatisticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f6ef] text-gray-900">
-      <header className="border-b border-white/10 bg-[#173d2d] px-5 py-6 text-white md:px-8">
+    <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
+      <header className="border-b border-white/10 bg-[#244637] px-5 py-6 text-white md:px-8">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c4d3bf]">
               Community Reporting System
             </p>
             <h1 className="mt-2 text-2xl font-bold md:text-3xl">
               Statistics & Analytics
             </h1>
-            <p className="mt-2 text-sm text-emerald-100">
+            <p className="mt-2 text-sm text-[#c4d3bf]">
               Live analysis of citizen-submitted community reports.
             </p>
           </div>
@@ -331,21 +331,21 @@ export default function StatisticsPage() {
             <button
               onClick={loadStatistics}
               disabled={loading}
-              className="rounded-lg border border-white/30 px-4 py-2.5 text-sm font-semibold transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg bg-[#187a58] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Refreshing..." : "Refresh Statistics"}
             </button>
 
             <Link
               href="/"
-              className="rounded-lg bg-[#f4f0dc] px-4 py-2.5 text-sm font-semibold text-[#173d2d] transition hover:bg-white"
+              className="rounded-lg border border-[#cbd6c8] bg-white px-4 py-2.5 text-sm font-semibold text-[#187a58] transition hover:bg-[#f5f8f5]"
             >
               Back to Dashboard
             </Link>
           </div>
         </div>
 
-        <div className="mx-auto mt-4 max-w-7xl text-xs text-emerald-100">
+        <div className="mx-auto mt-4 max-w-7xl text-xs text-[#c4d3bf]">
           {lastUpdated
             ? `Last updated at ${lastUpdated}`
             : "Waiting for backend data"}
@@ -356,7 +356,7 @@ export default function StatisticsPage() {
         {error && (
           <div
             role="alert"
-            className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800"
+            className="rounded-xl border border-[#f1c9c2] bg-[#fff3f0] p-5 text-sm text-[#8b392f]"
           >
             <p className="font-bold">Could not load statistics</p>
             <p className="mt-2">{error}</p>
@@ -370,36 +370,36 @@ export default function StatisticsPage() {
           {summaryCards.map((card) => (
             <div
               key={card.label}
-              className="rounded-xl border border-[#e4e1d5] bg-white p-6 shadow-sm"
+              className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm"
             >
-              <p className="text-sm text-gray-500">{card.label}</p>
+              <p className="text-sm text-[#687468]">{card.label}</p>
               <p className={`mt-3 text-3xl font-bold ${card.color}`}>
                 {loading ? "—" : card.value}
               </p>
-              <p className="mt-2 text-xs text-gray-500">{card.detail}</p>
+              <p className="mt-2 text-xs text-[#687468]">{card.detail}</p>
             </div>
           ))}
         </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-xl border border-[#e4e1d5] bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-[#173d2d]">
+                <h2 className="text-lg font-bold text-[#173c32]">
                   Resolution Rate
                 </h2>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[#687468]">
                   Percentage of loaded reports marked as resolved
                 </p>
               </div>
 
-              <p className="text-3xl font-bold text-emerald-700">
+              <p className="text-3xl font-bold text-[#244637]">
                 {loading ? "—" : `${stats.resolutionRate}%`}
               </p>
             </div>
 
             <div
-              className="mt-6 h-3 w-full overflow-hidden rounded-full bg-gray-100"
+              className="mt-6 h-3 w-full overflow-hidden rounded-full bg-[#eff1e9]"
               role="progressbar"
               aria-label="Resolution rate"
               aria-valuenow={stats.resolutionRate}
@@ -407,30 +407,30 @@ export default function StatisticsPage() {
               aria-valuemax={100}
             >
               <div
-                className="h-full rounded-full bg-emerald-700 transition-all"
+                className="h-full rounded-full bg-[#244637] transition-all"
                 style={{ width: `${stats.resolutionRate}%` }}
               />
             </div>
 
-            <p className="mt-3 text-sm text-gray-600">
+            <p className="mt-3 text-sm text-[#687468]">
               {loading
                 ? "Calculating resolution rate..."
                 : `${stats.resolved} of ${reports.length} loaded reports resolved`}
             </p>
 
             {!loading && reports.length !== totalFromApi && (
-              <p className="mt-2 text-xs text-amber-700">
+              <p className="mt-2 text-xs text-[#66572f]">
                 The API reports {totalFromApi} total records but returned{" "}
                 {reports.length}. The rate uses the records successfully loaded.
               </p>
             )}
           </div>
 
-          <div className="rounded-xl border border-[#e4e1d5] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-[#173d2d]">
+          <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-[#173c32]">
               Status Breakdown
             </h2>
-            <p className="mb-5 mt-1 text-sm text-gray-500">
+            <p className="mb-5 mt-1 text-sm text-[#687468]">
               Counts by the backend&apos;s report statuses
             </p>
 
@@ -438,10 +438,10 @@ export default function StatisticsPage() {
               {statusBreakdown.map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-lg border border-gray-100 bg-[#fafaf5] p-4"
+                  className="rounded-lg border border-[#dce2d8] bg-[#f5f8f5] p-4"
                 >
-                  <p className="text-xs text-gray-500">{item.label}</p>
-                  <p className="mt-2 text-2xl font-bold text-[#24543b]">
+                  <p className="text-xs text-[#687468]">{item.label}</p>
+                  <p className="mt-2 text-2xl font-bold text-[#173c32]">
                     {loading ? "—" : item.value}
                   </p>
                 </div>
@@ -451,11 +451,11 @@ export default function StatisticsPage() {
         </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-xl border border-[#e4e1d5] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-[#173d2d]">
+          <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-[#173c32]">
               Reports by Category
             </h2>
-            <p className="mb-6 mt-1 text-sm text-gray-500">
+            <p className="mb-6 mt-1 text-sm text-[#687468]">
               Number and proportion of reports for each category
             </p>
 
@@ -466,11 +466,11 @@ export default function StatisticsPage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-[#e4e1d5] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-[#173d2d]">
+          <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-[#173c32]">
               Reports by Location
             </h2>
-            <p className="mb-6 mt-1 text-sm text-gray-500">
+            <p className="mb-6 mt-1 text-sm text-[#687468]">
               Number and proportion of reports for each location
             </p>
 

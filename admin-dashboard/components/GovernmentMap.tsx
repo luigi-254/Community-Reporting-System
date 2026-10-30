@@ -32,7 +32,7 @@ export default function GovernmentMap() {
 
   return createElement(
     "section",
-    { className: "overflow-hidden rounded-xl border border-gray-200 bg-white" },
+    { className: "overflow-hidden rounded-xl border border-[#cbd6c8] bg-[#fdfdf9]" },
     createElement(
       "div",
       {
@@ -41,14 +41,14 @@ export default function GovernmentMap() {
       },
       createElement(
         "p",
-        { className: "min-w-0 flex-1 text-sm text-gray-600", role: "status" },
+        { className: "min-w-0 flex-1 text-sm text-[#687468]", role: "status" },
         message
       ),
       createElement(
         "button",
         {
           className:
-            "min-h-11 shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+            "min-h-11 shrink-0 rounded-lg bg-[#187a58] px-4 py-2 text-sm font-medium text-white hover:bg-[#126448] focus:outline-none focus:ring-2 focus:ring-[#187a58] focus:ring-offset-2",
           onClick: showMyLocation,
           type: "button",
         },
@@ -66,7 +66,7 @@ export default function GovernmentMap() {
           "div",
           {
             className:
-              "flex h-[360px] items-center justify-center bg-gray-100 text-center text-sm text-gray-500 sm:h-[440px]",
+              "flex h-[360px] items-center justify-center bg-[#eff1e9] text-center text-sm text-[#687468] sm:h-[440px]",
           },
           "The map will appear here after you choose a location."
         )

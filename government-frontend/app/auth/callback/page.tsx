@@ -90,21 +90,21 @@ export default function GovernmentAuthCallbackPage() {
   }, [router]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-100 px-5 text-gray-800">
-      <section className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-xl">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 font-bold text-emerald-700">M</div>
+    <main className="flex min-h-screen items-center justify-center bg-[#f7f7f2] px-5 text-[#243329]">
+      <section className="w-full max-w-md rounded-2xl border border-[#cbd6c8] bg-[#fdfdf9] p-8 text-center shadow-xl">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#e5f3eb] font-bold text-[#187a58]">M</div>
         <h1 className="mt-5 text-xl font-bold">Finishing sign-in</h1>
         {error ? (
           <>
-            <p role="alert" className="mt-3 text-sm leading-6 text-red-800">{error}</p>
+            <p role="alert" className="mt-3 text-sm leading-6 text-[#8b392f]">{error}</p>
             {CITIZEN_APP_URL ? (
-              <a href={`${CITIZEN_APP_URL.replace(/\/+$/, "")}/sign-in`} className="mt-6 inline-flex rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white">Return to MtaaFix</a>
+              <a href={`${CITIZEN_APP_URL.replace(/\/+$/, "")}/sign-in`} className="mt-6 inline-flex rounded-lg bg-[#187a58] px-5 py-3 text-sm font-semibold text-white">Return to MtaaFix</a>
             ) : (
-              <p className="mt-4 text-xs text-gray-600">Set NEXT_PUBLIC_CITIZEN_APP_URL to show the portal sign-in link.</p>
+              <p className="mt-4 text-xs text-[#687468]">Set NEXT_PUBLIC_CITIZEN_APP_URL to show the portal sign-in link.</p>
             )}
           </>
         ) : (
-          <p className="mt-3 text-sm text-gray-600">Connecting your account to the government workspace…</p>
+          <p className="mt-3 text-sm text-[#687468]">Connecting your account to the government workspace…</p>
         )}
       </section>
     </main>
