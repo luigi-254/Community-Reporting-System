@@ -13,7 +13,7 @@ const GovernmentMap = dynamic(
         "div",
       {
         className:
-          "flex h-[360px] items-center justify-center rounded-xl bg-gray-100 sm:h-[440px]",
+          "flex h-[360px] items-center justify-center rounded-xl bg-[#eff1e9] sm:h-[440px]",
       },
       "Loading GIS map..."
     ),

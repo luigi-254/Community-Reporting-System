@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -79,7 +80,7 @@ export default function GuestReportPage() {
           href="/"
           className="inline-flex items-center gap-2 font-semibold text-[#187a58] hover:text-[#126448]"
         >
-          <span aria-hidden="true">←</span> Back to MtaaFix
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back to MtaaFix
         </Link>
 
         <section className="mt-8 rounded-3xl border border-[#e0e9e2] bg-white p-6 shadow-sm sm:p-9">

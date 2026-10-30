@@ -1,5 +1,14 @@
 import Link from "next/link";
 import BrandLogo from "./components/BrandLogo";
+import {
+  ArrowRight,
+  Building2,
+  CheckCircle,
+  ExternalLink,
+  FileText,
+  MapPin,
+  Bell,
+} from "lucide-react";
 
 const steps = [
   {
@@ -27,37 +36,37 @@ const features = [
     title: "Simple issue reporting",
     description:
       "Describe the issue, add a location, and attach photos when they help explain the problem.",
-    icon: "↗",
+    icon: <ExternalLink className="w-5 h-5" />,
   },
   {
     title: "Clear status tracking",
     description:
       "See whether your report has been submitted, reviewed, resolved, or needs follow-up.",
-    icon: "✓",
+    icon: <CheckCircle className="w-5 h-5" />,
   },
   {
     title: "Location-aware reports",
     description:
       "Add a place or use the map-supported location tools to help officers find the issue.",
-    icon: "⌖",
+    icon: <MapPin className="w-5 h-5" />,
   },
   {
     title: "Updates and notifications",
     description:
       "Receive account and report updates through the notification features available in the system.",
-    icon: "•",
+    icon: <Bell className="w-5 h-5" />,
   },
   {
     title: "Tools for public officers",
     description:
       "Government officers and administrators can review reports and monitor service delivery.",
-    icon: "▤",
+    icon: <Building2 className="w-5 h-5" />,
   },
   {
     title: "A shared record",
     description:
       "Keep report details and progress together to support transparency and accountability.",
-    icon: "◷",
+    icon: <FileText className="w-5 h-5" />,
   },
 ];
 
@@ -199,7 +208,7 @@ export default function HomePage() {
                 className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#187a58] px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#126448] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#187a58]"
               >
                 Report an Issue
-                <span className="ml-2" aria-hidden="true">→</span>
+                <ArrowRight className="ml-2 w-4 h-4" aria-hidden="true" />
               </Link>
               <Link
                 href="/create-account"
@@ -286,7 +295,7 @@ export default function HomePage() {
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[#53675d]">Create an account to submit a community report and follow its progress.</p>
           </div>
           <Link href="/create-account" className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-[#187a58] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#126448]">
-            Create Account <span className="ml-2" aria-hidden="true">→</span>
+            Create Account <ArrowRight className="ml-2 w-4 h-4" aria-hidden="true" />
           </Link>
         </div>
       </section>

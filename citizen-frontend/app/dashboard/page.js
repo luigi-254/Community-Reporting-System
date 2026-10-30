@@ -5,6 +5,17 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import BrandLogo from "../components/BrandLogo";
 import { normalizeRole } from "../../lib/auth";
+import {
+  ArrowRight,
+  Bell,
+  Building2,
+  Camera as CameraIcon,
+  CheckCircle,
+  ExternalLink,
+  Image as GalleryIcon,
+  MapPin,
+  X,
+} from "lucide-react";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -231,47 +242,6 @@ function formatDate(value) {
 
 function formatFileSize(size) {
   return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-}
-
-function CameraIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="23"
-      height="23"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M14 4h-4L8 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z" />
-      <circle cx="12" cy="13" r="3" />
-    </svg>
-  );
-}
-
-function GalleryIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="23"
-      height="23"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-      <path d="m21 15-5-5L5 21" />
-    </svg>
-  );
 }
 
 export default function CitizenDashboard() {
@@ -1579,7 +1549,8 @@ const [gpsStatus, setGpsStatus] = useState("");
                     onClick={() => navigateTo("Report an Issue")}
                     className="inline-flex min-h-12 items-center justify-center gap-3 self-start bg-[#244637] px-5 py-3 text-sm font-semibold text-white hover:bg-[#19372a] md:self-auto"
                   >
-                    Report an Issue →
+                    Report an Issue
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </section>
@@ -2262,7 +2233,7 @@ const [gpsStatus, setGpsStatus] = useState("");
                 aria-label="Close camera"
                 className="px-3 py-2 text-2xl text-[#244637] hover:bg-[#eff1e9]"
               >
-                ×
+                <X className="w-6 h-6" aria-hidden="true" />
               </button>
             </div>
 

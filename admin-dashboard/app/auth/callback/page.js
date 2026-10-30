@@ -92,15 +92,15 @@ export default function AdminAuthCallbackPage() {
         <h1 className="mt-5 text-xl font-bold">Finishing sign-in</h1>
         {error ? (
           <>
-            <p role="alert" className="mt-3 text-sm leading-6 text-red-800">{error}</p>
+            <p role="alert" className="mt-3 text-sm leading-6 text-[#8b392f]">{error}</p>
             {CITIZEN_APP_URL ? (
               <a href={`${CITIZEN_APP_URL.replace(/\/+$/, "")}/sign-in`} className="mt-6 inline-flex rounded-lg bg-[#244637] px-5 py-3 text-sm font-semibold text-white">Return to MtaaFix</a>
             ) : (
-              <p className="mt-4 text-xs text-gray-600">Set NEXT_PUBLIC_CITIZEN_APP_URL to show the portal sign-in link.</p>
+              <p className="mt-4 text-xs text-[#687468]">Set NEXT_PUBLIC_CITIZEN_APP_URL to show the portal sign-in link.</p>
             )}
           </>
         ) : (
-          <p className="mt-3 text-sm text-gray-600">Connecting your account to the administrator workspace…</p>
+          <p className="mt-3 text-sm text-[#687468]">Connecting your account to the administrator workspace…</p>
         )}
       </section>
     </main>

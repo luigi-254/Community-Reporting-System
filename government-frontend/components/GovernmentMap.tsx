@@ -336,43 +336,43 @@ export default function GovernmentMap() {
   const missingOrOutsideCount = reports.length - mappedReports.length;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-      <div className="flex flex-col gap-3 border-b border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+    <section className="overflow-hidden rounded-xl border border-[#cbd6c8] bg-[#fdfdf9]">
+      <div className="flex flex-col gap-3 border-b border-[#cbd6c8] p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-[#173c32]">
             Kisii County GIS Map
           </h2>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-[#687468]">
             Report locations are displayed using their saved GPS coordinates.
           </p>
         </div>
 
-        <div className="rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-800">
+        <div className="rounded-lg bg-[#e5f3eb] px-3 py-2 text-sm font-medium text-[#187a58]">
           {mappedReports.length} mapped report
           {mappedReports.length === 1 ? "" : "s"}
         </div>
       </div>
 
-      <div className="border-b border-gray-100 px-4 py-3 text-sm">
+      <div className="border-b border-[#dce2d8] px-4 py-3 text-sm">
         {loadingReports || loadingBoundary ? (
-          <p className="text-gray-500">Loading Kisii map and report locations…</p>
+          <p className="text-[#687468]">Loading Kisii map and report locations…</p>
         ) : null}
 
         {reportError ? (
-          <p className="text-red-600">
+          <p className="text-[#8b392f]">
             Reports could not be loaded: {reportError}
           </p>
         ) : null}
 
         {boundaryError ? (
-          <p className="text-red-600">
+          <p className="text-[#8b392f]">
             County boundary could not be loaded: {boundaryError}
           </p>
         ) : null}
 
         {!loadingReports && !loadingBoundary && !reportError && !boundaryError ? (
-          <p className="text-gray-600">
+          <p className="text-[#687468]">
             {missingOrOutsideCount > 0
               ? `${missingOrOutsideCount} report(s) are not shown because their GPS coordinates are missing or outside Kisii County.`
               : "All reports with coordinates are within the Kisii County boundary."}
@@ -400,9 +400,9 @@ export default function GovernmentMap() {
             <GeoJsonLayer
               data={boundary as any}
               style={{
-                color: "#15803d",
+                color: "#187a58",
                 weight: 3,
-                fillColor: "#22c55e",
+                fillColor: "#e6f3eb",
                 fillOpacity: 0.07,
               }}
             />
@@ -421,10 +421,10 @@ export default function GovernmentMap() {
                   weight: 2,
                   fillColor:
                     report.status?.toLowerCase() === "resolved"
-                      ? "#16a34a"
+                      ? "#187a58"
                       : report.status?.toLowerCase() === "in progress"
-                        ? "#2563eb"
-                        : "#dc2626",
+                        ? "#244637"
+                        : "#173c32",
                   fillOpacity: 1,
                 }}
               >
@@ -457,7 +457,7 @@ export default function GovernmentMap() {
                         href={imageUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-blue-700 underline"
+                        className="text-[#187a58] underline"
                       >
                         View report photo
                       </a>

@@ -45,19 +45,19 @@ function statusLabel(status) {
 function statusStyle(status) {
   switch (normalizeStatus(status)) {
     case "SUBMITTED":
-      return "bg-amber-100 text-amber-800";
+      return "bg-[#e6ece3] text-[#31543a]";
     case "UNDER_REVIEW":
-      return "bg-sky-100 text-sky-800";
+      return "bg-[#e4e8dd] text-[#344338]";
     case "IN_PROGRESS":
-      return "bg-blue-100 text-blue-800";
+      return "bg-[#dce8d8] text-[#244637]";
     case "RESOLVED":
-      return "bg-emerald-100 text-emerald-800";
+      return "bg-[#dce8d8] text-[#244637]";
     case "REJECTED":
-      return "bg-red-100 text-red-800";
+      return "bg-[#f2e2dc] text-[#7d4435]";
     case "ESCALATED":
-      return "bg-purple-100 text-purple-800";
+      return "bg-[#f0ebd9] text-[#66572f]";
     default:
-      return "bg-gray-100 text-gray-700";
+      return "bg-[#e8eee9] text-[#687468]";
   }
 }
 
@@ -275,37 +275,37 @@ export default function AdminDashboard() {
       title: "Total Reports",
       value: totalFromApi,
       subtitle: "Reports returned by the backend",
-      color: "text-[#24543b]",
+      color: "text-[#173c32]",
     },
     {
       title: "Pending",
       value: reportStats.pending,
       subtitle: "Awaiting review or action",
-      color: "text-amber-700",
+      color: "text-[#66572f]",
     },
     {
       title: "In Progress",
       value: reportStats.inProgress,
       subtitle: "Currently being handled",
-      color: "text-blue-700",
+      color: "text-[#244637]",
     },
     {
       title: "Resolved",
       value: reportStats.resolved,
       subtitle: "Marked as resolved",
-      color: "text-emerald-700",
+      color: "text-[#244637]",
     },
   ];
 
   return (
-    <div className="flex min-h-screen bg-[#f7f6ef] text-gray-900">
-      <aside className="flex min-h-screen w-64 shrink-0 flex-col bg-[#173d2d] p-6 text-white">
+    <div className="flex min-h-screen bg-[#f7f7f2] text-[#243329]">
+      <aside className="flex min-h-screen w-64 shrink-0 flex-col bg-[#244637] p-6 text-[#f7f7f2]">
         <div className="mb-10">
           <BrandLogo className="mb-4 h-10 w-10" />
           <h1 className="text-xl font-bold">
             Community Reports
           </h1>
-          <p className="mt-1 text-sm text-emerald-200">
+          <p className="mt-1 text-sm text-[#c4d3bf]">
             Admin Panel
           </p>
         </div>
@@ -321,10 +321,10 @@ export default function AdminDashboard() {
             <button
               key={item}
               onClick={() => handleNavigation(item)}
-              className={`w-full rounded-lg px-4 py-3 text-left text-sm font-medium transition ${
+              className={`w-full border-l-2 px-3 py-3 text-left transition-colors ${
                 activePage === item
-                  ? "bg-[#f4f0dc] text-[#173d2d]"
-                  : "text-emerald-50 hover:bg-white/10"
+                  ? "border-[#e1e8d9] bg-white/10 font-semibold text-white"
+                  : "border-transparent text-[#d5dfd2] hover:bg-white/5 hover:text-white"
               }`}
             >
               {item}
@@ -333,12 +333,12 @@ export default function AdminDashboard() {
         </nav>
 
         <div className="mt-auto border-t border-white/15 pt-6">
-          <p className="text-xs leading-5 text-emerald-100">
+          <p className="text-xs leading-5 text-[#bdcdbd]">
             Community issue monitoring and administration
           </p>
           <button
             type="button"
-            className="mt-4 w-full rounded-lg bg-white/10 px-4 py-2.5 text-left text-sm font-medium text-emerald-50 hover:bg-white/20"
+            className="mt-4 w-full border border-white/30 rounded-lg px-4 py-2.5 text-left text-sm font-medium text-white hover:bg-white/10"
             onClick={async () => {
               await logout();
               router.replace("/login");
@@ -353,13 +353,13 @@ export default function AdminDashboard() {
         <header className="border-b border-[#e4e1d5] bg-white px-5 py-6 md:px-8">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#487257]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#55745c]">
                 Administration
               </p>
-              <h2 className="mt-1 text-2xl font-bold text-[#173d2d]">
+              <h2 className="mt-1 text-2xl font-bold text-[#173c32]">
                 Admin Dashboard
               </h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-[#687468]">
                 Live overview of community issues submitted by citizens.
               </p>
             </div>
@@ -371,13 +371,13 @@ export default function AdminDashboard() {
                 loadReports();
               }}
               disabled={loading}
-              className="rounded-lg bg-[#24543b] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#173d2d] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg bg-[#187a58] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Loading..." : "Refresh Data"}
             </button>
           </div>
 
-          <p className="mt-3 text-xs text-gray-500">
+          <p className="mt-3 text-xs text-[#687468]">
             {lastUpdated
               ? `Last updated at ${lastUpdated}`
               : "Waiting for reports from the backend"}
@@ -388,7 +388,7 @@ export default function AdminDashboard() {
           {error && (
             <div
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800"
+              className="rounded-xl border border-[#f1c9c2] bg-[#fff3f0] p-5 text-sm text-[#8b392f]"
             >
               <p className="font-bold">
                 Could not load live reports
@@ -406,7 +406,7 @@ export default function AdminDashboard() {
                 key={card.title}
                 className="rounded-xl border border-[#e4e1d5] bg-white p-6 shadow-sm"
               >
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-[#687468]">
                   {card.title}
                 </p>
 
@@ -416,7 +416,7 @@ export default function AdminDashboard() {
                   {loading ? "—" : card.value}
                 </p>
 
-                <p className="mt-2 text-xs text-gray-500">
+                <p className="mt-2 text-xs text-[#687468]">
                   {card.subtitle}
                 </p>
               </div>
@@ -426,21 +426,21 @@ export default function AdminDashboard() {
           <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="rounded-xl border border-[#e4e1d5] bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-lg font-bold text-[#173d2d]">
+                <h3 className="text-lg font-bold text-[#173c32]">
                   Resolution Progress
                 </h3>
 
-                <span className="text-2xl font-bold text-emerald-700">
+                <span className="text-2xl font-bold text-[#244637]">
                   {loading ? "—" : `${reportStats.resolutionRate}%`}
                 </span>
               </div>
 
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-[#687468]">
                 Percentage of reports in the records loaded that are resolved.
               </p>
 
               <div
-                className="mt-5 h-3 w-full overflow-hidden rounded-full bg-gray-100"
+                className="mt-5 h-3 w-full overflow-hidden rounded-full bg-[#eff1e9]"
                 role="progressbar"
                 aria-label="Report resolution rate"
                 aria-valuenow={loading ? undefined : reportStats.resolutionRate}
@@ -453,14 +453,14 @@ export default function AdminDashboard() {
                 aria-valuemax={100}
               >
                 <div
-                  className="h-full rounded-full bg-emerald-700 transition-all"
+                  className="h-full rounded-full bg-[#244637] transition-all"
                   style={{
                     width: `${reportStats.resolutionRate}%`,
                   }}
                 />
               </div>
 
-              <p className="mt-3 text-sm text-gray-600">
+              <p className="mt-3 text-sm text-[#687468]">
                 {loading
                   ? "Loading resolution details..."
                   : `${reportStats.resolved} of ${reports.length} loaded reports resolved`}
@@ -468,11 +468,11 @@ export default function AdminDashboard() {
             </div>
 
             <div className="rounded-xl border border-[#e4e1d5] bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-[#173d2d]">
+              <h3 className="text-lg font-bold text-[#173c32]">
                 Reports by Category
               </h3>
 
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-[#687468]">
                 Breakdown of issues returned by the API.
               </p>
 
@@ -481,7 +481,7 @@ export default function AdminDashboard() {
                   ([category, count]) => (
                     <div key={category}>
                       <div className="mb-1 flex justify-between gap-3 text-sm">
-                        <span className="text-gray-700">
+                        <span className="text-[#687468]">
                           {category}
                         </span>
                         <span className="font-semibold">
@@ -489,9 +489,9 @@ export default function AdminDashboard() {
                         </span>
                       </div>
 
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-[#eff1e9]">
                         <div
-                          className="h-full rounded-full bg-[#568066]"
+                          className="h-full rounded-full bg-[#244637]"
                           style={{
                             width: `${
                               reports.length
@@ -507,13 +507,13 @@ export default function AdminDashboard() {
 
                 {!loading &&
                   Object.keys(reportStats.categoryCounts).length === 0 && (
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-[#687468]">
                       No reports available yet.
                     </p>
                   )}
 
                 {loading && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-[#687468]">
                     Loading categories...
                   </p>
                 )}
@@ -524,17 +524,17 @@ export default function AdminDashboard() {
           <section className="overflow-hidden rounded-xl border border-[#e4e1d5] bg-white shadow-sm">
             <div className="flex flex-col justify-between gap-4 border-b border-[#e4e1d5] px-6 py-5 sm:flex-row sm:items-center">
               <div>
-                <h3 className="text-lg font-bold text-[#173d2d]">
+                <h3 className="text-lg font-bold text-[#173c32]">
                   Recent Reports
                 </h3>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[#687468]">
                   Latest issues received from the backend.
                 </p>
               </div>
 
               <button
                 onClick={() => handleNavigation("Reports")}
-                className="rounded-lg bg-[#24543b] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#173d2d]"
+                className="rounded-lg bg-[#187a58] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#126448]"
               >
                 View All Reports
               </button>
@@ -542,7 +542,7 @@ export default function AdminDashboard() {
 
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px] text-left text-sm">
-                <thead className="bg-[#f5f4ec] text-gray-600">
+                <thead className="bg-[#eff1e9] text-[#687468]">
                   <tr>
                     <th className="px-6 py-4 font-semibold">
                       Report ID
@@ -567,7 +567,7 @@ export default function AdminDashboard() {
                     <tr>
                       <td
                         colSpan={5}
-                        className="px-6 py-10 text-center text-gray-500"
+                        className="px-6 py-10 text-center text-[#687468]"
                       >
                         Loading reports from the backend...
                       </td>
@@ -578,12 +578,12 @@ export default function AdminDashboard() {
                         colSpan={5}
                         className="px-6 py-10 text-center"
                       >
-                        <p className="font-semibold text-gray-700">
+                        <p className="font-semibold text-[#687468]">
                           {error
                             ? "Reports could not be loaded."
                             : "No reports found."}
                         </p>
-                        <p className="mt-2 text-sm text-gray-500">
+                        <p className="mt-2 text-sm text-[#687468]">
                           {error
                             ? "Resolve the connection error and refresh."
                             : "Submit a citizen report, then click Refresh Data."}
@@ -594,10 +594,10 @@ export default function AdminDashboard() {
                     reportStats.recentReports.map((report) => (
                       <tr
                         key={report.id}
-                        className="border-t border-gray-100 transition hover:bg-[#fafaf5]"
+                        className="border-t border-[#dce2d8] transition hover:bg-[#f5f8f5]"
                       >
                         <td
-                          className="px-6 py-4 font-semibold text-[#24543b]"
+                          className="px-6 py-4 font-semibold text-[#173c32]"
                           title={report.id}
                         >
                           {report.id.length > 15
@@ -609,7 +609,7 @@ export default function AdminDashboard() {
                           {report.issue}
                         </td>
 
-                        <td className="px-6 py-4 text-gray-600">
+                        <td className="px-6 py-4 text-[#687468]">
                           {report.location}
                         </td>
 
@@ -621,7 +621,7 @@ export default function AdminDashboard() {
                           </span>
                         </td>
 
-                        <td className="whitespace-nowrap px-6 py-4 text-gray-600">
+                        <td className="whitespace-nowrap px-6 py-4 text-[#687468]">
                           {report.date}
                         </td>
                       </tr>

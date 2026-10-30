@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { X } from "lucide-react";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -92,19 +93,19 @@ function statusLabel(status) {
 function getStatusStyle(status) {
   switch (getStatus(status)) {
     case "SUBMITTED":
-      return "bg-amber-100 text-amber-800";
+      return "bg-[#e6ece3] text-[#31543a]";
     case "UNDER_REVIEW":
-      return "bg-sky-100 text-sky-800";
+      return "bg-[#e4e8dd] text-[#344338]";
     case "IN_PROGRESS":
-      return "bg-blue-100 text-blue-800";
+      return "bg-[#dce8d8] text-[#244637]";
     case "RESOLVED":
-      return "bg-emerald-100 text-emerald-800";
+      return "bg-[#dce8d8] text-[#244637]";
     case "REJECTED":
-      return "bg-rose-100 text-rose-800";
+      return "bg-[#f2e2dc] text-[#7d4435]";
     case "ESCALATED":
-      return "bg-purple-100 text-purple-800";
+      return "bg-[#f0ebd9] text-[#66572f]";
     default:
-      return "bg-gray-100 text-gray-700";
+      return "bg-[#e8eee9] text-[#687468]";
   }
 }
 
@@ -328,7 +329,7 @@ export default function ReportsPage() {
     {
       label: "Total Reports",
       value: reports.length,
-      style: "border-l-4 border-emerald-700",
+      style: "border-l-4 border-[#173c32]",
     },
     {
       label: "Awaiting Review",
@@ -337,30 +338,30 @@ export default function ReportsPage() {
           report.status === "SUBMITTED" ||
           report.status === "UNDER_REVIEW"
       ).length,
-      style: "border-l-4 border-amber-500",
+      style: "border-l-4 border-[#66572f]",
     },
     {
       label: "In Progress",
       value: reports.filter(
         (report) => report.status === "IN_PROGRESS"
       ).length,
-      style: "border-l-4 border-blue-500",
+      style: "border-l-4 border-[#244637]",
     },
     {
       label: "Resolved",
       value: reports.filter(
         (report) => report.status === "RESOLVED"
       ).length,
-      style: "border-l-4 border-green-600",
+      style: "border-l-4 border-[#244637]",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f7f6ef] text-gray-900">
-      <header className="border-b border-white/10 bg-[#173d2d] px-5 py-6 text-white md:px-8">
+    <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
+      <header className="border-b border-white/10 bg-[#244637] px-5 py-6 text-white md:px-8">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c4d3bf]">
               Community Reporting System
             </p>
 
@@ -368,7 +369,7 @@ export default function ReportsPage() {
               Community Reports
             </h1>
 
-            <p className="mt-2 text-sm text-emerald-100">
+            <p className="mt-2 text-sm text-[#c4d3bf]">
               View citizen submissions received by the backend.
             </p>
           </div>
@@ -377,14 +378,14 @@ export default function ReportsPage() {
             <button
               onClick={loadReports}
               disabled={loading}
-              className="rounded-lg border border-white/30 px-4 py-2.5 text-sm font-semibold transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg bg-[#187a58] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Refreshing..." : "Refresh Reports"}
             </button>
 
             <Link
               href="/"
-              className="rounded-lg bg-[#f4f0dc] px-4 py-2.5 text-sm font-semibold text-[#173d2d] transition hover:bg-white"
+              className="rounded-lg border border-[#cbd6c8] bg-white px-4 py-2.5 text-sm font-semibold text-[#187a58] transition hover:bg-[#f5f8f5]"
             >
               Back to Dashboard
             </Link>
@@ -396,7 +397,7 @@ export default function ReportsPage() {
         {error && (
           <div
             role="alert"
-            className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800"
+            className="rounded-xl border border-[#f1c9c2] bg-[#fff3f0] p-5 text-sm text-[#8b392f]"
           >
             <h2 className="font-bold">Could not load live reports</h2>
             <p className="mt-2">{error}</p>
@@ -411,22 +412,22 @@ export default function ReportsPage() {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className={`rounded-xl border border-[#e4e1d5] bg-white p-5 shadow-sm ${stat.style}`}
+              className={`rounded-xl border border-[#dce2d8] bg-white p-5 shadow-sm ${stat.style}`}
             >
-              <p className="text-sm text-gray-500">{stat.label}</p>
-              <p className="mt-3 text-3xl font-bold text-[#173d2d]">
+              <p className="text-sm text-[#687468]">{stat.label}</p>
+              <p className="mt-3 text-3xl font-bold text-[#173c32]">
                 {loading ? "—" : stat.value}
               </p>
             </div>
           ))}
         </section>
 
-        <section className="rounded-xl border border-[#e4e1d5] bg-white p-5 shadow-sm md:p-6">
+        <section className="rounded-xl border border-[#dce2d8] bg-white p-5 shadow-sm md:p-6">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div className="flex-1">
               <label
                 htmlFor="report-search"
-                className="mb-2 block text-sm font-semibold text-gray-700"
+                className="mb-2 block text-sm font-semibold text-[#687468]"
               >
                 Search Reports
               </label>
@@ -437,14 +438,14 @@ export default function ReportsPage() {
                 placeholder="Search ID, issue, category, citizen or location..."
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-[#35654b] focus:ring-2 focus:ring-[#35654b]/20"
+                className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 outline-none transition focus:border-[#187a58] focus:ring-2 focus:ring-[#187a58]/10"
               />
             </div>
 
             <div className="w-full md:w-60">
               <label
                 htmlFor="status-filter"
-                className="mb-2 block text-sm font-semibold text-gray-700"
+                className="mb-2 block text-sm font-semibold text-[#687468]"
               >
                 Filter by Status
               </label>
@@ -453,7 +454,7 @@ export default function ReportsPage() {
                 id="status-filter"
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none focus:border-[#35654b] focus:ring-2 focus:ring-[#35654b]/20"
+                className="w-full rounded-lg border border-[#cbd6c8] bg-white px-4 py-3 outline-none transition focus:border-[#187a58] focus:ring-2 focus:ring-[#187a58]/10"
               >
                 {STATUS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -466,16 +467,16 @@ export default function ReportsPage() {
             <button
               onClick={() => exportToCSV(filteredReports)}
               disabled={filteredReports.length === 0}
-              className="rounded-lg bg-[#24543b] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#173d2d] disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-[#187a58] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Export CSV
             </button>
           </div>
 
-          <div className="mt-5 flex flex-col gap-1 border-t border-gray-100 pt-4 text-sm text-gray-500 sm:flex-row sm:justify-between">
+          <div className="mt-5 flex flex-col gap-1 border-t border-[#dce2d8] pt-4 text-sm text-[#687468] sm:flex-row sm:justify-between">
             <p>
               Showing{" "}
-              <span className="font-semibold text-gray-800">
+              <span className="font-semibold text-[#243329]">
                 {filteredReports.length}
               </span>{" "}
               of {reports.length} reports
@@ -489,19 +490,19 @@ export default function ReportsPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-[#e4e1d5] bg-white shadow-sm">
-          <div className="border-b border-[#e4e1d5] px-5 py-5 md:px-6">
+        <section className="overflow-hidden rounded-xl border border-[#dce2d8] bg-white shadow-sm">
+          <div className="border-b border-[#dce2d8] px-5 py-5 md:px-6">
             <h2 className="text-lg font-bold text-[#173d2d]">
               Report Register
             </h2>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-[#687468]">
               Reports returned by the Community Reporting System API.
             </p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[850px] text-left text-sm">
-              <thead className="bg-[#f5f4ec] text-gray-600">
+              <thead className="bg-[#f5f4ec] text-[#687468]">
                 <tr>
                   <th className="px-5 py-4 font-semibold">Report ID</th>
                   <th className="px-5 py-4 font-semibold">Issue</th>
@@ -518,7 +519,7 @@ export default function ReportsPage() {
                   <tr>
                     <td
                       colSpan={7}
-                      className="px-5 py-12 text-center text-gray-500"
+                      className="px-5 py-12 text-center text-[#687468]"
                     >
                       Loading reports from the backend...
                     </td>
@@ -529,14 +530,14 @@ export default function ReportsPage() {
                       colSpan={7}
                       className="px-5 py-12 text-center"
                     >
-                      <p className="font-semibold text-gray-700">
+                      <p className="font-semibold text-[#687468]">
                         {error
                           ? "Reports could not be loaded."
                           : reports.length === 0
                             ? "No reports have been returned by the API."
                             : "No reports match your search."}
                       </p>
-                      <p className="mt-2 text-sm text-gray-500">
+                      <p className="mt-2 text-sm text-[#687468]">
                         {error
                           ? "Resolve the connection or authorization error and refresh."
                           : reports.length === 0
@@ -549,9 +550,9 @@ export default function ReportsPage() {
                   filteredReports.map((report, index) => (
                     <tr
                       key={`${report.originalId || report.id}-${index}`}
-                      className="border-t border-gray-100 transition hover:bg-[#fafaf5]"
+                      className="border-t border-[#dce2d8] transition hover:bg-[#f5f8f5]"
                     >
-                      <td className="px-5 py-4 font-semibold text-[#24543b]">
+                      <td className="px-5 py-4 font-semibold text-[#173c32]">
                         <span title={report.id}>
                           {report.id.length > 16
                             ? `${report.id.slice(0, 8)}...`
@@ -559,15 +560,15 @@ export default function ReportsPage() {
                         </span>
                       </td>
 
-                      <td className="max-w-xs px-5 py-4 font-medium text-gray-900">
+                      <td className="max-w-xs px-5 py-4 font-medium text-[#243329]">
                         {report.issue}
                       </td>
 
-                      <td className="px-5 py-4 text-gray-600">
+                      <td className="px-5 py-4 text-[#687468]">
                         {report.category}
                       </td>
 
-                      <td className="max-w-xs px-5 py-4 text-gray-600">
+                      <td className="max-w-xs px-5 py-4 text-[#687468]">
                         {report.location}
                       </td>
 
@@ -579,14 +580,14 @@ export default function ReportsPage() {
                         </span>
                       </td>
 
-                      <td className="whitespace-nowrap px-5 py-4 text-gray-600">
+                      <td className="whitespace-nowrap px-5 py-4 text-[#687468]">
                         {report.date}
                       </td>
 
                       <td className="px-5 py-4">
                         <button
                           onClick={() => setSelectedReport(report)}
-                          className="rounded-lg border border-[#b7c8bc] px-3 py-2 text-xs font-semibold text-[#24543b] transition hover:bg-[#edf4ee]"
+                          className="rounded-lg border border-[#cbd6c8] px-3 py-2 text-xs font-semibold text-[#173c32] transition hover:bg-[#e6f3eb]"
                         >
                           View Details
                         </button>
@@ -612,9 +613,9 @@ export default function ReportsPage() {
             className="my-auto max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4 bg-[#173d2d] px-6 py-5 text-white">
+            <div className="flex items-start justify-between gap-4 bg-[#244637] px-6 py-5 text-white">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-emerald-200">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#c4d3bf]">
                   Report Details
                 </p>
                 <h2
@@ -623,7 +624,7 @@ export default function ReportsPage() {
                 >
                   {selectedReport.issue}
                 </h2>
-                <p className="mt-1 break-all text-sm text-emerald-100">
+                <p className="mt-1 break-all text-sm text-[#c4d3bf]">
                   Reference: {selectedReport.id}
                 </p>
               </div>
@@ -633,35 +634,35 @@ export default function ReportsPage() {
                 aria-label="Close report details"
                 className="rounded-lg px-3 py-1 text-2xl text-white/80 hover:bg-white/10 hover:text-white"
               >
-                ×
+                <X className="w-6 h-6" aria-hidden="true" />
               </button>
             </div>
 
             <div className="space-y-6 p-6">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
-                  <p className="text-sm text-gray-500">Category</p>
+                  <p className="text-sm text-[#687468]">Category</p>
                   <p className="mt-1 font-semibold">
                     {selectedReport.category}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-500">Location</p>
+                  <p className="text-sm text-[#687468]">Location</p>
                   <p className="mt-1 font-semibold">
                     {selectedReport.location}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-500">Reported By</p>
+                  <p className="text-sm text-[#687468]">Reported By</p>
                   <p className="mt-1 font-semibold">
                     {selectedReport.reportedBy}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-500">Date Submitted</p>
+                  <p className="text-sm text-[#687468]">Date Submitted</p>
                   <p className="mt-1 font-semibold">
                     {selectedReport.date}
                   </p>
@@ -669,7 +670,7 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <p className="text-sm text-gray-500">Current Status</p>
+                <p className="text-sm text-[#687468]">Current Status</p>
                 <span
                   className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusStyle(selectedReport.status)}`}
                 >
@@ -678,15 +679,15 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <p className="text-sm text-gray-500">Description</p>
-                <p className="mt-2 whitespace-pre-wrap leading-7 text-gray-700">
+                <p className="text-sm text-[#687468]">Description</p>
+                <p className="mt-2 whitespace-pre-wrap leading-7 text-[#687468]">
                   {selectedReport.description}
                 </p>
               </div>
 
               {selectedReport.mediaUrls.length > 0 && (
                 <div>
-                  <h3 className="mb-3 font-semibold text-[#173d2d]">
+                  <h3 className="mb-3 font-semibold text-[#173c32]">
                     Attachments
                   </h3>
 
@@ -699,7 +700,7 @@ export default function ReportsPage() {
                       return (
                         <div
                           key={`${url}-${index}`}
-                          className="overflow-hidden rounded-xl border border-gray-200"
+                          className="overflow-hidden rounded-xl border border-[#cbd6c8]"
                         >
                           {isImage ? (
                             <a
@@ -722,7 +723,7 @@ export default function ReportsPage() {
                               href={url}
                               target="_blank"
                               rel="noreferrer"
-                              className="block p-4 font-medium text-[#24543b] underline"
+                              className="block p-4 font-medium text-[#173c32] underline"
                             >
                               Open attachment {index + 1}
                             </a>
@@ -734,10 +735,10 @@ export default function ReportsPage() {
                 </div>
               )}
 
-              <div className="flex justify-end border-t border-gray-100 pt-4">
+              <div className="flex justify-end border-t border-[#dce2d8] pt-4">
                 <button
                   onClick={() => setSelectedReport(null)}
-                  className="rounded-lg bg-[#24543b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173d2d]"
+                  className="rounded-lg bg-[#187a58] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#126448]"
                 >
                   Close Details
                 </button>

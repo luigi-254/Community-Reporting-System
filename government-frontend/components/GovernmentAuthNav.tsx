@@ -27,16 +27,16 @@ export default function GovernmentAuthNav() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-50 border-b border-[#dce2d8] bg-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4">
         <Link
           href="/government"
-          className="flex items-center gap-3 font-bold text-slate-900"
+          className="flex items-center gap-3 font-bold text-[#173c32]"
         >
           <BrandLogo className="h-9 w-9" preload />
           <span>
             Community Reporting System
-            <span className="ml-2 text-sm font-normal text-slate-500">
+            <span className="ml-2 text-sm font-normal text-[#687468]">
               Government Portal
             </span>
           </span>
@@ -46,7 +46,7 @@ export default function GovernmentAuthNav() {
           {signedIn && (
             <Link
               href="/government"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[#687468] hover:bg-[#f5f8f5]"
             >
               Dashboard
             </Link>
@@ -56,14 +56,14 @@ export default function GovernmentAuthNav() {
             <button
               type="button"
               onClick={handleSignOut}
-              className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
+              className="rounded-lg bg-[#187a58] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#126448]"
             >
               Sign Out
             </button>
           ) : (
             <Link
               href="/login"
-              className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+              className="rounded-lg bg-[#187a58] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#126448]"
             >
               Sign In
             </Link>
