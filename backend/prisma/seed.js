@@ -300,6 +300,95 @@ try {
   }
   console.log(`Category seed completed (${CATEGORIES.length}).`);
   console.log(`Subcategory seed completed (${subcategoryCount}).`);
+
+  // Seed routing rules: map each category to its responsible department
+  const categoryByCode = new Map();
+  for (const category of CATEGORIES) {
+    const record = await prisma.category.findUnique({
+      where: { code: category.code },
+    });
+    if (record) categoryByCode.set(category.code, record);
+  }
+
+  const routingRules = [
+    { name: 'Route Roads to Infrastructure', category: 'ROADS', departmentCode: 'INFRA' },
+    { name: 'Route Water to Water Department', category: 'WATER', departmentCode: 'WATER' },
+    { name: 'Route Drainage to Infrastructure', category: 'DRAINAGE', departmentCode: 'INFRA' },
+    { name: 'Route Waste to Water Department', category: 'WASTE', departmentCode: 'WATER' },
+    { name: 'Route Lighting to Infrastructure', category: 'LIGHTING', departmentCode: 'INFRA' },
+    { name: 'Route Safety to Disaster Management', category: 'SAFETY', departmentCode: 'DISASTER' },
+  ];
+
+  let routingRuleCount = 0;
+  for (const rule of routingRules) {
+    const category = categoryByCode.get(rule.category);
+    const department = rule.departmentCode
+      ? departmentByCode.get(rule.departmentCode)
+      : null;
+    if (!category || !department) continue;
+    const existing = await prisma.routingRule.findFirst({
+      where: { name: rule.name },
+    });
+    if (existing) {
+      await prisma.routingRule.update({
+        where: { id: existing.id },
+        data: {
+          category: category.name,
+          departmentId: department.id,
+          isActive: true,
+        },
+      });
+    } else {
+      await prisma.routingRule.create({
+        data: {
+          name: rule.name,
+          category: category.name,
+          departmentId: department.id,
+          isActive: true,
+        },
+      });
+    }
+    routingRuleCount += 1;
+  }
+  console.log(`Routing rule seed completed (${routingRuleCount}).`);
+
+  // Seed SLA policies based on subcategory slaHours
+  const slaPolicies = [];
+  for (const [catCode, subIssues] of Object.entries(SUBCATEGORY_SEED)) {
+    const category = categoryByCode.get(catCode);
+    if (!category) continue;
+    const subcats = await prisma.subcategory.findMany({
+      where: { categoryId: category.id },
+    });
+    for (const subcat of subcats) {
+      slaPolicies.push({
+        code: `SLA-${catCode}-${subcat.name.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`,
+        name: `SLA: ${catCode} - ${subcat.name}`,
+        targetHours: subcat.slaHours || 48,
+      });
+    }
+  }
+
+  let slaCount = 0;
+  for (const policy of slaPolicies) {
+    await prisma.slaPolicy.upsert({
+      where: { code: policy.code },
+      update: {
+        name: policy.name,
+        targetHours: policy.targetHours,
+        isActive: true,
+      },
+      create: {
+        code: policy.code,
+        name: policy.name,
+        targetHours: policy.targetHours,
+        isActive: true,
+      },
+    });
+    slaCount += 1;
+  }
+  console.log(`SLA policy seed completed (${slaCount}).`);
+
   console.log(
     'Seeding complete. Officials (Governor/CECM/Chief Officer/MP/MCA) are not seeded yet.'
   );
