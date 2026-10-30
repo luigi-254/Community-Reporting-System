@@ -17,6 +17,7 @@
     "test:operations": "node tests/test-operations.js",
     "test:monitoring": "node tests/test-escalation-dashboard-audit.js",
     "db:seed": "node prisma/seed.js",
+    "db:seed:dev": "node prisma/dev-seed.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
