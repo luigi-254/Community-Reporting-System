@@ -3,7 +3,7 @@ import { isValidTransition, recordStatusHistory, getStatusHistory } from '../ser
 import { applyRoutingRules } from '../services/routingEngine.js';
 import { notifyUser, notifyReportStatus } from '../services/notifyService.js';
 import { findPossibleDuplicates } from '../services/duplicateDetection.js';
-import { canAccessReport, canChangeStatus, scopeReportQuery } from '../services/jurisdiction.js';
+import { canAccessReport, canChangeStatus, canPerformTransition, scopeReportQuery } from '../services/jurisdiction.js';
 
 const sanitizeReport = (report, currentUser = null) => {
   if (!report) return null;
@@ -446,6 +446,13 @@ export const changeStatus = async (req, res, next) => {
       return res.status(400).json({
         status: 'error',
         message: `Invalid status transition from '${existing.status}' to '${status}'.`,
+      });
+    }
+
+    if (!canPerformTransition(req.user, existing.status, status)) {
+      return res.status(403).json({
+        status: 'error',
+        message: `Forbidden: Role '${req.user.role}' cannot transition report from '${existing.status}' to '${status}'.`,
       });
     }
 
