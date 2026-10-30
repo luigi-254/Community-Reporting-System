@@ -279,6 +279,9 @@ export default function CitizenDashboard() {
   const [gpsCoordinates, setGpsCoordinates] = useState(null);
 const [gpsBusy, setGpsBusy] = useState(false);
 const [gpsStatus, setGpsStatus] = useState("");
+const [verifyingReportId, setVerifyingReportId] = useState(null);
+const [verificationFeedback, setVerificationFeedback] = useState("");
+const [isVerifying, setIsVerifying] = useState(false);
 
   // Live camera state.
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -1004,6 +1007,69 @@ const [gpsStatus, setGpsStatus] = useState("");
       setIsSubmittingReport(false);
     }
   }
+
+  async function handleAcceptResolution(reportId, feedback) {
+    setVerifyingReportId(reportId);
+    setIsVerifying(true);
+    setMessage("");
+    try {
+      const response = await apiRequest(`/api/reports/${encodeURIComponent(reportId)}/accept-resolution`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ feedback: feedback || "Resolution accepted by citizen." }),
+      });
+      setMessage(response.message || "Resolution accepted. Thank you for confirming the fix!");
+      setVerifyingReportId(null);
+      setVerificationFeedback("");
+      try {
+        const latestReports = await fetchMyReports(token);
+        setReports(latestReports);
+      } catch (error) {
+        setReportsError(error.message);
+      }
+    } catch (error) {
+      setMessage(error.message || "Could not accept resolution.");
+    } finally {
+      setIsVerifying(false);
+    }
+  }
+
+  async function handleRejectResolution(reportId, reason) {
+    if (!reason || !reason.trim()) {
+      setMessage("Please provide a reason for rejecting the resolution.");
+      return;
+    }
+    setVerifyingReportId(reportId);
+    setIsVerifying(true);
+    setMessage("");
+    try {
+      const response = await apiRequest(`/api/reports/${encodeURIComponent(reportId)}/reject-resolution`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason: reason.trim(), feedback: reason.trim() }),
+      });
+      setMessage(response.message || "Resolution rejected. The report has been re-opened for further action.");
+      setVerifyingReportId(null);
+      setVerificationFeedback("");
+      try {
+        const latestReports = await fetchMyReports(token);
+        setReports(latestReports);
+      } catch (error) {
+        setReportsError(error.message);
+      }
+    } catch (error) {
+      setMessage(error.message || "Could not reject resolution.");
+    } finally {
+      setIsVerifying(false);
+    }
+  }
+
   const pendingCount = reports.filter((report) =>
     ["Pending", "Submitted", "Under review"].includes(report.status)
   ).length;
@@ -2103,6 +2169,67 @@ const [gpsStatus, setGpsStatus] = useState("");
                               );
                             })}
                           </div>
+                        </div>
+                      )}
+
+                      {report.status === "Resolved" && (
+                        <div className="mt-5 border-t border-[#e5e9e1] pt-5">
+                          <h4 className="mb-3 text-sm font-semibold text-[#173c32]">Resolution Verification</h4>
+                          {verifyingReportId === report.id ? (
+                            <div className="space-y-3">
+                              <p className="text-sm text-[#687468]">
+                                The proposed resolution is ready for your verification.
+                              </p>
+                              <div className="flex gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => handleAcceptResolution(report.id, verificationFeedback)}
+                                  disabled={isVerifying}
+                                  className="flex-1 bg-[#244637] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#19372a] disabled:opacity-60"
+                                >
+                                  {isVerifying ? "Accepting..." : "Accept Resolution"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const reason = window.prompt("Please provide a reason for rejecting the resolution:");
+                                    if (reason) handleRejectResolution(report.id, reason);
+                                  }}
+                                  disabled={isVerifying}
+                                  className="flex-1 border border-[#9c654d] px-4 py-2.5 text-sm font-semibold text-[#7d4435] hover:bg-[#f5e9df] disabled:opacity-60"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                              {verificationFeedback && (
+                                <p className="text-xs text-[#687468]">
+                                  Feedback: {verificationFeedback}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex gap-3">
+                              <button
+                                type="button"
+                                onClick={() => handleAcceptResolution(report.id, "")}
+                                disabled={isVerifying}
+                                className="flex-1 bg-[#244637] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#19372a] disabled:opacity-60"
+                              >
+                                {isVerifying ? "Accepting..." : "Accept Resolution"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const reason = window.prompt("Please provide a reason for rejecting the resolution:");
+                                  if (reason) handleRejectResolution(report.id, reason);
+                                }}
+                                disabled={isVerifying}
+                                className="flex-1 border border-[#9c654d] px-4 py-2.5 text-sm font-semibold text-[#7d4435] hover:bg-[#f5e9df] disabled:opacity-60"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
 
