@@ -20,6 +20,7 @@ import notificationRoutes from './routes/notificationroutes.js';
 import escalationRoutes from './routes/escalationroutes.js';
 import dashboardRoutes from './routes/dashboardroutes.js';
 import auditLogRoutes from './routes/auditlogroutes.js';
+import { autoEscalateOverdueReports } from './services/slaService.js';
 
 import {
   notFoundHandler,
@@ -199,6 +200,25 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`Category endpoints: http://localhost:${PORT}/api/categories`);
     console.log(`Subcategory endpoints: http://localhost:${PORT}/api/subcategories`);
   });
+
+  // --------------------------------------------------
+  // AUTOMATIC ESCALATION SCHEDULER
+  // --------------------------------------------------
+  // Enabled via ENABLE_ESCALATION_SCHEDULER=true. Runs every 5 minutes by default.
+  if (process.env.ENABLE_ESCALATION_SCHEDULER === 'true') {
+    const intervalMs = Number(process.env.ESCALATION_SCHEDULER_INTERVAL_MS) || 300000;
+    setInterval(async () => {
+      try {
+        const created = await autoEscalateOverdueReports();
+        if (created.length > 0) {
+          console.log(`[SLA] Auto-escalated ${created.length} overdue report(s).`);
+        }
+      } catch (err) {
+        console.error('[SLA] Auto-escalation scheduler error:', err.message);
+      }
+    }, intervalMs);
+    console.log(`[SLA] Escalation scheduler enabled (interval: ${intervalMs}ms).`);
+  }
 }
 
 export default app;

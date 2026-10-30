@@ -34,3 +34,33 @@ export async function findOverdueReports() {
 
   return overdue;
 }
+
+export async function autoEscalateOverdueReports() {
+  const overdue = await findOverdueReports();
+  const created = [];
+
+  for (const item of overdue) {
+    try {
+      const existing = await db.findEscalationByReportId(item.report.id);
+      if (existing) continue;
+      const escalation = await db.createEscalation({
+        reportId: item.report.id,
+        reason: `SLA overdue by ${item.hoursOverdue} hour(s)`,
+        priority: 'HIGH',
+      });
+      await db.updateReport(item.report.id, { status: 'ESCALATED' });
+      await db.createAuditLog({
+        action: 'AUTO_ESCALATE_OVERDUE',
+        entityType: 'REPORT',
+        entityId: item.report.id,
+        previousValue: { status: item.report.status },
+        newValue: { status: 'ESCALATED', escalationId: escalation.id },
+      });
+      created.push(escalation);
+    } catch (err) {
+      console.warn('[SLA] Auto-escalation failed for report', item.report.id, err.message);
+    }
+  }
+
+  return created;
+}
