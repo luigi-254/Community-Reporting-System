@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../lib/auth-context";
+import BrandLogo from "./components/BrandLogo";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -300,6 +301,7 @@ export default function AdminDashboard() {
     <div className="flex min-h-screen bg-[#f7f6ef] text-gray-900">
       <aside className="flex min-h-screen w-64 shrink-0 flex-col bg-[#173d2d] p-6 text-white">
         <div className="mb-10">
+          <BrandLogo className="mb-4 h-10 w-10" />
           <h1 className="text-xl font-bold">
             Community Reports
           </h1>

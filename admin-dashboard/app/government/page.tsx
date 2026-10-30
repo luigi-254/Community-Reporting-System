@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import GovernmentMapLoader from "../../components/GovernmentMapLoader";
+import BrandLogo from "../components/BrandLogo";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -292,6 +293,7 @@ export default function GovernmentDashboard() {
   return (
     <div className="government-dashboard min-h-screen bg-gray-100 text-gray-800 md:flex">
       <aside className="w-full bg-slate-900 p-6 text-white md:min-h-screen md:w-64">
+        <BrandLogo className="mb-4 h-10 w-10" />
         <h1 className="mb-2 text-2xl font-bold">Community Reports</h1>
         <p className="mb-8 text-sm text-gray-400">Government Portal</p>
         <nav className="space-y-2" aria-label="Government dashboard navigation">

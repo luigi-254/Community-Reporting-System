@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import BrandLogo from "./BrandLogo";
 
 export default function GovernmentAuthNav() {
   const pathname = usePathname();
@@ -28,10 +29,16 @@ export default function GovernmentAuthNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4">
-        <Link href="/government" className="font-bold text-slate-900">
-          Community Reporting System
-          <span className="ml-2 text-sm font-normal text-slate-500">
-            Government Portal
+        <Link
+          href="/government"
+          className="flex items-center gap-3 font-bold text-slate-900"
+        >
+          <BrandLogo className="h-9 w-9" preload />
+          <span>
+            Community Reporting System
+            <span className="ml-2 text-sm font-normal text-slate-500">
+              Government Portal
+            </span>
           </span>
         </Link>
 

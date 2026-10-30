@@ -1,13 +1,12 @@
 import Link from "next/link";
+import BrandLogo from "./BrandLogo";
 
 export default function AuthShell({ children, eyebrow, title, description }) {
   return (
     <main className="min-h-screen bg-[#f2f7f3] px-5 py-8 text-[#173c32] sm:px-8">
       <div className="mx-auto max-w-6xl">
         <Link href="/" className="inline-flex items-center gap-3 font-semibold">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#187a58] text-lg font-bold text-white">
-            M
-          </span>
+          <BrandLogo className="h-10 w-10" preload />
           <span className="text-xl">MtaaFix</span>
         </Link>
         <div className="mx-auto mt-10 grid max-w-5xl overflow-hidden rounded-3xl border border-[#e1ebe4] bg-white shadow-[0_28px_90px_-50px_rgba(23,60,50,0.45)] lg:grid-cols-[0.85fr_1.15fr]">
