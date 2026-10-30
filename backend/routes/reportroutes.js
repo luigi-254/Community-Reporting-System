@@ -18,6 +18,7 @@ import {
 
 import { authenticate } from '../middlewares/authMiddleware.js';
 import { authorizeRoles } from '../middlewares/roleMiddlewares.js';
+import { STATUS_CHANGE_ROLES } from '../services/jurisdiction.js';
 import { validate } from '../middlewares/validateMiddlewares.js';
 import { uploadMedia } from '../middlewares/uploadMiddlewares.js';
 import { guestReportLimiter } from '../middlewares/ratelimitMiddlewares.js';
@@ -94,14 +95,14 @@ deleteRoute('/:id', authenticate, deleteReport);
 patchRoute(
   '/:id/status',
   authenticate,
-  authorizeRoles('OFFICER', 'ADMIN', 'SUPER_ADMIN'),
+  authorizeRoles(...STATUS_CHANGE_ROLES),
   validate(changeStatusSchema),
   changeStatus
 );
 putRoute(
   '/:id/status',
   authenticate,
-  authorizeRoles('OFFICER', 'ADMIN', 'SUPER_ADMIN'),
+  authorizeRoles(...STATUS_CHANGE_ROLES),
   validate(changeStatusSchema),
   changeStatus
 );
