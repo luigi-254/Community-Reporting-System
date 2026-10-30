@@ -14,5 +14,9 @@ export function proxy(request) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // Public brand/app assets must bypass the auth gate, otherwise the favicon,
+  // manifest and logo are redirected to /login and never reach the browser.
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|manifest.webmanifest|brand/).*)',
+  ],
 };

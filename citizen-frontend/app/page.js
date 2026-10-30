@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandLogo from "./components/BrandLogo";
 
 const steps = [
   {
@@ -69,9 +70,7 @@ function Brand({ inverse = false }) {
       }`}
       aria-label="MtaaFix home"
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#187a58] text-lg font-bold text-white">
-        M
-      </span>
+      <BrandLogo className="h-10 w-10" preload />
       <span className="text-xl">MtaaFix</span>
     </Link>
   );
@@ -84,9 +83,7 @@ function CommunityIllustration() {
       <div className="relative rounded-[2rem] border border-white/70 bg-white p-4 shadow-[0_28px_80px_-35px_rgba(13,48,37,0.5)] sm:p-6">
         <div className="flex items-center justify-between border-b border-[#e7eee9] pb-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e5f3eb] text-lg text-[#187a58]">
-              M
-            </span>
+            <BrandLogo className="h-10 w-10" alt="" />
             <div>
               <p className="text-sm font-semibold text-[#173c32]">
                 Community reports

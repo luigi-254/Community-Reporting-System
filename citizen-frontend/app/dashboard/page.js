@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import BrandLogo from "../components/BrandLogo";
 import { normalizeRole } from "../../lib/auth";
 
 const API_BASE_URL = (
@@ -1446,9 +1447,7 @@ const [gpsStatus, setGpsStatus] = useState("");
       >
         <div className="border-b border-white/15 px-6 py-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center border border-white/40 text-sm font-bold">
-              CR
-            </div>
+            <BrandLogo className="h-11 w-11" />
             <div>
               <p className="text-sm font-semibold">Community Reporting</p>
               <p className="mt-1 text-xs text-[#c4d3bf]">Citizen Portal</p>

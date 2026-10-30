@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import BrandLogo from "../../components/BrandLogo";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -96,9 +97,7 @@ const allowedRoles = [
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-100 px-5 py-10 text-gray-800">
       <section className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-7 shadow-sm sm:p-9">
-        <div className="mb-7 flex h-14 w-14 items-center justify-center rounded-xl bg-slate-900 text-2xl text-white">
-          🏛️
-        </div>
+        <BrandLogo className="mb-7 h-14 w-14" preload />
 
         <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
           Community Reporting System

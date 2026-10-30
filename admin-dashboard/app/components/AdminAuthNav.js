@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import BrandLogo from "./BrandLogo";
 
 const TOKEN_KEYS = [
   "crs_admin_access_token",
@@ -49,10 +50,13 @@ export default function AdminAuthNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-[#dce2d8] bg-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4">
-        <Link href="/" className="font-bold text-[#244637]">
-          Community Reporting System
-          <span className="ml-2 text-xs font-normal text-[#687468]">
-            Admin Portal
+        <Link href="/" className="flex items-center gap-3 font-bold text-[#244637]">
+          <BrandLogo className="h-9 w-9" preload />
+          <span>
+            Community Reporting System
+            <span className="ml-2 text-xs font-normal text-[#687468]">
+              Admin Portal
+            </span>
           </span>
         </Link>
 
