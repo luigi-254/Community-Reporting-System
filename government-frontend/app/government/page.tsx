@@ -31,7 +31,34 @@ type Report = {
   mediaUrls: string[];
 };
 
-const menuItems = ["Dashboard", "Reports", "GIS Map", "Departments", "Statistics"];
+type GovernmentUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+};
+
+const ADMIN_ROLES = new Set(["ADMIN", "SUPER_ADMIN", "GOVERNOR", "CECM", "CHIEF_OFFICER"]);
+const WARD_SCOPED_ROLES = new Set(["OFFICER", "FIELD_OFFICER", "TECHNICAL_SUPERVISOR", "WARD_ADMIN", "SUBCOUNTY_ADMIN"]);
+const DEPARTMENT_SCOPED_ROLES = new Set(["CHIEF_OFFICER", "TECHNICAL_HEAD", "CECM"]);
+const STATUS_CHANGE_ROLES = new Set(["OFFICER", "FIELD_OFFICER", "TECHNICAL_SUPERVISOR", "ADMIN", "SUPER_ADMIN"]);
+
+// Menu items visible per role. WARD_ADMIN and SUBCOUNTY_ADMIN see monitoring-only views.
+const MENU_BY_ROLE: Record<string, string[]> = {
+  GOVERNOR: ["Dashboard", "Reports", "GIS Map", "Departments", "Statistics"],
+  CECM: ["Dashboard", "Reports", "Departments", "Statistics"],
+  CHIEF_OFFICER: ["Dashboard", "Reports", "Departments", "Statistics"],
+  TECHNICAL_HEAD: ["Dashboard", "Reports", "Departments"],
+  TECHNICAL_SUPERVISOR: ["Dashboard", "Reports"],
+  FIELD_OFFICER: ["Dashboard", "Reports"],
+  WARD_ADMIN: ["Dashboard", "Reports"],
+  SUBCOUNTY_ADMIN: ["Dashboard", "Reports"],
+  ADMIN: ["Dashboard", "Reports", "GIS Map", "Departments", "Statistics"],
+  SUPER_ADMIN: ["Dashboard", "Reports", "GIS Map", "Departments", "Statistics"],
+};
+
+const DEFAULT_MENU = ["Dashboard", "Reports"];
+
 const baseDepartments = ["Public Works", "Water and Sanitation", "Environment"];
 
 const statusStyles: Record<ReportStatus, string> = {
@@ -181,6 +208,29 @@ export default function GovernmentDashboard() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [updatingReportId, setUpdatingReportId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
+
+  // Read the logged-in government user's role from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("crs_government_user");
+      if (stored) {
+        const parsed: GovernmentUser = JSON.parse(stored);
+        setUserRole(parsed.role || "");
+        setUserName(parsed.name || parsed.email || "Government Officer");
+      }
+    } catch {
+      setUserRole("");
+      setUserName("");
+    }
+  }, []);
+
+  const menuItems = useMemo(() => {
+    return MENU_BY_ROLE[userRole] || DEFAULT_MENU;
+  }, [userRole]);
+
+  const canChangeStatus = useMemo(() => STATUS_CHANGE_ROLES.has(userRole), [userRole]);
 
   const loadReports = useCallback(async (showLoading = true) => {
     if (showLoading) setReportsLoading(true);
@@ -244,6 +294,10 @@ export default function GovernmentDashboard() {
   const selectedReport = reports.find((report) => report.id === selectedReportId);
 
   async function updateReportStatus(reportId: string, status: ReportStatus) {
+    if (!canChangeStatus) {
+      setActionError("Your role does not have permission to change report status.");
+      return;
+    }
     setUpdatingReportId(reportId);
     setActionMessage("");
     setActionError("");
@@ -317,7 +371,8 @@ export default function GovernmentDashboard() {
         </nav>
         <div className="mt-10 border-t border-white/15 pt-5">
           <p className="text-sm text-[#bdcdbd]">Portal</p>
-          <p className="mt-1 font-medium">Government Officer</p>
+          <p className="mt-1 font-medium">{userRole.replace(/_/g, " ") || "Government Officer"}</p>
+          {userName && <p className="mt-0.5 text-xs text-[#a3b8a8]">{userName}</p>}
         </div>
       </aside>
 
@@ -343,7 +398,18 @@ export default function GovernmentDashboard() {
           <>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-xl font-semibold text-[#173c32]">Overview</h3>
-              <p className="text-sm text-[#687468]">{reportsLoading ? "Loading data from the backend..." : `${reports.length} live report(s) retrieved from the API`}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-[#687468]">{reportsLoading ? "Loading data from the backend..." : `${reports.length} live report(s) retrieved from the API`}</p>
+                <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                  userRole === "GOVERNOR" || userRole === "ADMIN" || userRole === "SUPER_ADMIN"
+                    ? "border-[#187a58] text-[#187a58] bg-[#e6f3eb]"
+                    : userRole && WARD_SCOPED_ROLES.has(userRole)
+                    ? "border-[#55745c] text-[#55745c] bg-[#e8eee3]"
+                    : "border-[#687468] text-[#687468] bg-[#f0f2f1]"
+                }`}>
+                  {userRole === "GOVERNOR" ? "County-wide" : userRole === "ADMIN" || userRole === "SUPER_ADMIN" ? "System-wide" : userRole && DEPARTMENT_SCOPED_ROLES.has(userRole) ? "Department-scoped" : userRole && WARD_SCOPED_ROLES.has(userRole) ? "Ward/Sub-county-scoped" : "Monitoring only"}
+                </span>
+              </div>
             </div>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
               {stats.map((stat) => <div key={stat.title} className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6"><div className="mb-4 flex items-center justify-between"><p className="text-sm text-[#687468]">{stat.title}</p><span className={`rounded-lg p-2 text-xs font-bold ${stat.color}`}>{stat.icon}</span></div><p className="text-3xl font-bold text-[#243329]">{reportsLoading ? "—" : stat.value}</p></div>)}
@@ -365,7 +431,7 @@ export default function GovernmentDashboard() {
             </div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-[#687468]">Showing {filteredReports.length} of {reports.length} reports</p><button type="button" onClick={exportReportsToCsv} disabled={filteredReports.length === 0} className="rounded-lg bg-[#187a58] px-4 py-2 font-medium text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-50">Export Reports to CSV</button></div>
             <div className="overflow-x-auto"><table className="w-full min-w-[950px] border-collapse text-left text-sm"><thead><tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]"><th className="p-3 font-semibold">Report</th><th className="p-3 font-semibold">Category</th><th className="p-3 font-semibold">Location</th><th className="p-3 font-semibold">Department</th><th className="p-3 font-semibold">Date</th><th className="p-3 font-semibold">Status</th><th className="p-3 font-semibold">Actions</th></tr></thead><tbody>
-              {filteredReports.map((report) => <tr key={report.id} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]"><td className="p-3"><p className="font-medium text-[#173c32]">{report.title}</p><p className="mt-1 text-xs text-[#7a8378]">{report.id}</p></td><td className="p-3 text-[#687468]">{report.category}</td><td className="p-3 text-[#687468]">{report.location}</td><td className="p-3 text-[#687468]">{report.department}</td><td className="whitespace-nowrap p-3">{formatDate(report.date)}</td><td className="p-3"><select value={report.status} disabled={updatingReportId === report.id} onChange={(event) => void updateReportStatus(report.id, event.target.value as ReportStatus)} aria-label={`Update status for ${report.id}`} className={`rounded-full border-0 px-3 py-2 text-xs font-semibold outline-none disabled:opacity-60 ${statusStyles[report.status]}`}>{(["Pending", "Under Review", "In Progress", "Resolved", "Rejected", "Escalated"] as ReportStatus[]).map((status) => <option key={status} value={status}>{status}</option>)}</select>{updatingReportId === report.id && <span className="mt-1 block text-xs text-[#687468]">Saving...</span>}</td><td className="p-3"><button type="button" onClick={() => setSelectedReportId(report.id)} className="whitespace-nowrap rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">View Details</button></td></tr>)}
+              {filteredReports.map((report) => <tr key={report.id} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]"><td className="p-3"><p className="font-medium text-[#173c32]">{report.title}</p><p className="mt-1 text-xs text-[#7a8378]">{report.id}</p></td><td className="p-3 text-[#687468]">{report.category}</td><td className="p-3 text-[#687468]">{report.location}</td><td className="p-3 text-[#687468]">{report.department}</td><td className="whitespace-nowrap p-3">{formatDate(report.date)}</td><td className="p-3"><select value={report.status} disabled={!canChangeStatus || updatingReportId === report.id} onChange={canChangeStatus ? (event) => void updateReportStatus(report.id, event.target.value as ReportStatus) : undefined} aria-label={`Update status for ${report.id}`} className={`rounded-full border-0 px-3 py-2 text-xs font-semibold outline-none ${!canChangeStatus ? "bg-[#e2e8ea] text-[#7a8378] cursor-not-allowed" : "disabled:opacity-60"} ${statusStyles[report.status]}`}>{(["Pending", "Under Review", "In Progress", "Resolved", "Rejected", "Escalated"] as ReportStatus[]).map((status) => <option key={status} value={status}>{status}</option>)}</select>{updatingReportId === report.id && <span className="mt-1 block text-xs text-[#687468]">Saving...</span>}{!canChangeStatus && <span className="mt-1 block text-xs text-[#7a8378]">View only</span>}</td><td className="p-3"><button type="button" onClick={() => setSelectedReportId(report.id)} className="whitespace-nowrap rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">View Details</button></td></tr>)}
               {!reportsLoading && filteredReports.length === 0 && <tr><td colSpan={7} className="p-8 text-center text-[#687468]">{reportsError ? "Reports could not be loaded. Use Try Again above." : "No reports match your search or status filter."}</td></tr>}
               {reportsLoading && <tr><td colSpan={7} className="p-8 text-center text-[#687468]">Loading reports from the backend...</td></tr>}
             </tbody></table></div>
