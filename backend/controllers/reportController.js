@@ -3,7 +3,7 @@ import { isValidTransition, recordStatusHistory, getStatusHistory } from '../ser
 import { applyRoutingRules } from '../services/routingEngine.js';
 import { notifyUser, notifyReportStatus } from '../services/notifyService.js';
 import { findPossibleDuplicates } from '../services/duplicateDetection.js';
-import { canAccessReport, scopeReportQuery } from '../services/jurisdiction.js';
+import { canAccessReport, canChangeStatus, scopeReportQuery } from '../services/jurisdiction.js';
 
 const sanitizeReport = (report, currentUser = null) => {
   if (!report) return null;
@@ -428,11 +428,10 @@ export const changeStatus = async (req, res, next) => {
         message: 'Report not found.',
       });
     }
-    const isOfficerOrAdmin = ['OFFICER', 'ADMIN', 'SUPER_ADMIN'].includes(req.user.role);
-    if (!isOfficerOrAdmin) {
+    if (!canChangeStatus(req.user)) {
       return res.status(403).json({
         status: 'error',
-        message: 'Forbidden: Only government officers or administrators can update report status.',
+        message: 'Forbidden: Only operational roles can update report status.',
       });
     }
 

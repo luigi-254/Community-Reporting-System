@@ -6,9 +6,11 @@ import {
   getDashboardDepartments, getDashboardWards, getDashboardPerformance,
   getDashboardEscalations,
 } from '../controllers/dashboardController.js';
+import { ADMIN_ROLES, WARD_SCOPED_ROLES, DEPARTMENT_SCOPED_ROLES } from '../services/jurisdiction.js';
 
 const router = express.Router();
-router.use(authenticate, authorizeRoles('ADMIN', 'SUPER_ADMIN', 'OFFICER'));
+const dashboardRoles = [...new Set([...ADMIN_ROLES, ...WARD_SCOPED_ROLES, ...DEPARTMENT_SCOPED_ROLES])];
+router.use(authenticate, authorizeRoles(...dashboardRoles));
 router.get('/overview', getDashboardOverview);
 router.get('/reports', getDashboardReports);
 router.get('/categories', getDashboardCategories);
