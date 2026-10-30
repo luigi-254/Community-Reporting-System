@@ -9,6 +9,7 @@ import locationRepository from '../repositories/locationRepository.js';
 import departmentRepository from '../repositories/departmentRepository.js';
 import officerRepository from '../repositories/officerRepository.js';
 import assignmentRepository from '../repositories/assignmentRepository.js';
+import officialRepository from '../repositories/officialRepository.js';
 import routingRuleRepository from '../repositories/routingRuleRepository.js';
 import notificationRepository from '../repositories/notificationRepository.js';
 import escalationRepository from '../repositories/escalationRepository.js';
@@ -34,6 +35,7 @@ export const db = {
   ...departmentRepository,
   ...officerRepository,
   ...assignmentRepository,
+  ...officialRepository,
   ...routingRuleRepository,
   ...notificationRepository,
   ...escalationRepository,
