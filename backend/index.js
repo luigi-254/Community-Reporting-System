@@ -16,6 +16,10 @@ import departmentRoutes from './routes/departmentroutes.js';
 import officerRoutes from './routes/officerroutes.js';
 import assignmentRoutes from './routes/assignmentroutes.js';
 import routingRuleRoutes from './routes/routingruleRoutes.js';
+import fieldInspectionRoutes from './routes/fieldInspectionRoutes.js';
+import workUpdateRoutes from './routes/workUpdateRoutes.js';
+import resolutionRoutes from './routes/resolutionRoutes.js';
+import reportFollowUpRoutes from './routes/reportFollowUpRoutes.js';
 import notificationRoutes from './routes/notificationroutes.js';
 import officialRoutes from './routes/officialroutes.js';
 import escalationRoutes from './routes/escalationroutes.js';
@@ -151,6 +155,10 @@ app.get('/', (req, res) => {
       notifications: '/api/notifications',
       escalations: '/api/escalations',
       dashboard: '/api/dashboard',
+      inspections: '/api/inspections',
+      workUpdates: '/api/work-updates',
+      resolutions: '/api/resolutions',
+      followUps: '/api/follow-ups',
       auditLogs: '/api/audit-logs',
       health: '/health',
     },
@@ -175,6 +183,10 @@ app.use('/api/officials', officialRoutes);
 app.use('/api/escalations', escalationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/inspections', fieldInspectionRoutes);
+app.use('/api/work-updates', workUpdateRoutes);
+app.use('/api/resolutions', resolutionRoutes);
+app.use('/api/follow-ups', reportFollowUpRoutes);
 
 // --------------------------------------------------
 // ERROR HANDLING

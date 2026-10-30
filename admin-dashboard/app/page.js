@@ -138,6 +138,40 @@ export default function AdminDashboard() {
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
 
+  // System health state.
+  const [systemHealth, setSystemHealth] = useState(null);
+  const [systemHealthLoading, setSystemHealthLoading] = useState(false);
+
+  const checkSystemHealth = useCallback(async () => {
+    setSystemHealthLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/health`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (response.ok) {
+        setSystemHealth({ status: "healthy", message: "Backend is reachable" });
+      } else {
+        setSystemHealth({
+          status: "degraded",
+          message: `Backend returned status ${response.status}`,
+        });
+      }
+    } catch {
+      setSystemHealth({
+        status: "unhealthy",
+        message: "Cannot connect to the backend",
+      });
+    } finally {
+      setSystemHealthLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkSystemHealth();
+  }, [checkSystemHealth]);
+
   const loadReports = useCallback(async () => {
     try {
       const response = await fetch(
@@ -262,6 +296,7 @@ export default function AdminDashboard() {
       Reports: "/reports",
       Users: "/users",
       Statistics: "/statistics",
+      "Audit Logs": "/audit-logs",
       Settings: "/settings",
     };
 
@@ -316,6 +351,7 @@ export default function AdminDashboard() {
             "Reports",
             "Users",
             "Statistics",
+            "Audit Logs",
             "Settings",
           ].map((item) => (
             <button
@@ -383,6 +419,39 @@ export default function AdminDashboard() {
               : "Waiting for reports from the backend"}
           </p>
         </header>
+
+        {systemHealthLoading ? (
+          <div className="p-5 md:p-8">
+            <div className="flex items-center gap-3 text-sm text-[#687468]">
+              Checking system health…
+            </div>
+          </div>
+        ) : systemHealth ? (
+          <div className="p-5 md:p-8">
+            <div
+              className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${
+                systemHealth.status === "healthy"
+                  ? "border-[#cfe2d5] bg-[#f1f8f3] text-[#31584b]"
+                  : systemHealth.status === "degraded"
+                    ? "border-[#f1c9c2] bg-[#fff3f0] text-[#8b392f]"
+                    : "border-[#f1c9c2] bg-[#fff3f0] text-[#8b392f]"
+              }`}
+            >
+              <span
+                className={`flex h-2.5 w-2.5 rounded-full ${
+                  systemHealth.status === "healthy"
+                    ? "bg-[#187a58]"
+                    : "bg-[#8b392f]"
+                }`}
+                aria-hidden="true"
+              />
+              <span className="font-medium">
+                System: {systemHealth.status.charAt(0).toUpperCase() + systemHealth.status.slice(1)}
+              </span>
+              <span className="font-normal">{systemHealth.message}</span>
+            </div>
+          </div>
+        ) : null}
 
         <div className="space-y-8 p-5 md:p-8">
           {error && (

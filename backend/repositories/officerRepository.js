@@ -72,14 +72,14 @@ const officerRepository = {
     if (checkIsPrisma()) {
       try {
         return await getPrismaClient().user.findFirst({
-          where: { id, role: 'OFFICER' },
+          where: { id, role: { in: ['OFFICER', 'FIELD_OFFICER'] } },
         }).then(withoutPassword);
       } catch (error) {
         console.warn('[DB] Prisma findOfficerById failed, falling back to memory:', error.message);
       }
     }
     const user = memoryStore.users.get(id);
-    return user?.role === 'OFFICER' ? withoutPassword(user) : null;
+    return user && ['OFFICER', 'FIELD_OFFICER'].includes(user.role) ? withoutPassword(user) : null;
   },
 
   async findOfficers({ isActive, departmentId, search } = {}) {

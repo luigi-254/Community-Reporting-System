@@ -59,7 +59,18 @@ export default function GovernmentLoginPage() {
 
      
 const allowedRoles = [
+  "GOVERNOR",
+  "CECM",
+  "CHIEF_OFFICER",
+  "TECHNICAL_HEAD",
+  "TECHNICAL_SUPERVISOR",
+  "WARD_ADMIN",
+  "SUBCOUNTY_ADMIN",
+  "FIELD_OFFICER",
+  "DISASTER_MANAGER",
+  "ENFORCEMENT_OFFICER",
   "OFFICER",
+  "DEPARTMENTAL_ADMIN",
   "ADMIN",
   "SUPER_ADMIN",
 ];

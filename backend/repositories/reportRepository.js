@@ -107,6 +107,10 @@ export const reportRepository = {
   async findReports({
     reporterId,
     assignedOfficerId,
+    departmentId,
+    wardId,
+    countyId,
+    subCountyId,
     status,
     priority,
     category,
@@ -135,6 +139,10 @@ export const reportRepository = {
         if (priority) where.priority = priority;
         if (category) where.category = category;
         if (subCategory) where.subCategory = subCategory;
+        if (departmentId) where.departmentId = departmentId;
+        if (wardId) where.wardId = wardId;
+        if (countyId) where.countyId = countyId;
+        if (subCountyId) where.subCountyId = subCountyId;
         if (ward) where.ward = { contains: ward, mode: 'insensitive' };
         if (county) where.county = { contains: county, mode: 'insensitive' };
         if (subCounty) where.subCounty = { contains: subCounty, mode: 'insensitive' };
@@ -202,6 +210,18 @@ export const reportRepository = {
     }
     if (category) {
       results = results.filter((r) => r.category.toLowerCase() === category.toLowerCase());
+    }
+    if (departmentId) {
+      results = results.filter((r) => r.departmentId === departmentId);
+    }
+    if (wardId) {
+      results = results.filter((r) => r.wardId === wardId);
+    }
+    if (countyId) {
+      results = results.filter((r) => r.countyId === countyId);
+    }
+    if (subCountyId) {
+      results = results.filter((r) => r.subCountyId === subCountyId);
     }
     if (subCategory) {
       results = results.filter(

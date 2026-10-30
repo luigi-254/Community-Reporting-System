@@ -9,9 +9,13 @@ const sanitizeReport = (report, currentUser = null) => {
   if (!report) return null;
   const rep = { ...report };
 
-  // If report is anonymous and requester is not the original reporter or admin/officer
+  // If report is anonymous and requester is not the original reporter or staff
   const isReporter = currentUser && currentUser.id === rep.reporterId;
-  const isStaff = currentUser && ['ADMIN', 'SUPER_ADMIN', 'OFFICER'].includes(currentUser.role);
+  const isStaff = currentUser && [
+    'ADMIN', 'SUPER_ADMIN', 'GOVERNOR', 'CECM', 'CHIEF_OFFICER',
+    'TECHNICAL_HEAD', 'TECHNICAL_SUPERVISOR', 'WARD_ADMIN', 'SUBCOUNTY_ADMIN',
+    'FIELD_OFFICER', 'OFFICER', 'DISASTER_MANAGER', 'ENFORCEMENT_OFFICER',
+  ].includes(currentUser.role);
 
   if (rep.isAnonymous && !isReporter && !isStaff && rep.reporter) {
     rep.reporter = {
@@ -64,6 +68,26 @@ export const createReport = async (req, res, next) => {
 
     const mediaUrls = extractMediaUrls(req);
 
+    // Resolve geographical FKs so reports carry proper jurisdictional references.
+    // Resolution failures must never block report creation.
+    let countyId = null, subCountyId = null, wardId = null;
+    try {
+      if (county) {
+        const c = await db.findCountyByName(county);
+        countyId = c?.id || null;
+      }
+      if (subCounty && countyId) {
+        const sc = await db.findSubCountyByName(countyId, subCounty);
+        subCountyId = sc?.id || null;
+      }
+      if (ward && subCountyId) {
+        const w = await db.findWardByName(subCountyId, ward);
+        wardId = w?.id || null;
+      }
+    } catch (err) {
+      console.warn('[Report] Location resolution failed, proceeding without FKs:', err.message);
+    }
+
     const newReport = await db.createReport({
       title,
       description,
@@ -75,6 +99,9 @@ export const createReport = async (req, res, next) => {
       county,
       subCounty,
       ward,
+      countyId,
+      subCountyId,
+      wardId,
       latitude: latitude ? parseFloat(latitude) : null,
       longitude: longitude ? parseFloat(longitude) : null,
       mediaUrls,
@@ -228,6 +255,13 @@ export const getReport = async (req, res, next) => {
       return res.status(404).json({
         status: 'error',
         message: 'Report not found.',
+      });
+    }
+
+    if (!canAccessReport(req.user, report)) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Report is outside your jurisdiction.',
       });
     }
 
@@ -539,6 +573,14 @@ export const acceptResolution = async (req, res, next) => {
       citizenFeedback: feedback || (rating ? `Rated ${rating}/5` : 'Resolution accepted by citizen.'),
     });
 
+    await db.createCitizenVerification({
+      reportId: id,
+      officerId: null,
+      outcome: 'CONFIRMED',
+      evidence: null,
+      notes: feedback || 'Resolution accepted by citizen.',
+    });
+
     return res.status(200).json({
       status: 'success',
       message: 'Resolution accepted. Thank you for confirming the fix!',
@@ -593,6 +635,14 @@ export const rejectResolution = async (req, res, next) => {
       status: 'IN_PROGRESS',
       resolutionStatus: 'REJECTED',
       rejectionReason,
+    });
+
+    await db.createCitizenVerification({
+      reportId: id,
+      officerId: null,
+      outcome: 'REJECTED',
+      evidence: null,
+      notes: `Resolution rejected by citizen: ${rejectionReason}`,
     });
 
     await recordStatusHistory({

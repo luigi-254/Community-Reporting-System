@@ -18,6 +18,11 @@ export const memoryStore = {
   escalations: new Map(),
   auditLogs: new Map(),
   statusHistories: new Map(),
+  fieldInspections: new Map(),
+  workUpdates: new Map(),
+  resolutionSubmissions: new Map(),
+  citizenVerifications: new Map(),
+  reportFollowUps: new Map(),
 };
 
 export default memoryStore;
