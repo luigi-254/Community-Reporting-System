@@ -61,6 +61,66 @@ for (const name of NAIROBI_SUBCOUNTIES) {
   });
 }
 
+// Seed Kisii County sub-counties and wards for the in-memory store so that
+// ward-scoped access works without a live database.
+const kisii = [...memoryStore.counties.values()].find(
+  (county) => county.name === 'Kisii'
+);
+const KISII_SUB_COUNTIES = [
+  'Bonchari',
+  'South Mugirango',
+  'Bomachoge Borabu',
+  'Bobasi',
+  'Nyaribari Masaba',
+  'Bomachoge Chache',
+  'Nyaribari Chache',
+  'Kitutu Chache North',
+  'Kitutu Chache South',
+];
+const KISII_WARDS = {
+  Bonchari: ['Riana', 'Bomorenda', 'Bogiakumu', 'Bomariba'],
+  'South Mugirango': ["Boikang'a", 'Tabaka', 'Getenga', 'Moticho', 'Bogetenga', 'Chitago Borabu'],
+  'Bomachoge Borabu': ['Boochi Borabu', 'Bombaba Borabu', 'Magenche', 'Bokimonge'],
+  Bobasi: [
+    'Masige East', 'Masige West', 'Bassi Bogetaorio', 'Bassi Central',
+    'Nyacheki', 'Bobasi Chache', 'Bobasi Boitangare', 'Sameta Mokwerero',
+  ],
+  'Nyaribari Masaba': ['Kiamokama', 'Gesusu', 'Masimba', 'Nyamasibi', 'Ichuni'],
+  'Bomachoge Chache': ['Bosoti/Sengera', 'Majoge Basi', 'Boochi/Tendere'],
+  'Nyaribari Chache': ['Ibeno', 'Kisii Central', 'Birongo', 'Kiogoro', 'Keumbu', 'Bobaracho'],
+  'Kitutu Chache North': ['Marani', 'Kegogi', 'Sensi', 'Monyerero'],
+  'Kitutu Chache South': ['Nyatieko', 'Nyakoe', 'Bogeka', 'Kitutu Central', 'Bogusero'],
+};
+
+if (kisii) {
+  for (const subCountyName of KISII_SUB_COUNTIES) {
+    const subCountyId = uuidv4();
+    const subCounty = {
+      id: subCountyId,
+      countyId: kisii.id,
+      name: subCountyName,
+      code: slug(subCountyName).toUpperCase(),
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    memoryStore.subCounties.set(subCountyId, subCounty);
+    const wards = KISII_WARDS[subCountyName] ?? [];
+    for (const wardName of wards) {
+      const wardId = uuidv4();
+      memoryStore.wards.set(wardId, {
+        id: wardId,
+        subCountyId,
+        name: wardName,
+        code: `${slug(subCountyName).toUpperCase()}-${String(wards.indexOf(wardName) + 1).padStart(2, '0')}`,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+  }
+}
+
 const locationRepository = {
   async findCounties({ search } = {}) {
     if (checkIsPrisma()) {
@@ -145,6 +205,54 @@ const locationRepository = {
       }
     }
     return memoryStore.subCounties.get(id) || null;
+  },
+
+  async findCountyByName(name) {
+    if (!name) return null;
+    if (checkIsPrisma()) {
+      try {
+        return await getPrismaClient().county.findFirst({
+          where: { name, isActive: true },
+        });
+      } catch (error) {
+        console.warn('[DB] Prisma findCountyByName failed, falling back to memory:', error.message);
+      }
+    }
+    return [...memoryStore.counties.values()].find(
+      (c) => c.isActive && c.name.toLowerCase() === String(name).toLowerCase()
+    );
+  },
+
+  async findSubCountyByName(countyId, name) {
+    if (!countyId || !name) return null;
+    if (checkIsPrisma()) {
+      try {
+        return await getPrismaClient().subCounty.findFirst({
+          where: { countyId, name, isActive: true },
+        });
+      } catch (error) {
+        console.warn('[DB] Prisma findSubCountyByName failed, falling back to memory:', error.message);
+      }
+    }
+    return [...memoryStore.subCounties.values()].find(
+      (s) => s.isActive && s.countyId === countyId && s.name.toLowerCase() === String(name).toLowerCase()
+    );
+  },
+
+  async findWardByName(subCountyId, name) {
+    if (!subCountyId || !name) return null;
+    if (checkIsPrisma()) {
+      try {
+        return await getPrismaClient().ward.findFirst({
+          where: { subCountyId, name, isActive: true },
+        });
+      } catch (error) {
+        console.warn('[DB] Prisma findWardByName failed, falling back to memory:', error.message);
+      }
+    }
+    return [...memoryStore.wards.values()].find(
+      (w) => w.isActive && w.subCountyId === subCountyId && w.name.toLowerCase() === String(name).toLowerCase()
+    );
   },
 };
 

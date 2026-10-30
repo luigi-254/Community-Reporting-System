@@ -281,7 +281,15 @@ const [gpsBusy, setGpsBusy] = useState(false);
 const [gpsStatus, setGpsStatus] = useState("");
 const [verifyingReportId, setVerifyingReportId] = useState(null);
 const [verificationFeedback, setVerificationFeedback] = useState("");
+const [rejectionReason, setRejectionReason] = useState("");
+const [rejectingReportId, setRejectingReportId] = useState(null);
 const [isVerifying, setIsVerifying] = useState(false);
+
+// Notifications state.
+const [notifications, setNotifications] = useState([]);
+const [notificationsLoading, setNotificationsLoading] = useState(false);
+const [notificationsError, setNotificationsError] = useState("");
+const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Live camera state.
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -409,6 +417,67 @@ const [isVerifying, setIsVerifying] = useState(false);
       setReportsLoading(false);
     }
   }
+
+  async function fetchNotifications(accessToken = token) {
+    if (!accessToken) return;
+    setNotificationsLoading(true);
+    setNotificationsError("");
+    try {
+      const data = await apiRequest("/api/notifications?page=1&limit=20", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
+      });
+      const items = Array.isArray(data?.data?.notifications) ? data.data.notifications : [];
+      setNotifications(items);
+    } catch (error) {
+      setNotificationsError(error.message);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }
+
+  async function markNotificationAsRead(notificationId, accessToken = token) {
+    if (!accessToken) return;
+    try {
+      await apiRequest(`/api/notifications/${encodeURIComponent(notificationId)}/read`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+        cache: "no-store",
+      });
+      setNotifications((current) =>
+        current.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
+      );
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error.message);
+    }
+  }
+
+  async function markAllNotificationsAsRead(accessToken = token) {
+    if (!accessToken) return;
+    try {
+      await apiRequest("/api/notifications/read-all", {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+        cache: "no-store",
+      });
+      setNotifications((current) => current.map((n) => ({ ...n, isRead: true })));
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error.message);
+    }
+  }
+
+  // Fetch notifications when a session token is available.
+  useEffect(() => {
+    let cancelled = false;
+    if (token) {
+      void fetchNotifications(token);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   async function finishSignIn(accessToken, account) {
     if (!accessToken || !account) {
@@ -1082,6 +1151,12 @@ const [isVerifying, setIsVerifying] = useState(false);
     (report) => report.status === "Resolved"
   ).length;
 
+  const overdueCount = reports.filter((report) => {
+    if (["Resolved", "Rejected", "Escalated", "Cancelled"].includes(report.status)) return false;
+    const ageDays = (Date.now() - new Date(report.createdAt).getTime()) / 86400000;
+    return ageDays > 7;
+  }).length;
+
   const filteredReports = reports.filter((report) => {
     const query = searchTerm.trim().toLowerCase();
 
@@ -1556,7 +1631,88 @@ const [isVerifying, setIsVerifying] = useState(false);
               {user.email}
             </p>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setNotificationsOpen(!notificationsOpen)}
+            aria-label="Notifications"
+            className="relative p-2 text-[#687468] hover:bg-[#f5f8f5] rounded-lg transition ml-2"
+          >
+            <Bell className="w-5 h-5" />
+            {notifications.filter((n) => !n.isRead).length > 0 && (
+              <span className="absolute top-1 right-1 flex h-2 w-2 items-center justify-center rounded-full bg-[#187a58] text-white text-[10px] font-bold">
+                {notifications.filter((n) => !n.isRead).length}
+              </span>
+            )}
+          </button>
         </header>
+
+        {/* Notifications dropdown panel */}
+        {notificationsOpen && (
+          <div
+            className="absolute right-0 mt-2 w-80 border border-[#dce2d8] bg-[#fdfdf9] rounded-xl shadow-lg z-50"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="px-4 py-3 border-b border-[#dce2d8]">
+              <h3 className="text-sm font-semibold text-[#173c32]">Notifications</h3>
+              <p className="mt-1 text-xs text-[#687468]">
+                {notifications.filter((n) => !n.isRead).length} unread
+              </p>
+            </div>
+            {notificationsLoading ? (
+              <div className="p-4 text-center text-sm text-[#687468]">
+                Loading notifications…
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="p-6 text-center text-sm text-[#687468]">
+                No notifications yet.
+              </div>
+            ) : (
+              <div className="divide-y divide-[#e5e9e1] max-h-[400px] overflow-y-auto">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    onClick={() => {
+                      if (!notification.isRead) {
+                        void markNotificationAsRead(notification.id);
+                      }
+                      setNotificationsOpen(false);
+                    }}
+                    className={`px-4 py-3 hover:bg-[#f5f8f5] cursor-pointer transition ${
+                      !notification.isRead ? "bg-[#e8eee3]" : ""
+                    }`}
+                  >
+                    <p className="text-sm font-medium text-[#243329]">
+                      {notification.title || "Notification"}
+                    </p>
+                    <p className="mt-1 text-xs text-[#687468]">
+                      {notification.message || ""}
+                    </p>
+                    <p className="mt-1 text-[10px] text-[#7a8378]">
+                      {new Date(notification.createdAt).toLocaleDateString("en-KE", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="px-4 py-3 border-t border-[#dce2d8]">
+              <button
+                type="button"
+                onClick={() => {
+                  void markAllNotificationsAsRead();
+                  setNotificationsOpen(false);
+                }}
+                className="w-full text-xs font-semibold text-[#187a58] hover:underline"
+              >
+                Mark all as read
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="mx-auto max-w-[1400px] px-5 py-7 sm:px-8 sm:py-9">
           {message && (
@@ -1627,6 +1783,7 @@ const [isVerifying, setIsVerifying] = useState(false);
                   { label: "Pending", value: pendingCount },
                   { label: "In Progress", value: inProgressCount },
                   { label: "Resolved", value: resolvedCount },
+                  { label: "Overdue", value: overdueCount },
                 ].map((stat) => (
                   <div
                     key={stat.label}
@@ -2192,8 +2349,8 @@ const [isVerifying, setIsVerifying] = useState(false);
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const reason = window.prompt("Please provide a reason for rejecting the resolution:");
-                                    if (reason) handleRejectResolution(report.id, reason);
+                                    setRejectingReportId(report.id);
+                                    setRejectionReason("");
                                   }}
                                   disabled={isVerifying}
                                   className="flex-1 border border-[#9c654d] px-4 py-2.5 text-sm font-semibold text-[#7d4435] hover:bg-[#f5e9df] disabled:opacity-60"
@@ -2201,6 +2358,50 @@ const [isVerifying, setIsVerifying] = useState(false);
                                   Reject
                                 </button>
                               </div>
+                              {rejectingReportId === report.id && (
+                                <div className="mt-3 space-y-2">
+                                  <label className="block text-xs font-semibold text-[#687468]">
+                                    Reason for rejection
+                                  </label>
+                                  <textarea
+                                    value={rejectionReason}
+                                    onChange={(event) =>
+                                      setRejectionReason(event.target.value)
+                                    }
+                                    rows={3}
+                                    className="w-full border border-[#cbd6c8] px-3 py-2 text-sm rounded focus:border-[#55745c] outline-none"
+                                    placeholder="Please explain why the resolution is not satisfactory..."
+                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (!rejectionReason.trim()) return;
+                                        handleRejectResolution(
+                                          rejectingReportId,
+                                          rejectionReason
+                                        );
+                                        setRejectingReportId(null);
+                                        setRejectionReason("");
+                                      }}
+                                      disabled={isVerifying}
+                                      className="flex-1 bg-[#7d4435] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#5a3023] disabled:opacity-60"
+                                    >
+                                      {isVerifying ? "Submitting..." : "Submit Rejection"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setRejectingReportId(null);
+                                        setRejectionReason("");
+                                      }}
+                                      className="flex-1 border border-[#cbd6c8] px-4 py-2.5 text-sm font-semibold text-[#687468] hover:bg-[#f5f8f5]"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                               {verificationFeedback && (
                                 <p className="text-xs text-[#687468]">
                                   Feedback: {verificationFeedback}
@@ -2220,8 +2421,8 @@ const [isVerifying, setIsVerifying] = useState(false);
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const reason = window.prompt("Please provide a reason for rejecting the resolution:");
-                                  if (reason) handleRejectResolution(report.id, reason);
+                                  setRejectingReportId(report.id);
+                                  setRejectionReason("");
                                 }}
                                 disabled={isVerifying}
                                 className="flex-1 border border-[#9c654d] px-4 py-2.5 text-sm font-semibold text-[#7d4435] hover:bg-[#f5e9df] disabled:opacity-60"

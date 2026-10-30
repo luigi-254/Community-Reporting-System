@@ -11,6 +11,11 @@ import officerRepository from '../repositories/officerRepository.js';
 import assignmentRepository from '../repositories/assignmentRepository.js';
 import officialRepository from '../repositories/officialRepository.js';
 import routingRuleRepository from '../repositories/routingRuleRepository.js';
+import fieldInspectionRepository from '../repositories/fieldInspectionRepository.js';
+import workUpdateRepository from '../repositories/workUpdateRepository.js';
+import resolutionRepository from '../repositories/resolutionRepository.js';
+import reportFollowUpRepository from '../repositories/reportFollowUpRepository.js';
+import citizenVerificationRepository from '../repositories/citizenVerificationRepository.js';
 import notificationRepository from '../repositories/notificationRepository.js';
 import escalationRepository from '../repositories/escalationRepository.js';
 import auditLogRepository from '../repositories/auditLogRepository.js';
@@ -40,6 +45,11 @@ export const db = {
   ...notificationRepository,
   ...escalationRepository,
   ...auditLogRepository,
+  ...fieldInspectionRepository,
+  ...workUpdateRepository,
+  ...resolutionRepository,
+  ...reportFollowUpRepository,
+  ...citizenVerificationRepository,
 };
 
 export default db;

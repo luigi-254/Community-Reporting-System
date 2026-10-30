@@ -1,4 +1,5 @@
 import db from '../config/db.js';
+import { canAccessReport } from '../services/jurisdiction.js';
 
 export const assignReport = async (req, res, next) => {
   try {
@@ -7,7 +8,12 @@ export const assignReport = async (req, res, next) => {
     const officer = await db.findOfficerById(officerId);
     if (!report) return res.status(404).json({ status: 'error', message: 'Report not found.' });
     if (!officer) return res.status(404).json({ status: 'error', message: 'Officer not found.' });
-    const updatedReport = await db.updateReport(reportId, { assignedOfficerId: officerId });
+    if (!canAccessReport(req.user, report)) {
+      return res.status(403).json({ status: 'error', message: 'Forbidden: Report is outside your jurisdiction.' });
+    }
+    // Assigning a report moves it into the ASSIGNED workflow state.
+    const statusUpdate = ['SUBMITTED', 'UNDER_REVIEW'].includes(report.status) ? { status: 'ASSIGNED' } : {};
+    const updatedReport = await db.updateReport(reportId, { assignedOfficerId: officerId, ...statusUpdate });
     const assignment = await db.createAssignment({ reportId, officerId, assignedById: req.user.id, reason });
     return res.status(201).json({ status: 'success', message: 'Report assigned successfully.', data: { assignment, report: updatedReport } });
   } catch (error) { next(error); }
