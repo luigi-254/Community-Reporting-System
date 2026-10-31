@@ -1,25 +1,25 @@
-# MTAA Fix — Community Reporting & Accountability System
+MTAA Fix — Community Reporting & Accountability System
 
 MTAA Fix is a professional community issue-reporting and accountability platform designed for Kisii County, Kenya. It enables citizens to report local infrastructure and service delivery issues, while providing government officials with the tools to track, manage, and resolve these reports transparently.
 
-## 🚀 Project Overview
+ Project Overview
 
 The system bridges the gap between citizens and government by digitizing the reporting process and enforcing accountability through structured workflows, SLA tracking, and escalation paths.
 
-### Intended Users
+Intended Users
 - **Citizens:** Report issues, track status, and verify resolutions.
 - **Government Officers:** Field officers, technical supervisors, and department heads who process and resolve reports.
 - **Administrators:** Oversee system configuration, manage user roles, and monitor county-wide performance.
 
-## ✨ Key Features
+key Features
 
-### For Citizens
+For Citizens
 - **Secure Reporting:** Submit detailed reports with category, priority, and location.
 - **Anonymous Submission:** Option to report issues without revealing identity.
 - **Status Tracking:** Real-time visibility into the progress of submitted reports.
 - **Resolution Verification:** Ability to provide feedback and verify if a reported issue was actually resolved.
 
-### For Government
+ For Government
 - **Structured Workflow:** Reports move through a defined lifecycle from `SUBMITTED` → `UNDER_REVIEW` → `ASSIGNED` → `RESOLVED`.
 - **Automated Routing:** Intelligent assignment of reports to the correct department and officer based on category and location.
 - **Escalation Management:** Built-in mechanism to escalate stagnant reports to higher authorities.
@@ -32,7 +32,7 @@ The system bridges the gap between citizens and government by digitizing the rep
 - **SLA Policy Configuration:** Define target resolution hours and automated escalation targets.
 - **System Monitoring:** Dashboards for tracking resolution progress and operational bottlenecks.
 
-## 🏗 Application Architecture
+Application Architecture
 
 The system follows a decoupled architecture:
 
@@ -50,7 +50,7 @@ The system follows a decoupled architecture:
 - **Validation:** Zod
 - **Security:** Helmet, CORS, express-rate-limit
 
-## 📂 Repository Structure
+ Repository Structure
 
 ```text
 .
@@ -67,14 +67,14 @@ The system follows a decoupled architecture:
 └── docs/                 # Technical and planning documentation
 ```
 
-## 🛠 Setup & Installation
+Setup & Installation
 
 ### Prerequisites
 - **Node.js:** v18.x or newer
 - **PostgreSQL:** v14.x or newer
 - **npm:** v9.x or newer
 
-### 1. Backend Setup
+ 1. Backend Setup
 ```bash
 cd backend
 npm install
@@ -138,7 +138,7 @@ This starts:
 
 Press `Ctrl+C` to stop all four applications. The launcher checks ports 3000, 3001, 3002, and 5000 before starting and aborts with a clear message if any port is already in use; it does not change application port configuration automatically. For database-backed backend behavior, complete the backend setup in Step 1 first.
 
-## 🧪 Testing & Quality Assurance
+Testing & Quality Assurance
 
 The backend includes a suite of integration tests to verify core functionality.
 
@@ -153,14 +153,14 @@ npm test
 - Reports: `npm run test:reports`
 - Monitoring: `npm run test:monitoring`
 
-## 🔒 Security & Privacy
+Security & Privacy
 
 - **Authorization:** Role-Based Access Control (RBAC) ensures users only access data permitted by their role.
 - **Authentication:** Secure password hashing using `bcryptjs` and stateful session management via JWT.
 - **Data Integrity:** Input validation using Zod on all API endpoints.
 - **Privacy:** Anonymous reporting mode allows citizens to submit issues without storing personal identifiers.
 
-## ⚠️ Project Status & Limitations
+Project Status & Limitations
 
 - **Current State:** Core reporting and resolution workflows are implemented and verified.
 - **Known Limitations:**
