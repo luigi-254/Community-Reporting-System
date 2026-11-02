@@ -1,4 +1,5 @@
 import db from '../config/db.js';
+import PDFDocument from 'pdfkit';
 import { isValidTransition, recordStatusHistory, getStatusHistory } from '../services/statusWorkflow.js';
 import { applyRoutingRules } from '../services/routingEngine.js';
 import { notifyUser, notifyReportStatus } from '../services/notifyService.js';
@@ -759,10 +760,92 @@ export const filterReports = async (req, res, next) => {
   }
 };
 
+export const getReportDownload = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const report = await db.findReportById(id);
+
+    if (!report) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Report not found.',
+      });
+    }
+
+    if (!canAccessReport(req.user, report)) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Report is outside your jurisdiction.',
+      });
+    }
+
+    const rep = sanitizeReport(report, req.user);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="mtaa-fix-report-${rep.id}.pdf"`
+    );
+
+    const doc = new PDFDocument({ margin: 50 });
+    doc.pipe(res);
+
+    doc.fontSize(20).font('Helvetica-Bold').text('Mtaa Fix — Citizen Portal', {
+      align: 'center',
+    });
+    doc.moveDown();
+    doc.fontSize(12).font('Helvetica').text('Report Details', { align: 'center' });
+    doc.moveDown();
+
+    doc.font('Helvetica-Bold').text('Report Reference:');
+    doc.font('Helvetica').text(rep.id || 'N/A');
+    doc.moveDown();
+
+    doc.font('Helvetica-Bold').text('Title:');
+    doc.font('Helvetica').text(rep.title || 'Not specified');
+    doc.moveDown();
+
+    doc.font('Helvetica-Bold').text('Description:');
+    doc.font('Helvetica').text(rep.description || 'No description provided.');
+    doc.moveDown();
+
+    doc.font('Helvetica-Bold').text('Category:');
+    doc.font('Helvetica').text(rep.category || 'Not specified');
+    doc.moveDown();
+
+    doc.font('Helvetica-Bold').text('Location:');
+    doc.font('Helvetica').text(rep.location || 'Not specified');
+    doc.moveDown();
+
+    doc.font('Helvetica-Bold').text('Status:');
+    doc.font('Helvetica').text(rep.status || 'Submitted');
+    doc.moveDown();
+
+    if (rep.createdAt || rep.date) {
+      doc.font('Helvetica-Bold').text('Date Submitted:');
+      doc.font('Helvetica').text(
+        new Date(rep.createdAt || rep.date).toLocaleDateString('en-US')
+      );
+      doc.moveDown();
+    }
+
+    if (rep.department) {
+      doc.font('Helvetica-Bold').text('Department:');
+      doc.font('Helvetica').text(rep.department);
+      doc.moveDown();
+    }
+
+    doc.end();
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   createReport,
   getReports,
   getReport,
+  getReportDownload,
   getMyReports,
   updateReport,
   deleteReport,

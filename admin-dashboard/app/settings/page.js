@@ -1,12 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from "../../lib/auth-context";
+import { StatusBadge, StatCard, EmptyState, LoadingState, ErrorState } from "../../components";
 
 export default function SettingsPage() {
+  const { user, loading } = useAuth();
   const [notifications, setNotifications] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (saved) {
+      const timer = setTimeout(() => setSaved(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [saved]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
+        <LoadingState message="Loading settings…" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
+        <ErrorState
+          message="No active session. Please sign in to access settings."
+          onRetry={() => {}}
+        />
+      </div>
+    );
+  }
+
+  async function handleSave(event) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const settings = {
+        notifications,
+        emailAlerts,
+        maintenanceMode,
+      };
+      localStorage.setItem("mtaafix_admin_settings", JSON.stringify(settings));
+      setSaved(true);
+    } catch {
+      // Save failed silently; settings remain in memory for this session
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
@@ -18,7 +67,7 @@ export default function SettingsPage() {
             </p>
             <h1 className="mt-2 text-2xl font-bold md:text-3xl">Settings</h1>
             <p className="mt-2 text-sm text-[#c4d3bf]">
-              Manage your admin dashboard settings.
+              Manage your platform administrator settings.
             </p>
           </div>
 
@@ -33,43 +82,77 @@ export default function SettingsPage() {
 
       <main className="mx-auto max-w-5xl p-5 md:p-8">
         <div className="space-y-6">
+
+          {/* Administrator Profile - real data from auth context */}
           <section className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
             <h2 className="text-xl font-bold text-[#173c32]">Administrator Profile</h2>
             <p className="mt-1 text-sm text-[#687468]">
-              Information about the administrator account.
+              Profile information for the signed-in platform administrator.
             </p>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label htmlFor="full-name" className="mb-2 block text-sm font-medium">
+                <label htmlFor="settings-full-name" className="mb-2 block text-sm font-medium">
                   Full Name
                 </label>
                 <input
-                  id="full-name"
+                  id="settings-full-name"
                   type="text"
-                  defaultValue="System Administrator"
-                  className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 text-sm outline-none focus:border-[#187a58] focus:ring-2 focus:ring-[#187a58]/10"
+                  defaultValue={user.name || "—"}
+                  readOnly
+                  className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 text-sm bg-[#f5f8f5]"
                 />
               </div>
 
               <div>
-                <label htmlFor="email-address" className="mb-2 block text-sm font-medium">
+                <label htmlFor="settings-email" className="mb-2 block text-sm font-medium">
                   Email Address
                 </label>
                 <input
-                  id="email-address"
+                  id="settings-email"
                   type="email"
-                  defaultValue="admin@communityreporting.com"
-                  className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 text-sm outline-none focus:border-[#187a58] focus:ring-2 focus:ring-[#187a58]/10"
+                  defaultValue={user.email || "—"}
+                  readOnly
+                  className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 text-sm bg-[#f5f8f5]"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="settings-role" className="mb-2 block text-sm font-medium">
+                  Role
+                </label>
+                <input
+                  id="settings-role"
+                  type="text"
+                  defaultValue={
+                    user.role
+                      ? String(user.role).replace(/_/g, " ")
+                      : "—"
+                  }
+                  readOnly
+                  className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 text-sm bg-[#f5f8f5]"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="settings-status" className="mb-2 block text-sm font-medium">
+                  Account Status
+                </label>
+                <StatusBadge
+                  status={user.isActive ? "ACTIVE" : "INACTIVE"}
+                  size="sm"
+                  className="text-xs"
                 />
               </div>
             </div>
           </section>
 
+          {/* Notifications - session-level preferences */}
           <section className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
             <h2 className="text-xl font-bold text-[#173c32]">Notifications</h2>
             <p className="mt-1 text-sm text-[#687468]">
-              Control how the system sends notifications.
+              Control how the system sends notifications. These preferences are
+              stored for this session only.
             </p>
 
             <div className="mt-6 space-y-5">
@@ -131,10 +214,12 @@ export default function SettingsPage() {
             </div>
           </section>
 
+          {/* System Settings */}
           <section className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
             <h2 className="text-xl font-bold text-[#173c32]">System Settings</h2>
             <p className="mt-1 text-sm text-[#687468]">
-              Configure general system behavior.
+              Configure general system behavior. These preferences are stored
+              for this session only.
             </p>
 
             <div className="mt-6 flex items-center justify-between gap-4">
@@ -170,11 +255,17 @@ export default function SettingsPage() {
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={() => alert("Settings saved successfully.")}
-              className="rounded-lg bg-[#187a58] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#126448]"
+              onClick={handleSave}
+              disabled={saving}
+              className="rounded-lg bg-[#187a58] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Save Settings
+              {saving ? "Saving…" : "Save Settings"}
             </button>
+            {saved && (
+              <span className="ml-4 text-sm text-[#187a58] font-semibold">
+                Settings saved for this session.
+              </span>
+            )}
           </div>
         </div>
       </main>

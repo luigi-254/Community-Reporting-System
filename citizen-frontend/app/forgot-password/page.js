@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import AuthShell from "../components/AuthShell";
+import BrandLogo from "../components/BrandLogo";
 import { API_URL } from "../../lib/auth";
 
 const inputClass =
@@ -91,68 +91,76 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell
-      eyebrow="Account recovery"
-      title={complete ? "Password updated" : "Reset your password"}
-      description={
-        complete
-          ? "Your password has been changed. Sign in with the new password to continue."
-          : "Request a recovery code by email, then use it to choose a new password."
-      }
-    >
-      {notice && (
-        <div role="status" className="mb-5 rounded-xl border border-[#cfe2d5] bg-[#f1f8f3] p-4 text-sm leading-6 text-[#31584b]">
-          {notice}
-          {developmentToken && requested && (
-            <p className="mt-2 font-semibold">
-              Development reset code: <span className="break-all font-mono">{developmentToken}</span>
-            </p>
-          )}
-        </div>
-      )}
-      {error && (
-        <div role="alert" className="mb-5 rounded-xl border border-[#f1c9c2] bg-[#fff3f0] p-4 text-sm leading-6 text-[#8b392f]">
-          {error}
-        </div>
-      )}
-
-      {complete ? (
-        <Link href="/sign-in" className="flex min-h-12 items-center justify-center rounded-xl bg-[#187a58] px-5 py-3 text-sm font-semibold text-white hover:bg-[#126448]">
-          Return to Sign In
+    <main className="min-h-screen bg-[#f7f7f2] px-5 py-10 text-[#243329] sm:px-8">
+      <div className="mx-auto max-w-md">
+        <Link href="/" className="inline-flex items-center gap-3 font-semibold mb-8 text-[#173c32]">
+          <BrandLogo className="h-10 w-10" preload />
+          <span className="text-xl">MtaaFix</span>
         </Link>
-      ) : requested ? (
-        <form onSubmit={resetPassword} className="space-y-5">
-          <div>
-            <label htmlFor="reset-code" className="mb-2 block text-sm font-semibold">Reset code</label>
-            <input id="reset-code" type="text" autoComplete="one-time-code" value={resetToken || developmentToken} onChange={(event) => setResetToken(event.target.value)} required className={inputClass} placeholder="Enter the code from your email" />
-          </div>
-          <div>
-            <label htmlFor="new-password" className="mb-2 block text-sm font-semibold">New password</label>
-            <input id="new-password" type="password" autoComplete="new-password" minLength={6} maxLength={100} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className={inputClass} />
-          </div>
-          <div>
-            <label htmlFor="confirm-new-password" className="mb-2 block text-sm font-semibold">Confirm new password</label>
-            <input id="confirm-new-password" type="password" autoComplete="new-password" minLength={6} maxLength={100} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className={inputClass} />
-          </div>
-          <button type="submit" disabled={busy} className="min-h-12 w-full rounded-xl bg-[#187a58] px-5 py-3 text-sm font-semibold text-white hover:bg-[#126448] disabled:cursor-wait disabled:opacity-60">
-            {busy ? "Updating password…" : "Set New Password"}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={requestReset} className="space-y-5">
-          <div>
-            <label htmlFor="reset-email" className="mb-2 block text-sm font-semibold">Email address</label>
-            <input id="reset-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className={inputClass} placeholder="you@example.com" />
-          </div>
-          <button type="submit" disabled={busy} className="min-h-12 w-full rounded-xl bg-[#187a58] px-5 py-3 text-sm font-semibold text-white hover:bg-[#126448] disabled:cursor-wait disabled:opacity-60">
-            {busy ? "Requesting code…" : "Send Recovery Code"}
-          </button>
-        </form>
-      )}
 
-      <p className="mt-6 text-center text-sm text-[#66776f]">
-        <Link href="/sign-in" className="font-semibold text-[#187a58] hover:underline">Back to Sign In</Link>
-      </p>
-    </AuthShell>
+        <h1 className="mb-2 text-3xl font-bold text-[#173c32]">
+          {complete ? "Password updated" : "Reset your password"}
+        </h1>
+        <p className="mb-8 text-sm leading-6 text-[#687468]">
+          {complete
+            ? "Your password has been changed. Sign in with the new password to continue."
+            : "Request a recovery code by email, then use it to choose a new password."}
+        </p>
+
+        {notice && (
+          <div role="status" className="mb-5 rounded-xl border border-[#cfe2d5] bg-[#f1f8f3] p-4 text-sm leading-6 text-[#31584b]">
+            {notice}
+            {developmentToken && requested && (
+              <p className="mt-2 font-semibold">
+                Development reset code: <span className="break-all font-mono">{developmentToken}</span>
+              </p>
+            )}
+          </div>
+        )}
+        {error && (
+          <div role="alert" className="mb-5 rounded-xl border border-[#f1c9c2] bg-[#fff3f0] p-4 text-sm leading-6 text-[#8b392f]">
+            {error}
+          </div>
+        )}
+
+        {complete ? (
+          <Link href="/login" className="flex min-h-12 items-center justify-center rounded-xl bg-[#187a58] px-5 py-3 text-sm font-semibold text-white hover:bg-[#126448]">
+            Return to Sign In
+          </Link>
+        ) : requested ? (
+          <form onSubmit={resetPassword} className="space-y-5">
+            <div>
+              <label htmlFor="reset-code" className="mb-2 block text-sm font-semibold">Reset code</label>
+              <input id="reset-code" type="text" autoComplete="one-time-code" value={resetToken || developmentToken} onChange={(event) => setResetToken(event.target.value)} required className={inputClass} placeholder="Enter the code from your email" />
+            </div>
+            <div>
+              <label htmlFor="new-password" className="mb-2 block text-sm font-semibold">New password</label>
+              <input id="new-password" type="password" autoComplete="new-password" minLength={6} maxLength={100} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label htmlFor="confirm-new-password" className="mb-2 block text-sm font-semibold">Confirm new password</label>
+              <input id="confirm-new-password" type="password" autoComplete="new-password" minLength={6} maxLength={100} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className={inputClass} />
+            </div>
+            <button type="submit" disabled={busy} className="min-h-12 w-full rounded-xl bg-[#187a58] px-5 py-3 text-sm font-semibold text-white hover:bg-[#126448] disabled:cursor-wait disabled:opacity-60">
+              {busy ? "Updating password…" : "Set New Password"}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={requestReset} className="space-y-5">
+            <div>
+              <label htmlFor="reset-email" className="mb-2 block text-sm font-semibold">Email address</label>
+              <input id="reset-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className={inputClass} placeholder="you@example.com" />
+            </div>
+            <button type="submit" disabled={busy} className="min-h-12 w-full rounded-xl bg-[#187a58] px-5 py-3 text-sm font-semibold text-white hover:bg-[#126448] disabled:cursor-wait disabled:opacity-60">
+              {busy ? "Requesting code…" : "Send Recovery Code"}
+            </button>
+          </form>
+        )}
+
+        <p className="mt-6 text-center text-sm text-[#66776f]">
+          <Link href="/login" className="font-semibold text-[#187a58] hover:underline">Back to Sign In</Link>
+        </p>
+      </div>
+    </main>
   );
 }

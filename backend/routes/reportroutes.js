@@ -5,6 +5,7 @@ import {
   createGuestReport,
   getReports,
   getReport,
+  getReportDownload,
   getReportHistory,
   getMyReports,
   updateReport,
@@ -75,6 +76,7 @@ postRoute(
   validate(createReportSchema),
   createReport
 );
+getRoute('/:id/download', authenticate, getReportDownload);
 getRoute('/:id/history', authenticate, getReportHistory);
 getRoute('/:id', authenticate, getReport);
 putRoute(
