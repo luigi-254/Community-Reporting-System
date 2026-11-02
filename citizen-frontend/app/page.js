@@ -74,9 +74,7 @@ function Brand({ inverse = false }) {
   return (
     <Link
       href="/"
-      className={`inline-flex items-center gap-3 font-semibold tracking-tight ${
-        inverse ? "text-white" : "text-[#173c32]"
-      }`}
+      className={`inline-flex items-center gap-3 font-semibold tracking-tight ${inverse ? "text-white" : "text-[#173c32]"}`}
       aria-label="MtaaFix home"
     >
       <BrandLogo className="h-10 w-10" preload />
@@ -165,7 +163,9 @@ export default function HomePage() {
           <Brand />
           <div className="order-3 flex w-full items-center gap-5 overflow-x-auto pb-1 text-sm font-medium text-[#53675d] md:order-2 md:w-auto md:pb-0">
             <Link href="/" className="text-[#187a58]">Home</Link>
-            <a href="#how-it-works" className="whitespace-nowrap hover:text-[#187a58]">How It Works</a>
+            <a href="#how-it-works" className="whitespace-nowrap hover:text-[#187a58]">
+              How It Works
+            </a>
             <a href="#features" className="hover:text-[#187a58]">Features</a>
             <a href="#about" className="hover:text-[#187a58]">About Us</a>
             <a href="#contact" className="hover:text-[#187a58]">Contact</a>
@@ -236,9 +236,15 @@ export default function HomePage() {
       <section id="how-it-works" className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-24">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#187a58]">How it works</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">From a local concern to visible progress</h2>
-            <p className="mt-4 leading-7 text-[#66776f]">MtaaFix connects community reports with the people responsible for reviewing them.</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#187a58]">
+              How it works
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              From a local concern to visible progress
+            </h2>
+            <p className="mt-4 leading-7 text-[#66776f]">
+              MtaaFix connects community reports with the people responsible for reviewing them.
+            </p>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             {steps.map((step) => (
@@ -255,9 +261,15 @@ export default function HomePage() {
       <section id="features" className="scroll-mt-24 bg-[#f5f8f5] px-5 py-20 sm:px-8 sm:py-24">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#187a58]">Built for the whole community</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Useful tools for reporting and follow-up</h2>
-            <p className="mt-4 leading-7 text-[#66776f]">A shared space for residents, government officers, and administrators to take part in the service process.</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#187a58]">
+              Built for the whole community
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              Useful tools for reporting and follow-up
+            </h2>
+            <p className="mt-4 leading-7 text-[#66776f]">
+              A shared space for residents, government officers, and administrators to take part in the service process.
+            </p>
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => (
@@ -279,10 +291,7 @@ export default function HomePage() {
           </div>
           <div>
             <p className="text-base leading-8 text-[#d5e3da]">
-              MtaaFix is a community reporting platform that helps residents
-              share local concerns and gives public service teams a place to
-              review, assign, and follow up on reports. It is designed to make
-              the process easier to understand for everyone involved.
+              MtaaFix is a community reporting platform that helps residents share local concerns and gives public service teams a place to review, assign, and follow up on reports. It is designed to make the process easier to understand for everyone involved.
             </p>
           </div>
         </div>

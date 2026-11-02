@@ -132,6 +132,7 @@ export default function AdminDashboard() {
   const { logout } = useAuth();
 
   const [activePage, setActivePage] = useState("Dashboard");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [reports, setReports] = useState([]);
   const [totalFromApi, setTotalFromApi] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -334,7 +335,19 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen bg-[#f7f7f2] text-[#243329]">
-      <aside className="flex min-h-screen w-64 shrink-0 flex-col bg-[#244637] p-6 text-[#f7f7f2]">
+      {mobileMenuOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-[#244637] p-6 text-[#f7f7f2] transition-transform duration-200 lg:translate-x-0 ${
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="mb-10">
           <BrandLogo className="mb-4 h-10 w-10" />
           <h1 className="text-xl font-bold">
@@ -399,6 +412,15 @@ export default function AdminDashboard() {
                 Live overview of community issues submitted by citizens.
               </p>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              className="lg:hidden rounded-lg border border-[#cbd6c8] px-3 py-2 text-sm"
+            >
+              {mobileMenuOpen ? "Close" : "Menu"}
+            </button>
 
             <button
               onClick={() => {
