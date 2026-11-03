@@ -146,6 +146,44 @@ export const userRepository = {
     memoryStore.users.set(id, updated);
     return { ...updated };
   },
+
+  async findUsers({ role, isActive, departmentId, search } = {}) {
+    if (checkIsPrisma()) {
+      try {
+        return await getPrismaClient().user.findMany({
+          where: {
+            ...(role && { role }),
+            ...(isActive !== undefined && { isActive: isActive === true || isActive === 'true' }),
+            ...(departmentId && { departmentId }),
+            ...(search && {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+              ],
+            }),
+          },
+          orderBy: { name: 'asc' },
+        });
+      } catch (error) {
+        console.warn('[DB] Prisma findUsers failed, using memory store:', error.message);
+      }
+    }
+
+    let users = [...memoryStore.users.values()];
+    if (role) users = users.filter((u) => u.role === role);
+    if (isActive !== undefined) {
+      const active = isActive === true || isActive === 'true' || isActive === '1';
+      users = users.filter((u) => u.isActive === active);
+    }
+    if (departmentId) users = users.filter((u) => u.departmentId === departmentId);
+    if (search) {
+      const q = search.toLowerCase().trim();
+      users = users.filter(
+        (u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
+      );
+    }
+    return users.sort((a, b) => a.name.localeCompare(b.name));
+  },
 };
 
 export default userRepository;
