@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Community Reporting System | Government Portal",
+  title: "Mtaa Fix | Government Portal",
   description: "Government dashboard for community reports and service delivery.",
 };
 

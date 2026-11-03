@@ -27,7 +27,8 @@ export default function GovernmentAuthNav() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#dce2d8] bg-white">
+    <>{pathname === "/login" ? null : (
+      <header className="sticky top-0 z-50 border-b border-[#dce2d8] bg-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4">
         <Link
           href="/government"
@@ -35,7 +36,7 @@ export default function GovernmentAuthNav() {
         >
           <BrandLogo className="h-9 w-9" preload />
           <span>
-            Community Reporting System
+            Mtaa Fix
             <span className="ml-2 text-sm font-normal text-[#687468]">
               Government Portal
             </span>
@@ -70,6 +71,7 @@ export default function GovernmentAuthNav() {
           )}
         </nav>
       </div>
-    </header>
+      </header>
+    )}</>
   );
 }
