@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import BrandLogo from "../components/BrandLogo";
+import { Eye, EyeOff } from "lucide-react";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -13,6 +14,7 @@ export default function AdminLoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -133,16 +135,30 @@ export default function AdminLoginPage() {
             >
               Password
             </label>
-            <input
-              id="admin-password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter admin password"
-              className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 outline-none focus:border-[#55745c] focus:ring-2 focus:ring-emerald-600 placeholder:text-[#7a8378]"
-            />
+            <div className="flex rounded-lg border border-[#cbd6c8] focus-within:border-[#187a58] focus-within:ring-4 focus-within:ring-[#187a58]/10">
+              <input
+                id="admin-password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Enter admin password"
+                className="min-w-0 flex-1 rounded-l-xl px-4 py-3 outline-none focus:border-[#55745c] focus:ring-2 focus:ring-emerald-600 placeholder:text-[#7a8378]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="rounded-r-xl px-4 text-sm font-semibold text-[#187a58] hover:bg-[#f2f7f3]"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="w-4 h-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
 
           <button
