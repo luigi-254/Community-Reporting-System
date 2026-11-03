@@ -432,7 +432,7 @@ export default function GovernmentDashboard() {
   const [dashboardOverview, setDashboardOverview] = useState<any>(null);
   const [overviewLoading, setOverviewLoading] = useState(true);
 
-  async function loadOverview() {
+  const loadOverview = useCallback(async () => {
     setOverviewLoading(true);
     try {
       const token = getGovernmentToken();
@@ -448,7 +448,7 @@ export default function GovernmentDashboard() {
     } finally {
       setOverviewLoading(false);
     }
-  }
+  }, []);
 
   const scope = useMemo<DashboardScope>(() => {
     if (!user) return { label: "Unauthenticated", level: "none" };
