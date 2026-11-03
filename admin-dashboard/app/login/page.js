@@ -61,6 +61,7 @@ export default function AdminLoginPage() {
 
       localStorage.setItem("crs_admin_access_token", accessToken);
       localStorage.setItem("crs_access_token", accessToken);
+      document.cookie = `crs_admin_access_token=${accessToken}; path=/; max-age=604800; SameSite=Lax`;
       localStorage.setItem(
         "crs_admin_user",
         JSON.stringify({
@@ -71,7 +72,9 @@ export default function AdminLoginPage() {
         })
       );
 
-      router.push("/users");
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectTo = searchParams.get("redirectTo") || "/users";
+      router.push(redirectTo);
     } catch (err) {
       setError(
         err instanceof Error

@@ -1,21 +1,27 @@
 import { NextResponse } from 'next/server';
 
+const TOKEN_KEY = 'crs_admin_access_token';
 const PUBLIC_PATHS = ['/login'];
 
 export function proxy(request) {
   const { pathname } = request.nextUrl;
+
   if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) {
     return NextResponse.next();
   }
-  if (request.cookies.has('refreshToken')) {
-    return NextResponse.next();
+
+  const token = request.cookies.get(TOKEN_KEY)?.value;
+
+  if (!token) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirectTo', pathname);
+    return NextResponse.redirect(loginUrl);
   }
-  return NextResponse.redirect(new URL('/login', request.url));
+
+  return NextResponse.next();
 }
 
 export const config = {
-  // Public brand/app assets must bypass the auth gate, otherwise the favicon,
-  // manifest and logo are redirected to /login and never reach the browser.
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|manifest.webmanifest|brand/).*)',
   ],

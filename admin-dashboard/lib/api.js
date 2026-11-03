@@ -6,8 +6,13 @@ export const getToken = () =>
 
 export const setToken = (token) => {
   if (typeof window === 'undefined') return;
-  if (token) localStorage.setItem(TOKEN_KEY, token);
-  else localStorage.removeItem(TOKEN_KEY);
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+    document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=604800; SameSite=Lax`;
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+    document.cookie = `${TOKEN_KEY}=; path=/; max-age=0`;
+  }
 };
 
 export async function apiFetch(path, { method = 'GET', body, headers = {}, retry = true } = {}) {
@@ -22,6 +27,14 @@ export async function apiFetch(path, { method = 'GET', body, headers = {}, retry
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
+
+  if (res.status === 401) {
+    if (typeof window !== 'undefined') {
+      setToken(null);
+      window.location.href = '/login';
+    }
+    throw new Error('Unauthorized - please sign in again.');
+  }
 
   if (res.status === 401 && retry) {
     const refreshed = await refreshToken();

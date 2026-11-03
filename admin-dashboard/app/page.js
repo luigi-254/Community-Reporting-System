@@ -158,6 +158,14 @@ export default function AdminDashboard() {
   const [systemHealth, setSystemHealth] = useState(null);
   const [systemHealthLoading, setSystemHealthLoading] = useState(false);
 
+  useEffect(() => {
+    if (!systemHealthLoading && !user) {
+      const redirectTo = window.location.pathname;
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = `/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+    }
+  }, [systemHealthLoading, user]);
+
   const checkSystemHealth = useCallback(async () => {
     setSystemHealthLoading(true);
     try {
