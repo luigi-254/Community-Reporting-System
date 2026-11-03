@@ -5,6 +5,7 @@ import { Camera as CameraIcon, Image as GalleryIcon, X } from "lucide-react";
 import {
   formatFileSize,
   resolveMediaUrl,
+  toSentenceCase,
 } from "../utils/reportUtils";
 
 const API_BASE_URL = (
@@ -491,10 +492,10 @@ export default function ReportForm({ token, onSubmitSuccess }) {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append("title", form.title.trim());
+      formData.append("title", toSentenceCase(form.title.trim()));
       formData.append("category", form.category);
-      formData.append("location", form.location.trim());
-      formData.append("description", form.description.trim());
+      formData.append("location", toSentenceCase(form.location.trim()));
+      formData.append("description", toSentenceCase(form.description.trim()));
       formData.append("priority", "MEDIUM");
       formData.append("isAnonymous", String(form.isAnonymous));
       if (county) formData.append("county", county);
@@ -579,6 +580,8 @@ export default function ReportForm({ token, onSubmitSuccess }) {
               maxLength={150}
               value={form.title}
               onChange={(event) => setForm({ ...form, title: event.target.value })}
+              onBlur={(event) => setForm({ ...form, title: toSentenceCase(event.target.value.trim()) })}
+              autocapitalize="sentences"
               placeholder="e.g. Pothole near the market entrance"
               className="w-full border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none focus:border-[#55745c]"
             />
@@ -620,6 +623,8 @@ export default function ReportForm({ token, onSubmitSuccess }) {
               maxLength={200}
               value={form.location}
               onChange={(event) => setForm({ ...form, location: event.target.value })}
+              onBlur={(event) => setForm({ ...form, location: toSentenceCase(event.target.value.trim()) })}
+              autocapitalize="sentences"
               placeholder="Town, estate, road, or nearby landmark"
               className="w-full border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none focus:border-[#55745c]"
             />
@@ -735,7 +740,7 @@ export default function ReportForm({ token, onSubmitSuccess }) {
             <label htmlFor="report-description" className="mb-2 block text-sm font-semibold">
               Description *
             </label>
-            <textarea
+              <textarea
               id="report-description"
               required
               minLength={10}
@@ -745,6 +750,10 @@ export default function ReportForm({ token, onSubmitSuccess }) {
               onChange={(event) =>
                 setForm({ ...form, description: event.target.value })
               }
+              onBlur={(event) =>
+                setForm({ ...form, description: toSentenceCase(event.target.value.trim()) })
+              }
+              autocapitalize="sentences"
               placeholder="Describe the condition of the issue and how it affects the community..."
               className="w-full resize-y border border-[#cbd6c8] bg-white px-4 py-3 text-sm leading-6 outline-none focus:border-[#55745c]"
             />

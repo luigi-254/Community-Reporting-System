@@ -71,3 +71,13 @@ export function resolveMediaUrl(path, apiBaseUrl) {
 export function isImageUrl(path) {
   return /\.(jpe?g|png|webp|gif)(?:[?#]|$)/i.test(path || "");
 }
+
+/**
+ * Sentence Case helper: capitalises the first character, lowercases the rest.
+ * Returns empty/undefined values unchanged.
+ */
+export function toSentenceCase(value) {
+  if (value == null || value === "") return value;
+  const str = String(value);
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}

@@ -177,7 +177,7 @@ export default function CreateAccountPage() {
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label htmlFor="account-name" className="mb-2 block text-sm font-semibold">Full name</label>
-            <input id="account-name" type="text" autoComplete="name" minLength={2} maxLength={100} required value={name} onChange={(event) => setName(event.target.value)} className={inputClass} placeholder="Your full name" />
+            <input id="account-name" type="text" autoComplete="name" minLength={2} maxLength={100} required value={name} onChange={(event) => setName(event.target.value)} autocapitalize="sentences" className={inputClass} placeholder="Your full name" />
           </div>
           <div>
             <label htmlFor="account-email" className="mb-2 block text-sm font-semibold">Email address</label>
