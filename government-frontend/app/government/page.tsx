@@ -516,8 +516,9 @@ export default function GovernmentDashboard() {
     });
   }, [reports, searchTerm, statusFilter]);
 
+  const overview = dashboardOverview || {};
+
   const roleStats = useMemo(() => {
-    const overview = dashboardOverview || {};
     const total = overview.totalReports ?? reports.length;
     const open = overview.openReports ?? reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length;
     const resolved = overview.resolvedReports ?? reports.filter((r) => r.status === "Resolved").length;
@@ -895,13 +896,13 @@ export default function GovernmentDashboard() {
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Open Escalations</p>
                         <p className="mt-1 text-2xl font-bold text-[#8b392f]">
-                          {dashboardOverview.openEscalations ?? 0}
+                          {overview.openEscalations ?? 0}
                         </p>
                       </div>
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Resolution Rate</p>
                         <p className="mt-1 text-2xl font-bold text-[#187a58]">
-                          {dashboardOverview.resolutionRate ?? 0}%
+                          {overview.resolutionRate ?? 0}%
                         </p>
                       </div>
                     </div>
@@ -949,19 +950,19 @@ export default function GovernmentDashboard() {
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Total Reports</p>
                         <p className="mt-1 text-2xl font-bold text-[#173c32]">
-                          {dashboardOverview.totalReports ?? reports.length}
+                          {overview.totalReports ?? reports.length}
                         </p>
                       </div>
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Open</p>
                         <p className="mt-1 text-2xl font-bold text-[#66572f]">
-                          {dashboardOverview.openReports ?? reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length}
+                          {overview.openReports ?? reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length}
                         </p>
                       </div>
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Active Officers</p>
                         <p className="mt-1 text-2xl font-bold text-[#187a58]">
-                          {dashboardOverview.activeOfficers ?? 0}
+                          {overview.activeOfficers ?? 0}
                         </p>
                       </div>
                     </div>
@@ -982,19 +983,19 @@ export default function GovernmentDashboard() {
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Hazard Reports</p>
                         <p className="mt-1 text-2xl font-bold text-[#8b392f]">
-                          {dashboardOverview.totalReports ?? reports.length}
+                          {overview.totalReports ?? reports.length}
                         </p>
                       </div>
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Open Incidents</p>
                         <p className="mt-1 text-2xl font-bold text-[#8b392f]">
-                          {dashboardOverview.openReports ?? reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length}
+                          {overview.openReports ?? reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length}
                         </p>
                       </div>
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Escalated</p>
                         <p className="mt-1 text-2xl font-bold text-[#8b392f]">
-                          {dashboardOverview.openEscalations ?? 0}
+                          {overview.openEscalations ?? 0}
                         </p>
                       </div>
                     </div>
@@ -1015,19 +1016,19 @@ export default function GovernmentDashboard() {
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Assigned Cases</p>
                         <p className="mt-1 text-2xl font-bold text-[#173c32]">
-                          {dashboardOverview.totalReports ?? reports.length}
+                          {overview.totalReports ?? reports.length}
                         </p>
                       </div>
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Open Cases</p>
                         <p className="mt-1 text-2xl font-bold text-[#66572f]">
-                          {dashboardOverview.openReports ?? reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length}
+                          {overview.openReports ?? reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length}
                         </p>
                       </div>
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Resolved</p>
                         <p className="mt-1 text-2xl font-bold text-[#187a58]">
-                          {dashboardOverview.resolvedReports ?? reports.filter((r) => r.status === "Resolved").length}
+                          {overview.resolvedReports ?? reports.filter((r) => r.status === "Resolved").length}
                         </p>
                       </div>
                     </div>
@@ -1084,7 +1085,7 @@ export default function GovernmentDashboard() {
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Assigned to Me</p>
                         <p className="mt-1 text-2xl font-bold text-[#173c32]">
-                          {dashboardOverview.assignedToMe ?? reports.filter((r) => r.assignedOfficerId === user?.id).length}
+                          {overview.assignedToMe ?? reports.filter((r) => r.assignedOfficerId === user?.id).length}
                         </p>
                       </div>
                       <div className="rounded-lg border border-[#dce2d8] p-4">
@@ -1120,7 +1121,7 @@ export default function GovernmentDashboard() {
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Reports in Jurisdiction</p>
                         <p className="mt-1 text-2xl font-bold text-[#173c32]">
-                          {dashboardOverview.totalReports ?? reports.length}
+                          {overview.totalReports ?? reports.length}
                         </p>
                       </div>
                       <div className="rounded-lg border border-[#dce2d8] p-4">
@@ -1132,7 +1133,7 @@ export default function GovernmentDashboard() {
                       <div className="rounded-lg border border-[#dce2d8] p-4">
                         <p className="text-sm text-[#687468]">Escalated</p>
                         <p className="mt-1 text-2xl font-bold text-[#8b392f]">
-                          {dashboardOverview.openEscalations ?? 0}
+                          {overview.openEscalations ?? 0}
                         </p>
                       </div>
                     </div>
