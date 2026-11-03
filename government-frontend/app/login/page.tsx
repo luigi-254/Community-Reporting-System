@@ -118,11 +118,6 @@ const allowedRoles = [
           Government Portal
         </h1>
 
-        <p className="mt-3 text-sm leading-6 text-[#687468]">
-          Sign in with your authorized government officer or administrator
-          account to manage community reports in Kisii County.
-        </p>
-
         {error && (
           <div
             role="alert"
@@ -181,11 +176,6 @@ const allowedRoles = [
             {busy ? "Signing in..." : "Sign In"}
           </button>
         </form>
-
-        <p className="mt-6 border-t border-[#e8eee9] pt-5 text-xs leading-5 text-[#687468]">
-          Only authorized accounts can update report statuses. Citizen
-          accounts cannot perform government actions.
-        </p>
       </section>
     </main>
   );

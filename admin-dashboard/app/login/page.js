@@ -97,11 +97,6 @@ export default function AdminLoginPage() {
 
         <h1 className="mt-3 text-3xl font-bold">Admin Portal Sign In</h1>
 
-        <p className="mt-3 text-sm leading-6 text-[#687468]">
-          Enter your administrator credentials to access the management
-          dashboard.
-        </p>
-
         {error && (
           <div
             role="alert"
@@ -158,11 +153,6 @@ export default function AdminLoginPage() {
             {busy ? "Signing in..." : "Sign In"}
           </button>
         </form>
-
-        <p className="mt-6 border-t border-[#edf0e9] pt-5 text-xs leading-5 text-[#55745c]">
-          Only accounts with the ADMIN or SUPER_ADMIN role can access
-          administrator functions.
-        </p>
       </section>
     </main>
   );
