@@ -1,9 +1,10 @@
 import db from '../config/db.js';
 import { findOverdueReports } from '../services/slaService.js';
+import { buildEscalationScope } from '../services/jurisdiction.js';
 
 export const getEscalatedReports = async (req, res, next) => {
   try {
-    const escalations = await db.findEscalatedReports();
+    const escalations = await db.findEscalatedReports(buildEscalationScope(req.user));
     return res.status(200).json({ status: 'success', total: escalations.length, data: { escalations } });
   } catch (error) { next(error); }
 };
