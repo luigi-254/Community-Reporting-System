@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const API_BASE_URL = (
@@ -57,6 +58,7 @@ function friendlyApiError(response, payload) {
 }
 
 export default function UsersPage() {
+  const router = useRouter();
   const [officers, setOfficers] = useState([]);
   const [form, setForm] = useState(INITIAL_FORM);
   const [search, setSearch] = useState("");
@@ -91,6 +93,11 @@ export default function UsersPage() {
       const payload = await readResponse(response);
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          const redirectTo = window.location.pathname;
+          router.replace(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
+          return;
+        }
         throw new Error(friendlyApiError(response, payload));
       }
 
@@ -183,6 +190,11 @@ export default function UsersPage() {
       const payload = await readResponse(response);
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          const redirectTo = window.location.pathname;
+          router.replace(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
+          return;
+        }
         throw new Error(friendlyApiError(response, payload));
       }
 

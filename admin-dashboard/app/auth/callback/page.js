@@ -60,7 +60,9 @@ export default function AdminAuthCallbackPage() {
         const user = data?.user;
         const role = String(user?.role || "").trim().toUpperCase();
         if (!accessToken || !["ADMIN", "SUPER_ADMIN"].includes(role)) {
-          throw new Error("This account is not authorized for the administrator dashboard.");
+          const redirectTo = window.location.pathname;
+          router.replace(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
+          return;
         }
 
         if (cancelled) return;

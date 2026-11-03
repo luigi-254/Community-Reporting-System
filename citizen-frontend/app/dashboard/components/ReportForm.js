@@ -471,7 +471,8 @@ export default function ReportForm({ token, onSubmitSuccess }) {
     setMessage("");
 
     if (!token) {
-      setFormError("Your session has expired. Please sign in again.");
+      const redirectTo = window.location.pathname;
+      router.replace(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
       return;
     }
     if (
