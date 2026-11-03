@@ -44,7 +44,11 @@ export default function SignInPage() {
       // Persist session and go straight to the citizen dashboard.
       window.localStorage.setItem(TOKEN_KEY, accessToken);
       window.localStorage.setItem("crs_citizen_user", JSON.stringify(user));
-      router.push("/dashboard");
+      document.cookie = `${TOKEN_KEY}=${accessToken}; path=/; max-age=604800; SameSite=Lax`;
+
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectTo = searchParams.get("redirectTo") || "/dashboard";
+      router.push(redirectTo);
     } catch (submitError) {
       setError(
         submitError instanceof Error
