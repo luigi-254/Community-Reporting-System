@@ -92,14 +92,14 @@ export default function AdminLoginPage() {
         <BrandLogo className="mb-6 h-14 w-14" preload />
 
         <p className="text-sm font-semibold uppercase tracking-wider text-[#55745c]">
-          Community Reporting System
+          Mtaa Fix
         </p>
 
-        <h1 className="mt-3 text-3xl font-bold">Admin Sign In</h1>
+        <h1 className="mt-3 text-3xl font-bold">Admin Portal Sign In</h1>
 
         <p className="mt-3 text-sm leading-6 text-[#687468]">
-          Sign in with an authorized administrator account to manage users
-          and government officer accounts.
+          Enter your administrator credentials to access the management
+          dashboard.
         </p>
 
         {error && (
@@ -127,7 +127,7 @@ export default function AdminLoginPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="Enter admin email"
-              className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 outline-none focus:border-[#55745c] focus:ring-2 focus:ring-[#eff1e9]"
+              className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 outline-none focus:border-[#55745c] focus:ring-2 focus:ring-emerald-600 placeholder:text-[#7a8378]"
             />
           </div>
 
@@ -146,7 +146,7 @@ export default function AdminLoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter admin password"
-              className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 outline-none focus:border-[#55745c] focus:ring-2 focus:ring-[#eff1e9]"
+              className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 outline-none focus:border-[#55745c] focus:ring-2 focus:ring-emerald-600 placeholder:text-[#7a8378]"
             />
           </div>
 
@@ -159,7 +159,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <p className="mt-6 border-t border-[#edf0e9] pt-5 text-xs leading-5 text-[#687468]">
+        <p className="mt-6 border-t border-[#edf0e9] pt-5 text-xs leading-5 text-[#55745c]">
           Only accounts with the ADMIN or SUPER_ADMIN role can access
           administrator functions.
         </p>
