@@ -95,7 +95,7 @@ export default function AdminLoginPage() {
           Mtaa Fix
         </p>
 
-        <h1 className="mt-3 text-3xl font-bold">Admin Portal Sign In</h1>
+        <h1 className="mt-3 text-3xl font-bold">Admin Portal</h1>
 
         {error && (
           <div
