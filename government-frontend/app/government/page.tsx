@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import GovernmentMapLoader from "../../components/GovernmentMapLoader";
 import BrandLogo from "../../components/BrandLogo";
 import { X, CheckCircle, Clock, PanelLeftClose, PanelLeftOpen, Menu, LogOut, LayoutDashboard, FileText, Users, BarChart3, Settings } from "lucide-react";
@@ -492,6 +493,8 @@ export default function GovernmentDashboard() {
     [user?.role]
   );
 
+  const router = useRouter();
+
   const toggleSidebar = () => setSidebarCollapsed((prev) => !prev);
 
   const initials = String(user?.name || "C")
@@ -602,16 +605,15 @@ export default function GovernmentDashboard() {
   useEffect(() => {
     if (!userLoading && !user) {
       const redirectTo = window.location.pathname;
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.href = `/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+      router.replace(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
     }
-  }, [userLoading, user]);
+  }, [userLoading, user, router]);
 
   const loadReports = useCallback(async (showLoading = true) => {
     if (showLoading) setReportsLoading(true);
     setReportsError("");
     try {
-      const response = await fetch(`${API_URL}/api/dashboard/reports?page=1&limit=100`, {
+      const response = await fetch(`${API_URL}/api/dashboard/reports?page=1&limit=10`, {
         cache: "no-store",
         headers: { ...(getGovernmentToken() ? { Authorization: `Bearer ${getGovernmentToken() }` } : {}) },
       });
@@ -633,9 +635,11 @@ export default function GovernmentDashboard() {
   }, []);
 
   useEffect(() => {
+    // Only fetch dashboard data once authentication is resolved.
+    if (!user) return;
     void loadReports();
     void loadOverview();
-  }, [loadReports, loadOverview]);
+  }, [loadReports, loadOverview, user]);
 
   async function updateReportStatus(reportId: string, status: ReportStatus) {
     if (!canChangeStatus) {
