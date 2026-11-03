@@ -141,7 +141,7 @@ export default function MyReports({ token }) {
               <p className="text-xs font-semibold uppercase tracking-wide text-[#55745c]">
                 {report.id}
               </p>
-              <h3 className="mt-2 text-lg font-semibold">{report.title}</h3>
+              <h3 className="mt-2 text-lg font-semibold capitalize">{report.title}</h3>
               <p className="mt-2 text-sm text-[#687468]">
                 {report.category} ·{" "}
                 {report.location || "Location not specified"}
@@ -163,12 +163,10 @@ export default function MyReports({ token }) {
                 {report.mediaUrls.map((media, index) => {
                   const url = resolveMediaUrl(media, API_BASE_URL);
                   return (
-                    <a
+                    <div
                       key={`${media}-${index}`}
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="block overflow-hidden border border-[#dce2d8] bg-[#eff1e9]"
+                      onClick={() => window.open(url, "_blank")}
+                      className="block overflow-hidden border border-[#dce2d8] bg-[#eff1e9] cursor-pointer hover:bg-[#f2f7f3] transition-colors"
                     >
                       {isImageUrl(media) ? (
                         <Image
@@ -187,7 +185,7 @@ export default function MyReports({ token }) {
                       <p className="break-all px-3 py-2 text-xs text-[#59675b]">
                         View attachment {index + 1}
                       </p>
-                    </a>
+                    </div>
                   );
                 })}
               </div>

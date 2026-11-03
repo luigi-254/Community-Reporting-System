@@ -142,7 +142,7 @@ export default function CitizenDashboard() {
   if (!sessionReady) return null;
 
   if (!token || !user) {
-    router.replace("/login");
+    router.replace("/sign-in");
     return null;
   }
 

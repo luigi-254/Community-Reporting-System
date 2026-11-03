@@ -19,6 +19,29 @@ import { PrismaPg } from '@prisma/adapter-pg';
 const SALT_ROUNDS = 10;
 const TEST_PASSWORD = 'TestPassword123!';
 
+// Generate MTAA Fix report reference codes: MT + 2 letters + 3 digits (e.g. MTAB123)
+const REF_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const REF_DIGITS = '0123456789';
+function generateReferenceCode() {
+  let code = 'MT';
+  for (let i = 0; i < 2; i++) code += REF_LETTERS[Math.floor(Math.random() * REF_LETTERS.length)];
+  for (let i = 0; i < 3; i++) code += REF_DIGITS[Math.floor(Math.random() * REF_DIGITS.length)];
+  return code;
+}
+const SEED_REF_CODES = new Set();
+function generateUniqueSeedReferenceCode() {
+  let attempts = 0;
+  while (attempts < 50) {
+    const code = generateReferenceCode();
+    if (!SEED_REF_CODES.has(code)) {
+      SEED_REF_CODES.add(code);
+      return code;
+    }
+    attempts++;
+  }
+  return `MT${Date.now().toString(36).toUpperCase().slice(-5)}`;
+}
+
 // Synthetic test identities — clearly labelled, not real public officials.
 const TEST_ACCOUNTS = [
   // ============ CITIZEN EXPERIENCE (Citizen Dashboard) ============
@@ -399,6 +422,7 @@ async function main() {
         subCountyId: bobasiSubCounty.id,
         wardId: bassiCentralWard.id,
         departmentId: infraDept.id,
+        referenceCode: generateUniqueSeedReferenceCode(),
         reporterId: alice.id,
         assignedOfficerId: fieldOfficer?.id,
         latitude: -0.6815,
@@ -481,6 +505,7 @@ async function main() {
         subCountyId: bobasiSubCounty.id,
         wardId: bassiCentralWard.id,
         departmentId: waterDept.id,
+        referenceCode: generateUniqueSeedReferenceCode(),
         reporterId: alice.id,
         assignedOfficerId: fieldOfficer?.id,
         latitude: -0.6830,
@@ -519,6 +544,7 @@ async function main() {
         subCountyId: bobasiSubCounty.id,
         wardId: bassiCentralWard.id,
         departmentId: infraDept.id,
+        referenceCode: generateUniqueSeedReferenceCode(),
         reporterId: alice.id,
         assignedOfficerId: null,
         latitude: -0.6820,
@@ -549,6 +575,7 @@ async function main() {
         subCountyId: nyaribariMasabaSubCounty.id,
         wardId: kiamokamaWard.id,
         departmentId: disasterDept.id,
+        referenceCode: generateUniqueSeedReferenceCode(),
         reporterId: bob.id,
         assignedOfficerId: fieldOfficer?.id,
         latitude: -0.6900,

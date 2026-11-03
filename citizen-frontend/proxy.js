@@ -12,7 +12,7 @@ export function proxy(request) {
     return NextResponse.next();
   }
 
-  const loginUrl = new URL('/login', request.url);
+  const loginUrl = new URL('/sign-in', request.url);
   loginUrl.searchParams.set('next', pathname);
   return NextResponse.redirect(loginUrl);
 }

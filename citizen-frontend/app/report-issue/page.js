@@ -208,7 +208,7 @@ export default function GuestReportPage() {
 
           <p className="mt-6 text-center text-sm text-[#66776f]">
             Want to track reports and receive updates?{" "}
-            <Link href="/register" className="font-semibold text-[#187a58] hover:underline">
+            <Link href="/create-account" className="font-semibold text-[#187a58] hover:underline">
               Create an account
             </Link>
           </p>

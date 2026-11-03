@@ -2,6 +2,47 @@ import { v4 as uuidv4 } from 'uuid';
 import { getPrismaClient, checkIsPrisma } from './client.js';
 import { memoryStore } from './memoryStore.js';
 
+const REFERENCE_PREFIX = 'MT';
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const DIGITS = '0123456789';
+
+function generateReferenceCode() {
+  let code = REFERENCE_PREFIX;
+  for (let i = 0; i < 2; i++) {
+    code += LETTERS[Math.floor(Math.random() * LETTERS.length)];
+  }
+  for (let i = 0; i < 3; i++) {
+    code += DIGITS[Math.floor(Math.random() * DIGITS.length)];
+  }
+  return code;
+}
+
+async function generateUniqueReferenceCode() {
+  let attempts = 0;
+  const maxAttempts = 10;
+  while (attempts < maxAttempts) {
+    const code = generateReferenceCode();
+    let exists = false;
+
+    if (checkIsPrisma()) {
+      try {
+        const existing = await getPrismaClient().report.findUnique({ where: { referenceCode: code } });
+        if (existing) exists = true;
+      } catch {
+        // If Prisma check fails, fall through to memory-store check
+        exists = Array.from(memoryStore.reports.values()).some((r) => r.referenceCode === code);
+      }
+    } else {
+      exists = Array.from(memoryStore.reports.values()).some((r) => r.referenceCode === code);
+    }
+
+    if (!exists) return code;
+    attempts++;
+  }
+  // Fallback: append a timestamp suffix to guarantee uniqueness
+  return `${REFERENCE_PREFIX}${Date.now().toString(36).toUpperCase().slice(-5)}`;
+}
+
 export const reportRepository = {
   enrichReport(report) {
     if (!report) return null;
@@ -27,8 +68,10 @@ export const reportRepository = {
 
   async createReport(data) {
     const reportId = uuidv4();
+    const referenceCode = await generateUniqueReferenceCode();
     const newReport = {
       id: reportId,
+      referenceCode,
       title: data.title,
       description: data.description,
       category: data.category,

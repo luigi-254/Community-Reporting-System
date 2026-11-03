@@ -124,7 +124,7 @@ export default function ForgotPasswordPage() {
         )}
 
         {complete ? (
-          <Link href="/login" className="flex min-h-12 items-center justify-center rounded-xl bg-[#187a58] px-5 py-3 text-sm font-semibold text-white hover:bg-[#126448]">
+          <Link href="/sign-in" className="flex min-h-12 items-center justify-center rounded-xl bg-[#187a58] px-5 py-3 text-sm font-semibold text-white hover:bg-[#126448]">
             Return to Sign In
           </Link>
         ) : requested ? (
@@ -158,7 +158,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <p className="mt-6 text-center text-sm text-[#66776f]">
-          <Link href="/login" className="font-semibold text-[#187a58] hover:underline">Back to Sign In</Link>
+          <Link href="/sign-in" className="font-semibold text-[#187a58] hover:underline">Back to Sign In</Link>
         </p>
       </div>
     </main>
