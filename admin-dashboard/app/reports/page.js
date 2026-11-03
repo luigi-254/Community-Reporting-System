@@ -364,7 +364,7 @@ export default function ReportsPage() {
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c4d3bf]">
-              Community Reporting System
+              Mtaa Fix
             </p>
 
             <h1 className="mt-2 text-2xl font-bold md:text-3xl">
@@ -498,7 +498,7 @@ export default function ReportsPage() {
               Report Register
             </h2>
             <p className="mt-1 text-sm text-[#687468]">
-              Reports returned by the Community Reporting System API.
+              Reports returned by the Mtaa Fix API.
             </p>
           </div>
 
