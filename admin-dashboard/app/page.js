@@ -12,6 +12,23 @@ const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 ).replace(/\/+$/, "");
 
+function getAdminToken() {
+  if (typeof window === "undefined") return null;
+  const keys = [
+    "crs_admin_access_token",
+    "crs_access_token",
+    "accessToken",
+    "access_token",
+    "authToken",
+    "token",
+  ];
+  for (const key of keys) {
+    const value = window.localStorage.getItem(key);
+    if (value) return value;
+  }
+  return null;
+}
+
 function normalizeStatus(status) {
   const value = String(status || "SUBMITTED")
     .trim()
@@ -155,6 +172,32 @@ export default function AdminDashboard() {
   const sidebarWidth = sidebarCollapsed ? "w-16" : "w-64";
   const mainContentMargin = sidebarCollapsed ? "lg:ml-16" : "lg:ml-64";
 
+  const adminScope = useMemo(() => {
+    if (!user) return { label: "Unauthenticated", level: "none" };
+    if (user.role === "SUPER_ADMIN")
+      return { label: "Platform-wide", level: "platform" };
+    if (user.role === "ADMIN")
+      return { label: "County platform administration", level: "county" };
+    return { label: "Administrative scope", level: "none" };
+  }, [user]);
+
+  const adminWelcome = useMemo(() => {
+    if (!user) return { title: "Admin Portal", subtitle: "" };
+    if (user.role === "SUPER_ADMIN") {
+      return {
+        title: "Super Administration",
+        subtitle: "Full platform oversight, system administration, and global configuration.",
+      };
+    }
+    if (user.role === "ADMIN") {
+      return {
+        title: "County Platform Administration",
+        subtitle: "Departmental configuration, user management, and platform activity monitoring.",
+      };
+    }
+    return { title: "Admin Portal", subtitle: "" };
+  }, [user]);
+
   // Strict auth redirect: redirect unauthenticated users to /admin/login
   useEffect(() => {
     if (!authLoading && !user) {
@@ -214,6 +257,7 @@ export default function AdminDashboard() {
           method: "GET",
           headers: {
             Accept: "application/json",
+            ...(getAdminToken() ? { Authorization: `Bearer ${getAdminToken()}` } : {}),
           },
           credentials: "include",
           cache: "no-store",
@@ -443,6 +487,9 @@ export default function AdminDashboard() {
                 <p className="mt-0.5 text-[10px] text-[#d1d5db] leading-none truncate">
                   {user?.email}
                 </p>
+                <p className="mt-0.5 text-[9px] text-[#bdcdbd] leading-none truncate uppercase">
+                  {String(user?.role || "").replace(/_/g, " ")}
+                </p>
               </div>
             )}
           </div>
@@ -483,6 +530,14 @@ export default function AdminDashboard() {
               <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-[#173c32] leading-none">
                 {activePage}
               </h1>
+              {adminWelcome.subtitle && (
+                <p className="mt-0.5 text-xs text-[#687468] leading-none">
+                  {adminWelcome.subtitle}
+                </p>
+              )}
+            </div>
+            <div className={`rounded-full border px-3 py-1 text-xs font-medium ${adminScope.level === "platform" ? "border-[#187a58] text-[#187a58] bg-[#e6f3eb]" : "border-[#55745c] text-[#55745c] bg-[#e8eee3]"}`}>
+              {adminScope.label}
             </div>
           </div>
 
