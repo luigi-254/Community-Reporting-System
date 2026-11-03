@@ -1,5 +1,6 @@
 import db from '../config/db.js';
 import { scopeDashboardQuery, buildEscalationScope, ADMIN_ROLES, WARD_SCOPED_ROLES, DEPARTMENT_SCOPED_ROLES } from '../services/jurisdiction.js';
+import { getDbHealthMetrics } from '../services/dbHealthMetrics.js';
 
 const countBy = (items, key) => items.reduce((result, item) => {
   const value = item[key] || 'UNKNOWN';
@@ -57,7 +58,7 @@ export const getDashboardOverview = async (req, res, next) => {
     const user = req.user;
     const reports = await getScopedReports(user);
     const officers = await db.findOfficers();
-    const escalations = await db.findEscalatedReports(buildEscalationScope(req.user));
+    const { escalations, degraded } = await db.findEscalatedReports(buildEscalationScope(req.user));
 
     const scopedReports = reports.reports;
     const openReports = scopedReports.filter((r) => isOpen(r.status));
@@ -75,6 +76,9 @@ export const getDashboardOverview = async (req, res, next) => {
         : 0,
       activeOfficers: officers.filter((o) => o.isActive).length,
       openEscalations: escalations.length,
+      // True when part of the overview could not be served from the live
+      // database. The UI shows a "live data unavailable" banner when set.
+      degraded: Boolean(degraded),
     };
 
     // Role-specific additions.
@@ -182,11 +186,21 @@ export const getDashboardPerformance = async (req, res, next) => {
 
 export const getDashboardEscalations = async (req, res, next) => {
   try {
-    const escalations = await db.findEscalatedReports(buildEscalationScope(req.user));
+    const { escalations, degraded } = await db.findEscalatedReports(buildEscalationScope(req.user));
     return res.status(200).json({
       status: 'success',
       total: escalations.length,
-      data: { escalations },
+      degraded: Boolean(degraded),
+      data: { escalations, degraded: Boolean(degraded) },
+    });
+  } catch (error) { next(error); }
+};
+
+export const getDashboardHealth = async (req, res, next) => {
+  try {
+    return res.status(200).json({
+      status: 'success',
+      data: getDbHealthMetrics(),
     });
   } catch (error) { next(error); }
 };
@@ -199,4 +213,5 @@ export default {
   getDashboardWards,
   getDashboardPerformance,
   getDashboardEscalations,
+  getDashboardHealth,
 };
