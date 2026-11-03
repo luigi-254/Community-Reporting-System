@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "../../lib/auth-context";
-import { StatusBadge, StatCard, EmptyState, LoadingState, ErrorState } from "../../components";
+import { StatusBadge, StatCard, EmptyState, LoadingState, ErrorState } from "../components";
 
 export default function SettingsPage() {
   const { user, loading } = useAuth();

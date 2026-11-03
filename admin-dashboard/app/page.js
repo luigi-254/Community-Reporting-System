@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../lib/auth-context";
+import { PanelLeftClose, PanelLeftOpen, Menu, LogOut } from "lucide-react";
 import BrandLogo from "./components/BrandLogo";
+import AdminProfilePill from "./components/AdminProfilePill";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -129,15 +131,28 @@ function normalizeReport(report, index) {
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const [activePage, setActivePage] = useState("Dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [reports, setReports] = useState([]);
   const [totalFromApi, setTotalFromApi] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
+
+  const toggleSidebar = () => setSidebarCollapsed((prev) => !prev);
+
+  const initials = String(user?.name || "C")
+    .split(" ")
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const sidebarWidth = sidebarCollapsed ? "w-16" : "w-64";
+  const mainContentMargin = sidebarCollapsed ? "lg:ml-16" : "lg:ml-64";
 
   // System health state.
   const [systemHealth, setSystemHealth] = useState(null);
@@ -344,84 +359,125 @@ export default function AdminDashboard() {
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-[#244637] p-6 text-[#f7f7f2] transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#244637] text-[#f7f7f2] transition-all duration-300 overflow-hidden ${sidebarWidth} lg:translate-x-0 ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="mb-10">
-          <BrandLogo className="mb-4 h-10 w-10" />
-          <h1 className="text-xl font-bold">
-            Community Reports
-          </h1>
-          <p className="mt-1 text-sm text-[#c4d3bf]">
-            Admin Panel
-          </p>
+        <div className={`border-b border-white/15 px-5 py-4 flex items-center ${sidebarCollapsed ? "justify-center" : "justify-start"} gap-3`}>
+          <BrandLogo className="h-8 w-8 flex-shrink-0" />
+          {!sidebarCollapsed && (
+            <div className="min-w-0">
+              <p className="text-xs font-semibold leading-tight">Mtaa Fix</p>
+              <p className="mt-0.5 text-[10px] text-[#d1d5db] leading-none">
+                Admin Portal
+              </p>
+            </div>
+          )}
         </div>
 
-        <nav className="space-y-2">
-          {[
-            "Dashboard",
-            "Reports",
-            "Users",
-            "Statistics",
-            "Audit Logs",
-            "Settings",
-          ].map((item) => (
-            <button
-              key={item}
-              onClick={() => handleNavigation(item)}
-              className={`w-full border-l-2 px-3 py-3 text-left transition-colors ${
-                activePage === item
-                  ? "border-[#e1e8d9] bg-white/10 font-semibold text-white"
-                  : "border-transparent text-[#d5dfd2] hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              {item}
-            </button>
-          ))}
-        </nav>
+        <div className={`px-5 pt-8 ${!sidebarCollapsed ? "" : "pt-3"}`}>
+          {!sidebarCollapsed && (
+            <p className="mb-6 px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#bdcdbd]">
+              Main menu
+            </p>
+          )}
+          <nav aria-label="Admin navigation" className="space-y-0.5">
+            {[
+              "Dashboard",
+              "Reports",
+              "Users",
+              "Statistics",
+              "Audit Logs",
+              "Settings",
+            ].map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => handleNavigation(item)}
+                aria-current={activePage === item ? "page" : undefined}
+                className={`flex items-center ${sidebarCollapsed ? "justify-center gap-3" : "justify-start gap-3"} w-full ${sidebarCollapsed ? "px-3" : "px-5"} py-3 text-sm transition-colors rounded-lg ${
+                  activePage === item
+                    ? "bg-white/10 text-white"
+                    : "text-[#d5dfd2] hover:bg-white/5 hover:text-white"
+                }`}
+                title={sidebarCollapsed ? item : undefined}
+              >
+                {item}
+              </button>
+            ))}
+          </nav>
+        </div>
 
-        <div className="mt-auto border-t border-white/15 pt-6">
-          <p className="text-xs leading-5 text-[#bdcdbd]">
-            Community issue monitoring and administration
-          </p>
-          <button
-            type="button"
-            className="mt-4 w-full border border-white/30 rounded-lg px-4 py-2.5 text-left text-sm font-medium text-white hover:bg-white/10"
-            onClick={async () => {
-              await logout();
-              router.replace("/login");
-            }}
-          >
-            Logout
-          </button>
+        <div className="mt-auto border-t border-white/15 p-4 pb-6">
+          <div className={`flex flex-col items-center gap-2 px-3 py-3 ${!sidebarCollapsed ? "flex-row justify-between items-center gap-3 px-3 py-2" : ""}`}>
+            <div className="flex size-8 items-center justify-center rounded-full bg-[#dce5d8] text-[#244637] text-xs font-semibold flex-shrink-0">
+              {initials}
+            </div>
+            {!sidebarCollapsed && (
+              <>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold leading-tight text-white">
+                    {user?.name || user?.email}
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-[#d1d5db] leading-none truncate">
+                    {user?.email}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await logout();
+                    router.replace("/login");
+                  }}
+                  className="p-1.5 rounded hover:bg-white/10 hover:text-white transition-colors flex-shrink-0"
+                  aria-label="Sign out"
+                >
+                  <LogOut className="w-4 h-4 text-[#c4d3bf]" aria-hidden="true" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1">
-        <header className="border-b border-[#e4e1d5] bg-white px-5 py-6 md:px-8">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#55745c]">
-                Administration
-              </p>
-              <h2 className="mt-1 text-2xl font-bold text-[#173c32]">
-                Admin Dashboard
-              </h2>
-              <p className="mt-1 text-sm text-[#687468]">
-                Live overview of community issues submitted by citizens.
-              </p>
-            </div>
-
+      <div
+        id="main-content"
+        className={`min-h-screen min-w-0 transition-all duration-300 ${mainContentMargin}`}
+      >
+        <header className="sticky top-0 z-30 flex min-h-[72px] items-center justify-between gap-4 border-b border-[#dce2d8] bg-[#fdfdf9] px-4 sm:px-6 py-2.5 sm:py-3">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setMobileMenuOpen((open) => !open)}
-              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-              className="lg:hidden rounded-lg border border-[#cbd6c8] px-3 py-2 text-sm"
+              onClick={toggleSidebar}
+              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              className="p-1.5 rounded-lg border border-[#dce2d8] text-[#687468] hover:bg-[#f5f8f5] hover:text-[#244637] transition-colors hidden lg:flex"
             >
-              {mobileMenuOpen ? "Close" : "Menu"}
+              {sidebarCollapsed ? (
+                <PanelLeftOpen className="w-4 h-4" aria-hidden="true" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" aria-hidden="true" />
+              )}
             </button>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open navigation menu"
+              className="p-1.5 rounded-lg border border-[#dce2d8] text-[#687468] hover:bg-[#f5f8f5] hover:text-[#244637] transition-colors lg:hidden"
+            >
+              <Menu className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <div className="h-4 w-px bg-[#dce2d8] mx-2" />
+            <div>
+              <p className="text-xs font-medium text-[#788277] leading-none">
+                Admin workspace
+              </p>
+              <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-[#173c32] leading-none">
+                {activePage}
+              </h1>
+            </div>
+          </div>
 
+          <div className="flex items-center gap-3">
             <button
               onClick={() => {
                 setLoading(true);
@@ -429,17 +485,12 @@ export default function AdminDashboard() {
                 loadReports();
               }}
               disabled={loading}
-              className="rounded-lg bg-[#187a58] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg border border-[#cbd6c8] bg-white px-4 py-2 text-sm font-medium transition hover:bg-[#f5f8f5] disabled:opacity-60"
             >
               {loading ? "Loading..." : "Refresh Data"}
             </button>
+            <AdminProfilePill user={user} onProfileClick={() => setActivePage("Dashboard")} />
           </div>
-
-          <p className="mt-3 text-xs text-[#687468]">
-            {lastUpdated
-              ? `Last updated at ${lastUpdated}`
-              : "Waiting for reports from the backend"}
-          </p>
         </header>
 
         {systemHealthLoading ? (
@@ -723,7 +774,7 @@ export default function AdminDashboard() {
             </div>
           </section>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
