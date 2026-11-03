@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const TOKEN_KEY = 'mtaafix_access_token';
+const TOKEN_KEY = 'crs_government_access_token';
 const PROTECTED_PREFIXES = ['/government'];
 
 export function proxy(request) {
