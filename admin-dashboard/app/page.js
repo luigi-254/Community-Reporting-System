@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "../lib/auth-context";
-import { PanelLeftClose, PanelLeftOpen, Menu, LogOut } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, Menu, LogOut, LayoutDashboard, FileText, Users, BarChart3, Settings } from "lucide-react";
 import BrandLogo from "./components/BrandLogo";
 import AdminProfilePill from "./components/AdminProfilePill";
 
@@ -131,7 +132,7 @@ function normalizeReport(report, index) {
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { logout, user } = useAuth();
+  const { logout, user, loading: authLoading } = useAuth();
 
   const [activePage, setActivePage] = useState("Dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -153,6 +154,15 @@ export default function AdminDashboard() {
 
   const sidebarWidth = sidebarCollapsed ? "w-16" : "w-64";
   const mainContentMargin = sidebarCollapsed ? "lg:ml-16" : "lg:ml-64";
+
+  // Strict auth redirect: redirect unauthenticated users to /admin/login
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const redirectTo = window.location.pathname;
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = `/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+    }
+  }, [authLoading, user, router]);
 
   // System health state.
   const [systemHealth, setSystemHealth] = useState(null);
@@ -391,28 +401,32 @@ export default function AdminDashboard() {
           )}
           <nav aria-label="Admin navigation" className="space-y-0.5">
             {[
-              "Dashboard",
-              "Reports",
-              "Users",
-              "Statistics",
-              "Audit Logs",
-              "Settings",
-            ].map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => handleNavigation(item)}
-                aria-current={activePage === item ? "page" : undefined}
-                className={`flex items-center ${sidebarCollapsed ? "justify-center gap-3" : "justify-start gap-3"} w-full ${sidebarCollapsed ? "px-3" : "px-5"} py-3 text-sm transition-colors rounded-lg ${
-                  activePage === item
-                    ? "bg-white/10 text-white"
-                    : "text-[#d5dfd2] hover:bg-white/5 hover:text-white"
-                }`}
-                title={sidebarCollapsed ? item : undefined}
-              >
-                {item}
-              </button>
-            ))}
+              { name: "Dashboard", icon: LayoutDashboard },
+              { name: "Reports", icon: FileText },
+              { name: "Users", icon: Users },
+              { name: "Statistics", icon: BarChart3 },
+              { name: "Audit Logs", icon: FileText },
+              { name: "Settings", icon: Settings },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => handleNavigation(item.name)}
+                  aria-current={activePage === item.name ? "page" : undefined}
+                  className={`flex items-center gap-3 w-full ${sidebarCollapsed ? "px-3 justify-center" : "px-5 justify-start"} py-3 text-sm transition-colors rounded-lg ${activePage === item.name ? "bg-white/10 text-white" : "text-[#d5dfd2] hover:bg-white/5 hover:text-white"}`}
+                  title={sidebarCollapsed ? item.name : undefined}
+                >
+                  <Icon className={`w-5 h-5 flex-shrink-0 ${activePage === item.name ? "text-white" : "text-[#c4d3bf]"}`} />
+                  {!sidebarCollapsed && (
+                    <span className={`truncate ${activePage === item.name ? "text-white" : "text-[#d5dfd2]"}`}>
+                      {item.name}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
         </div>
 
@@ -422,27 +436,14 @@ export default function AdminDashboard() {
               {initials}
             </div>
             {!sidebarCollapsed && (
-              <>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold leading-tight text-white">
-                    {user?.name || user?.email}
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-[#d1d5db] leading-none truncate">
-                    {user?.email}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await logout();
-                    router.replace("/login");
-                  }}
-                  className="p-1.5 rounded hover:bg-white/10 hover:text-white transition-colors flex-shrink-0"
-                  aria-label="Sign out"
-                >
-                  <LogOut className="w-4 h-4 text-[#c4d3bf]" aria-hidden="true" />
-                </button>
-              </>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold leading-tight text-white">
+                  {user?.name || user?.email}
+                </p>
+                <p className="mt-0.5 text-[10px] text-[#d1d5db] leading-none truncate">
+                  {user?.email}
+                </p>
+              </div>
             )}
           </div>
         </div>
@@ -450,7 +451,7 @@ export default function AdminDashboard() {
 
       <div
         id="main-content"
-        className={`min-h-screen min-w-0 transition-all duration-300 ${mainContentMargin}`}
+        className={`min-h-screen min-w-0 w-full transition-all duration-300 ${mainContentMargin}`}
       >
         <header className="sticky top-0 z-30 flex min-h-[72px] items-center justify-between gap-4 border-b border-[#dce2d8] bg-[#fdfdf9] px-4 sm:px-6 py-2.5 sm:py-3">
           <div className="flex items-center gap-2">
@@ -497,6 +498,13 @@ export default function AdminDashboard() {
             >
               {loading ? "Loading..." : "Refresh Data"}
             </button>
+            <Link
+              href="/users"
+              onClick={() => setActivePage("Users")}
+              className="rounded-lg border border-[#cbd6c8] bg-white px-4 py-2 text-sm font-medium transition hover:bg-[#f5f8f5] text-[#244637]"
+            >
+              Manage Officers
+            </Link>
             <AdminProfilePill user={user} onProfileClick={() => setActivePage("Dashboard")} />
           </div>
         </header>
