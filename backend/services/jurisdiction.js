@@ -151,4 +151,47 @@ export function scopeDashboardQuery(user, query = {}) {
   return query;
 }
 
+/**
+ * Build jurisdiction scope filters for escalation queries.
+ * Escalations are scoped through their parent report's jurisdiction.
+ * Mirrors scopeDashboardQuery so a user only sees escalations for reports
+ * they are authorized to view.
+ */
+export function buildEscalationScope(user) {
+  if (!user) return {};
+  // County-wide / system-wide oversight: see all escalations.
+  if (
+    user.role === 'GOVERNOR' ||
+    user.role === 'ADMIN' ||
+    user.role === 'SUPER_ADMIN'
+  ) {
+    return {};
+  }
+  // Field Officer: only escalations on their personally assigned reports.
+  if (user.role === 'FIELD_OFFICER' && user.id) {
+    return { report: { assignedOfficerId: user.id } };
+  }
+  // Department-scoped oversight roles: escalations on their department's reports.
+  if (DEPARTMENT_SCOPED_ROLES.has(user.role) && user.departmentId) {
+    return { report: { departmentId: user.departmentId } };
+  }
+  // Technical Supervisor: escalations on reports in their ward and department.
+  if (user.role === 'TECHNICAL_SUPERVISOR') {
+    if (user.wardId && user.departmentId) {
+      return { report: { wardId: user.wardId, departmentId: user.departmentId } };
+    }
+    if (user.wardId) return { report: { wardId: user.wardId } };
+    if (user.departmentId) return { report: { departmentId: user.departmentId } };
+  }
+  // Sub-County Administrator: escalations on reports in their sub-county.
+  if (user.role === 'SUBCOUNTY_ADMIN' && user.subCountyId) {
+    return { report: { subCountyId: user.subCountyId } };
+  }
+  // Ward-scoped operational roles: escalations on reports in their ward.
+  if (WARD_SCOPED_ROLES.has(user.role) && user.wardId) {
+    return { report: { wardId: user.wardId } };
+  }
+  return {};
+}
+
 export { ADMIN_ROLES, WARD_SCOPED_ROLES, DEPARTMENT_SCOPED_ROLES, STATUS_CHANGE_ROLES };

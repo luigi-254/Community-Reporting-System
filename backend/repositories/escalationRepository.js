@@ -24,9 +24,9 @@ const escalationRepository = {
     memoryStore.escalations.set(escalation.id, escalation);
     return { ...escalation };
   },
-  async findEscalatedReports() {
+  async findEscalatedReports(scope = {}) {
     if (checkIsPrisma()) {
-      try { return await getPrismaClient().escalation.findMany({ where: { status: 'OPEN' }, orderBy: { createdAt: 'desc' } }); }
+      try { return await getPrismaClient().escalation.findMany({ where: { status: 'OPEN', ...scope }, orderBy: { createdAt: 'desc' } }); }
       catch (error) { console.warn('[DB] Prisma findEscalatedReports failed, falling back to memory:', error.message); }
     }
     return [...memoryStore.escalations.values()].filter((item) => item.status === 'OPEN')

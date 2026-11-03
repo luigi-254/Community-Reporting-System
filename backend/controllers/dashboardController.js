@@ -1,5 +1,5 @@
 import db from '../config/db.js';
-import { scopeDashboardQuery } from '../services/jurisdiction.js';
+import { scopeDashboardQuery, buildEscalationScope, ADMIN_ROLES, WARD_SCOPED_ROLES, DEPARTMENT_SCOPED_ROLES } from '../services/jurisdiction.js';
 
 const countBy = (items, key) => items.reduce((result, item) => {
   const value = item[key] || 'UNKNOWN';
@@ -57,7 +57,7 @@ export const getDashboardOverview = async (req, res, next) => {
     const user = req.user;
     const reports = await getScopedReports(user);
     const officers = await db.findOfficers();
-    const escalations = await db.findEscalatedReports();
+    const escalations = await db.findEscalatedReports(buildEscalationScope(req.user));
 
     const scopedReports = reports.reports;
     const openReports = scopedReports.filter((r) => isOpen(r.status));
@@ -182,7 +182,7 @@ export const getDashboardPerformance = async (req, res, next) => {
 
 export const getDashboardEscalations = async (req, res, next) => {
   try {
-    const escalations = await db.findEscalatedReports();
+    const escalations = await db.findEscalatedReports(buildEscalationScope(req.user));
     return res.status(200).json({
       status: 'success',
       total: escalations.length,
