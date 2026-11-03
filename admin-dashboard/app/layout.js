@@ -3,7 +3,7 @@ import { AuthProvider } from "../lib/auth-context";
 import AdminAuthNav from "./components/AdminAuthNav";
 
 export const metadata = {
-  title: "Community Reporting System | Admin",
+  title: "Mtaa Fix | Admin",
   description: "Administrator dashboard for community reports and officer accounts.",
 };
 
