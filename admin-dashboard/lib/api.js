@@ -1,5 +1,5 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-const TOKEN_KEY = 'mtaafix_access_token';
+const TOKEN_KEY = 'crs_admin_access_token';
 
 export const getToken = () =>
   typeof window === 'undefined' ? null : localStorage.getItem(TOKEN_KEY);
