@@ -142,7 +142,8 @@ export default function CitizenDashboard() {
   if (!sessionReady) return null;
 
   if (!token || !user) {
-    router.replace("/sign-in");
+    const redirectTo = window.location.pathname;
+    router.replace(`/sign-in?redirectTo=${encodeURIComponent(redirectTo)}`);
     return null;
   }
 
