@@ -784,7 +784,7 @@ export const getReportDownload = async (req, res, next) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="mtaa-fix-report-${rep.id}.pdf"`
+      `attachment; filename="mtaa-fix-report-${rep.referenceCode || rep.id}.pdf"`
     );
 
     const doc = new PDFDocument({ margin: 50 });

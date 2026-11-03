@@ -223,7 +223,7 @@ export default function ReportDetailsPage() {
 
     if (!token || !id) {
       if (!token && typeof window !== "undefined") {
-        router.replace("/login");
+        router.replace("/sign-in");
       }
       setLoading(false);
       return;
@@ -280,7 +280,7 @@ export default function ReportDetailsPage() {
       <main className="min-h-screen bg-[#f7f7f2] flex items-center justify-center px-6 text-[#243329]">
         <div className="text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-4 border-[#e8eee9] border-t-[#244637] animate-[spin_1s_linear_infinite]" />
-          <p className="mt-4 text-sm text-[#687468]">Loading reportâ€¦</p>
+          <p className="mt-4 text-sm text-[#687468]">Loading report…</p>
         </div>
       </main>
     );
@@ -321,9 +321,7 @@ export default function ReportDetailsPage() {
   )
     ? report.resolutionMediaUrls
     : [];
-  const shortReportId = report.id
-    ? `${report.id.slice(0, 8)}â€¦${report.id.slice(-4)}`
-    : "";
+  const shortReportId = report.referenceCode || report.id || "";
 
   const isResolved = report.status === "RESOLVED";
   const isAwaitingVerification =
@@ -385,15 +383,16 @@ export default function ReportDetailsPage() {
                   <span className="font-mono text-sm truncate">{shortReportId}</span>
                   <button
                     onClick={() => {
-                      copyToClipboard(report.id, (id) => {
+                      const ref = report.referenceCode || report.id;
+                      copyToClipboard(ref, (id) => {
                         setCopiedId(id);
                         setTimeout(() => setCopiedId(""), 1500);
                       });
                     }}
                     className="p-1.5 rounded hover:bg-gray-50 text-[#244637] flex-shrink-0"
-                    aria-label="Copy report ID"
+                    aria-label="Copy report reference"
                   >
-                    {copiedId === report.id ? (
+                    {copiedId === (report.referenceCode || report.id) ? (
                       <CheckCircle className="w-3 h-3 text-[#187a58]" />
                     ) : (
                       <Copy className="w-3 h-3" />
@@ -446,7 +445,7 @@ export default function ReportDetailsPage() {
 
             <div className="md:w-2/3 p-6 sm:p-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-[#173c32]">{report.title}</h2>
+                <h2 className="text-2xl font-bold text-[#173c32] capitalize">{report.title}</h2>
                 <div className="no-print flex items-center gap-2">
                   <button
                     onClick={() => downloadReportPDF(report.id)}
