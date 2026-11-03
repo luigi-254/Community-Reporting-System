@@ -581,7 +581,7 @@ export default function ReportForm({ token, onSubmitSuccess }) {
               value={form.title}
               onChange={(event) => setForm({ ...form, title: event.target.value })}
               onBlur={(event) => setForm({ ...form, title: toSentenceCase(event.target.value.trim()) })}
-              autocapitalize="sentences"
+              autoCapitalize="sentences"
               placeholder="e.g. Pothole near the market entrance"
               className="w-full border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none focus:border-[#55745c]"
             />
@@ -624,7 +624,7 @@ export default function ReportForm({ token, onSubmitSuccess }) {
               value={form.location}
               onChange={(event) => setForm({ ...form, location: event.target.value })}
               onBlur={(event) => setForm({ ...form, location: toSentenceCase(event.target.value.trim()) })}
-              autocapitalize="sentences"
+              autoCapitalize="sentences"
               placeholder="Town, estate, road, or nearby landmark"
               className="w-full border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none focus:border-[#55745c]"
             />
@@ -753,7 +753,7 @@ export default function ReportForm({ token, onSubmitSuccess }) {
               onBlur={(event) =>
                 setForm({ ...form, description: toSentenceCase(event.target.value.trim()) })
               }
-              autocapitalize="sentences"
+              autoCapitalize="sentences"
               placeholder="Describe the condition of the issue and how it affects the community..."
               className="w-full resize-y border border-[#cbd6c8] bg-white px-4 py-3 text-sm leading-6 outline-none focus:border-[#55745c]"
             />

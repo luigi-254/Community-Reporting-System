@@ -149,7 +149,7 @@ export default function ForgotPasswordPage() {
           <form onSubmit={requestReset} className="space-y-5">
             <div>
               <label htmlFor="reset-email" className="mb-2 block text-sm font-semibold">Email address</label>
-              <input id="reset-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} autocapitalize="sentences" className={inputClass} placeholder="you@example.com" />
+              <input id="reset-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} autoCapitalize="sentences" className={inputClass} placeholder="you@example.com" />
             </div>
             <button type="submit" disabled={busy} className="min-h-12 w-full rounded-xl bg-[#187a58] px-5 py-3 text-sm font-semibold text-white hover:bg-[#126448] disabled:cursor-wait disabled:opacity-60">
               {busy ? "Requesting code…" : "Send Recovery Code"}

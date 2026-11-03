@@ -68,7 +68,7 @@ export default function SignInPage() {
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            autocapitalize="sentences"
+            autoCapitalize="sentences"
             placeholder="you@example.com"
             className="min-h-12 w-full rounded-xl border border-[#cddbd1] px-4 py-3 outline-none transition focus:border-[#187a58] focus:ring-4 focus:ring-[#187a58]/10"
           />
