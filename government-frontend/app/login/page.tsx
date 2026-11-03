@@ -84,6 +84,7 @@ const allowedRoles = [
 
       // Keep this token separate from the citizen's login token.
       localStorage.setItem("crs_government_access_token", accessToken);
+      document.cookie = `crs_government_access_token=${accessToken}; path=/; max-age=604800; SameSite=Lax`;
 
       localStorage.setItem(
         "crs_government_user",
