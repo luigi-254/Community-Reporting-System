@@ -4,7 +4,7 @@ import { authorizeRoles } from '../middlewares/roleMiddlewares.js';
 import {
   getDashboardOverview, getDashboardReports, getDashboardCategories,
   getDashboardDepartments, getDashboardWards, getDashboardPerformance,
-  getDashboardEscalations,
+  getDashboardEscalations, getDashboardHealth,
 } from '../controllers/dashboardController.js';
 import { ADMIN_ROLES, WARD_SCOPED_ROLES, DEPARTMENT_SCOPED_ROLES } from '../services/jurisdiction.js';
 
@@ -18,4 +18,5 @@ router.get('/departments', getDashboardDepartments);
 router.get('/wards', getDashboardWards);
 router.get('/performance', getDashboardPerformance);
 router.get('/escalations', getDashboardEscalations);
+router.get('/health', getDashboardHealth);
 export default router;

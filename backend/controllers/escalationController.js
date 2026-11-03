@@ -4,8 +4,13 @@ import { buildEscalationScope } from '../services/jurisdiction.js';
 
 export const getEscalatedReports = async (req, res, next) => {
   try {
-    const escalations = await db.findEscalatedReports(buildEscalationScope(req.user));
-    return res.status(200).json({ status: 'success', total: escalations.length, data: { escalations } });
+    const { escalations, degraded } = await db.findEscalatedReports(buildEscalationScope(req.user));
+    return res.status(200).json({
+      status: 'success',
+      total: escalations.length,
+      degraded: Boolean(degraded),
+      data: { escalations, degraded: Boolean(degraded) },
+    });
   } catch (error) { next(error); }
 };
 
