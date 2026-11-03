@@ -111,7 +111,7 @@ const allowedRoles = [
         <BrandLogo className="mb-7 h-14 w-14" preload />
 
         <p className="text-sm font-semibold uppercase tracking-wider text-[#55745c]">
-          Community Reporting System
+          Mtaa Fix
         </p>
 
         <h1 className="mt-3 text-3xl font-bold text-[#173c32]">

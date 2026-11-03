@@ -317,7 +317,7 @@ export default function StatisticsPage() {
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c4d3bf]">
-              Community Reporting System
+              Mtaa Fix
             </p>
             <h1 className="mt-2 text-2xl font-bold md:text-3xl">
               Statistics & Analytics

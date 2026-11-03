@@ -145,7 +145,7 @@ export default function AuditLogsPage() {
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c4d3bf]">
-              Community Reporting System
+              Mtaa Fix
             </p>
             <h1 className="mt-2 text-2xl font-bold md:text-3xl">Audit Logs</h1>
             <p className="mt-2 text-sm text-[#c4d3bf]">
