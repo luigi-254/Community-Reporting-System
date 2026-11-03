@@ -1,20 +1,25 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import AuthShell from "../components/AuthShell";
-import { API_URL, createDashboardHandoff } from "../../lib/auth";
+import { API_URL } from "../../lib/auth";
+
+const TOKEN_KEY = "crs_citizen_access_token";
 
 export default function SignInPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setBusy(true);
+    setIsLoading(true);
     setError("");
 
     try {
@@ -36,14 +41,17 @@ export default function SignInPage() {
         throw new Error("The server did not return a valid sign-in session.");
       }
 
-      await createDashboardHandoff(accessToken, user);
+      // Persist session and go straight to the citizen dashboard.
+      window.localStorage.setItem(TOKEN_KEY, accessToken);
+      window.localStorage.setItem("crs_citizen_user", JSON.stringify(user));
+      router.push("/dashboard");
     } catch (submitError) {
       setError(
         submitError instanceof Error
           ? submitError.message
           : "Unable to sign in. Please try again."
       );
-      setBusy(false);
+      setIsLoading(false);
     }
   }
 
@@ -95,10 +103,17 @@ export default function SignInPage() {
         </div>
         <button
           type="submit"
-          disabled={busy}
+          disabled={isLoading}
           className="flex min-h-12 w-full items-center justify-center rounded-xl bg-[#187a58] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-wait disabled:opacity-60"
         >
-          {busy ? "Signing in…" : "Sign In"}
+          {isLoading ? (
+            <>
+              <Loader2 className="animate-spin w-4 h-4 mr-2" aria-hidden="true" />
+              Signing in…
+            </>
+          ) : (
+            "Sign In"
+          )}
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-[#66776f]">
