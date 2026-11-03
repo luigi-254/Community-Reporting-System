@@ -12,7 +12,7 @@ import {
 import BrandLogo from "../../components/BrandLogo";
 import StatusBadge from "../../components/StatusBadge";
 import StatCard from "../../components/StatCard";
-import { normalizeReport, formatDate } from "../utils/reportUtils";
+import { normalizeReport, formatDate, toSentenceCase } from "../utils/reportUtils";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -186,9 +186,9 @@ export default function Overview({ token, user, onReportClick }) {
                 className="flex flex-wrap items-start justify-between gap-3 px-5 py-4"
               >
                 <div className="min-w-0">
-                  <p className="font-medium capitalize">{report.title}</p>
+                  <p className="font-medium capitalize">{toSentenceCase(report.title)}</p>
                   <p className="mt-1 text-xs text-[#7a8378]">
-                    {report.id} · {report.location || "Location not specified"}
+                    {report.id} · {toSentenceCase(report.location || "Location not specified")}
                   </p>
                   <p className="mt-2 text-xs text-[#687468]">
                     {formatDate(report.date)}

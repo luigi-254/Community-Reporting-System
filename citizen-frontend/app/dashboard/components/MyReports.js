@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import StatusBadge from "../../components/StatusBadge";
-import { normalizeReport, formatDate, resolveMediaUrl, isImageUrl } from "../utils/reportUtils";
+import { normalizeReport, formatDate, resolveMediaUrl, isImageUrl, toSentenceCase } from "../utils/reportUtils";
 import Image from "next/image";
 
 const API_BASE_URL = (
@@ -141,10 +141,10 @@ export default function MyReports({ token }) {
               <p className="text-xs font-semibold uppercase tracking-wide text-[#55745c]">
                 {report.id}
               </p>
-              <h3 className="mt-2 text-lg font-semibold capitalize">{report.title}</h3>
+              <h3 className="mt-2 text-lg font-semibold capitalize">{toSentenceCase(report.title)}</h3>
               <p className="mt-2 text-sm text-[#687468]">
-                {report.category} ·{" "}
-                {report.location || "Location not specified"}
+                {toSentenceCase(report.category)} ·{" "}
+                {toSentenceCase(report.location || "Location not specified")}
               </p>
             </div>
             <StatusBadge status={report.status} size="md" />
@@ -152,7 +152,7 @@ export default function MyReports({ token }) {
 
           {report.description && (
             <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[#59675b]">
-              {report.description}
+              {toSentenceCase(report.description)}
             </p>
           )}
 

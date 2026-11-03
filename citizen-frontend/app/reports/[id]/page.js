@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import BrandLogo from "../../components/BrandLogo";
+import { toSentenceCase } from "../../dashboard/utils/reportUtils";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -403,12 +404,12 @@ export default function ReportDetailsPage() {
 
               <div className="mb-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#55745c]">Category</p>
-                <p className="mt-1 text-sm text-[#687468]">{report.category || "Not specified"}</p>
+                <p className="mt-1 text-sm text-[#687468]">{toSentenceCase(report.category || "Not specified")}</p>
               </div>
 
               <div className="mb-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#55745c]">Location</p>
-                <p className="mt-1 text-sm text-[#687468]">{report.location || "Not specified"}</p>
+                <p className="mt-1 text-sm text-[#687468]">{toSentenceCase(report.location || "Not specified")}</p>
               </div>
 
               <div className="mb-6">
@@ -445,14 +446,14 @@ export default function ReportDetailsPage() {
 
             <div className="md:w-2/3 p-6 sm:p-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-[#173c32] capitalize">{report.title}</h2>
+                <h2 className="text-2xl font-bold text-[#173c32] capitalize">{toSentenceCase(report.title)}</h2>
                 <div className="no-print flex items-center gap-2">
                   <button
                     onClick={() => downloadReportPDF(report.id)}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
                   >
                     <Download className="w-4 h-4" />
-                    Download PDF
+                    Download
                   </button>
                   <button
                     onClick={() => window.print()}
@@ -467,7 +468,7 @@ export default function ReportDetailsPage() {
               <div className="mb-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#55745c]">Description</p>
                 <p className="mt-2 text-sm leading-7 text-[#59675b] whitespace-pre-wrap">
-                  {report.description || "No description provided."}
+                  {toSentenceCase(report.description || "No description provided.")}
                 </p>
               </div>
 
