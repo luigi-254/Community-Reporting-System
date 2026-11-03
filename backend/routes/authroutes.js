@@ -11,6 +11,7 @@ import {
   forgotPassword,
   resetPassword,
   getCurrentUser,
+  updateProfile,
 } from '../controllers/authController.js';
 
 import { authenticate } from '../middlewares/authMiddleware.js';
@@ -69,5 +70,7 @@ postWithFallback(
 );
 
 getWithFallback('/me', authenticate, getCurrentUser);
+router.patch('/me', authenticate, updateProfile);
+router.patch(`/api/auth/me`, authenticate, updateProfile);
 
 export default router;

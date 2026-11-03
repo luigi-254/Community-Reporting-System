@@ -509,6 +509,36 @@ export const getCurrentUser = async (req, res, next) => {
 export const verifyEmailPhone = verify;
 export const getMe = getCurrentUser;
 
+export const updateProfile = async (req, res, next) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized. Authentication required.',
+      });
+    }
+
+    const { name, email, phone, avatarUrl } = req.body;
+    const updatePayload = {};
+    if (name !== undefined) updatePayload.name = name;
+    if (email !== undefined) updatePayload.email = email;
+    if (phone !== undefined) updatePayload.phone = phone;
+    if (avatarUrl !== undefined) updatePayload.avatarUrl = avatarUrl;
+
+    const updatedUser = await db.updateUser(req.user.id, updatePayload);
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Profile updated successfully.',
+      data: {
+        user: sanitizeUser(updatedUser),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   register,
   login,
@@ -520,4 +550,5 @@ export default {
   getCurrentUser,
   verifyEmailPhone,
   getMe,
+  updateProfile,
 };
