@@ -2,6 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { X } from "lucide-react";
@@ -221,6 +222,7 @@ function exportToCSV(reports) {
 }
 
 export default function ReportsPage() {
+  const router = useRouter();
   const [reports, setReports] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -263,9 +265,9 @@ export default function ReportsPage() {
 
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
-          throw new Error(
-            "The backend requires an authorized account. Sign in with an administrator account and ensure its access token is available to this dashboard."
-          );
+          const redirectTo = window.location.pathname;
+          router.replace(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
+          return;
         }
 
         throw new Error(
