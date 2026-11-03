@@ -179,6 +179,36 @@ const TEST_ACCOUNTS = [
     departmentCode: 'ENFORCEMENT',
     description: 'County Enforcement — enforcement-related cases county-wide',
   },
+  {
+    name: 'Government Officer',
+    email: 'officer.general@example.com',
+    role: 'OFFICER',
+    countyName: 'Kisii',
+    subCountyName: 'Bobasi',
+    wardName: 'Bassi Central',
+    departmentCode: 'INFRA',
+    description: 'General Government Officer — operational support within jurisdiction',
+  },
+  {
+    name: 'Departmental Admin',
+    email: 'dept.admin.infra@example.com',
+    role: 'DEPARTMENTAL_ADMIN',
+    countyName: 'Kisii',
+    subCountyName: null,
+    wardName: null,
+    departmentCode: 'INFRA',
+    description: 'Departmental Administrator — Infrastructure department administration',
+  },
+  {
+    name: 'Platform Admin',
+    email: 'admin.county@example.com',
+    role: 'ADMIN',
+    countyName: 'Kisii',
+    subCountyName: null,
+    wardName: null,
+    departmentCode: null,
+    description: 'Platform Administrator — county-wide administrative oversight',
+  },
 ];
 
 const prisma = new PrismaClient({
