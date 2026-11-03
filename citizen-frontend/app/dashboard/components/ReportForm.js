@@ -441,6 +441,30 @@ export default function ReportForm({ token, onSubmitSuccess }) {
     setFormError("");
   }
 
+  async function uploadFilesToCloudinary(files) {
+    const token =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem(TOKEN_KEY)
+        : null;
+    const urls = [];
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch(`${API_BASE_URL}/api/uploads/upload-image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to upload image to Cloudinary.");
+      }
+      const data = await res.json();
+      urls.push(data.data.url);
+    }
+    return urls;
+  }
+
   async function handleSubmitReport(event) {
     event.preventDefault();
     setFormError("");
@@ -503,7 +527,12 @@ export default function ReportForm({ token, onSubmitSuccess }) {
       if (ward) formData.append("ward", ward);
       if (latitude !== null) formData.append("latitude", String(latitude));
       if (longitude !== null) formData.append("longitude", String(longitude));
-      selectedFiles.forEach((file) => formData.append("media", file));
+
+      let mediaUrls = [];
+      if (selectedFiles.length > 0) {
+        mediaUrls = await uploadFilesToCloudinary(selectedFiles);
+      }
+      formData.append("mediaUrls", JSON.stringify(mediaUrls));
 
       const response = await fetch(`${API_BASE_URL}/api/reports`, {
         method: "POST",
