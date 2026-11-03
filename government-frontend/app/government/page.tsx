@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import GovernmentMapLoader from "../../components/GovernmentMapLoader";
 import BrandLogo from "../../components/BrandLogo";
-import { X, CheckCircle, Clock } from "lucide-react";
-import { StatusBadge, StatCard, EmptyState, LoadingState, ErrorState } from "../../components";
+import { X, CheckCircle, Clock, PanelLeftClose, PanelLeftOpen, Menu, LogOut } from "lucide-react";
+import { StatusBadge, StatCard, EmptyState, LoadingState, ErrorState, GovernmentProfilePill } from "../../components";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -102,6 +102,8 @@ const DEPARTMENT_LABELS: Record<string, string> = {
   DISASTER: "Disaster Management",
   ENFORCEMENT: "Enforcement",
 };
+
+const now = Date.now();
 
 function normalizeStatus(value: unknown): ReportStatus {
   const status = String(value || "SUBMITTED")
@@ -414,6 +416,8 @@ export default function GovernmentDashboard() {
   const [activePage, setActivePage] = useState("Dashboard");
   const [user, setUser] = useState<DashboardUser | null>(null);
   const [userLoading, setUserLoading] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [reports, setReports] = useState<Report[]>([]);
   const [reportsLoading, setReportsLoading] = useState(true);
@@ -454,6 +458,18 @@ export default function GovernmentDashboard() {
     [user?.role]
   );
 
+  const toggleSidebar = () => setSidebarCollapsed((prev) => !prev);
+
+  const initials = String(user?.name || "C")
+    .split(" ")
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const sidebarWidth = sidebarCollapsed ? "w-16" : "w-64";
+  const mainContentMargin = sidebarCollapsed ? "lg:ml-16" : "lg:ml-64";
+
   const filteredReports = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return reports.filter((report) => {
@@ -472,7 +488,7 @@ export default function GovernmentDashboard() {
     const resolved = reports.filter((r) => r.status === "Resolved").length;
     const overdue = reports.filter((r) => {
       if (["RESOLVED", "REJECTED", "CLOSED", "CANCELLED"].includes(r.status)) return false;
-      const ageDays = (Date.now() - new Date(r.createdAt).getTime()) / 86400000;
+      const ageDays = (now - new Date(r.createdAt).getTime()) / 86400000;
       return ageDays > 7;
     }).length;
     return [
@@ -585,71 +601,127 @@ export default function GovernmentDashboard() {
   const selectedReport = reports.find((report) => report.id === selectedReportId);
 
   return (
-    <div className="min-h-screen bg-[#f7f7f2] text-[#243329] md:flex">
-      <aside className="w-full bg-[#244637] p-6 text-[#f7f7f2] md:min-h-screen md:w-64">
-        <div className="mb-6">
-          <BrandLogo className="mb-3 h-10 w-10" />
-          <h1 className="text-xl font-bold">Community Reports</h1>
-          <p className="mt-1 text-sm text-[#c4d3bf]">Government Portal</p>
+    <div className="min-h-screen bg-[#f7f7f2] text-[#243329] transition-all duration-300">
+      {mobileMenuOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#244637] text-[#f7f7f2] transition-all duration-300 overflow-hidden ${sidebarWidth} lg:translate-x-0 ${
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className={`border-b border-white/15 px-5 py-4 flex items-center ${sidebarCollapsed ? "justify-center" : "justify-start"} gap-3`}>
+          <BrandLogo className="h-8 w-8 flex-shrink-0" />
+          {!sidebarCollapsed && (
+            <div className="min-w-0">
+              <p className="text-xs font-semibold leading-tight">Mtaa Fix</p>
+              <p className="mt-0.5 text-[10px] text-[#d1d5db] leading-none">
+                Government Portal
+              </p>
+            </div>
+          )}
         </div>
 
-        <nav className="space-y-2" aria-label="Government dashboard navigation">
-          {menuItems.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setActivePage(item)}
-              aria-current={activePage === item ? "page" : undefined}
-              className={`w-full rounded-lg px-4 py-3 text-left transition-colors ${
-                activePage === item
-                  ? "bg-[#187a58] text-white"
-                  : "text-[#d5dfd2] hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              {item}
-            </button>
-          ))}
-        </nav>
-
-        <div className="mt-10 border-t border-white/15 pt-5">
-          <p className="text-sm text-[#bdcdbf]">Jurisdiction</p>
-          <p className="mt-1 font-medium">{scope.label}</p>
-          {user && (
-            <p className="mt-0.5 text-xs text-[#a3b8a8]">
-              {user.role.replace(/_/g, " ")} · {user.email}
+        <div className={`px-5 pt-8 ${!sidebarCollapsed ? "" : "pt-3"}`}>
+          {!sidebarCollapsed && (
+            <p className="mb-6 px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#bdcdbd]">
+              Main menu
             </p>
           )}
-          <button
-            type="button"
-            onClick={() => {
-              localStorage.removeItem("crs_government_access_token");
-              localStorage.removeItem("crs_government_user");
-              window.location.href = "/login";
-            }}
-            className="mt-5 rounded-lg border border-[#cbd6c8] px-4 py-2 text-sm font-medium text-[#8b392f] hover:bg-[#fff3f0] transition"
-          >
-            Sign out
-          </button>
+          <nav aria-label="Government navigation" className="space-y-0.5">
+            {menuItems.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setActivePage(item)}
+                aria-current={activePage === item ? "page" : undefined}
+                className={`flex items-center ${sidebarCollapsed ? "justify-center gap-3" : "justify-start gap-3"} w-full ${sidebarCollapsed ? "px-3" : "px-5"} py-3 text-sm transition-colors rounded-lg ${
+                  activePage === item
+                    ? "bg-white/10 text-white"
+                    : "text-[#d5dfd2] hover:bg-white/5 hover:text-white"
+                }`}
+                title={sidebarCollapsed ? item : undefined}
+              >
+                {item}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="mt-auto border-t border-white/15 p-4 pb-6">
+          <div className={`flex flex-col items-center gap-2 px-3 py-3 ${!sidebarCollapsed ? "flex-row justify-between items-center gap-3 px-3 py-2" : ""}`}>
+            <div className="flex size-8 items-center justify-center rounded-full bg-[#dce5d8] text-[#244637] text-xs font-semibold flex-shrink-0">
+              {initials}
+            </div>
+            {!sidebarCollapsed && (
+              <>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold leading-tight text-white">
+                    {user?.name || user?.email}
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-[#d1d5db] leading-none truncate">
+                    {user?.email}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem("crs_government_access_token");
+                    localStorage.removeItem("crs_government_user");
+                    window.location.href = "/login";
+                  }}
+                  className="p-1.5 rounded hover:bg-white/10 hover:text-white transition-colors flex-shrink-0"
+                  aria-label="Sign out"
+                >
+                  <LogOut className="w-4 h-4 text-[#c4d3bf]" aria-hidden="true" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 p-5 md:p-10">
-        <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-3xl font-bold text-[#173c32]">{welcome.title}</h2>
-            <p className="mt-2 text-sm text-[#687468]">{welcome.subtitle}</p>
-            <div className={`mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${
-              scope.level === "county" || scope.level === "system"
-                ? "border-[#187a58] text-[#187a58] bg-[#e6f3eb]"
-                : scope.level === "department"
-                  ? "border-[#55745c] text-[#55745c] bg-[#e8eee3]"
-                  : "border-[#687468] text-[#687468] bg-[#f0f2f1]"
-            }`}>
-              {scope.label}
+      <div
+        id="main-content"
+        className={`min-h-screen min-w-0 transition-all duration-300 ${mainContentMargin}`}
+      >
+        <header className="sticky top-0 z-30 flex min-h-[72px] items-center justify-between gap-4 border-b border-[#dce2d8] bg-[#fdfdf9] px-4 sm:px-6 py-2.5 sm:py-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              className="p-1.5 rounded-lg border border-[#dce2d8] text-[#687468] hover:bg-[#f5f8f5] hover:text-[#244637] transition-colors hidden lg:flex"
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen className="w-4 h-4" aria-hidden="true" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" aria-hidden="true" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open navigation menu"
+              className="p-1.5 rounded-lg border border-[#dce2d8] text-[#687468] hover:bg-[#f5f8f5] hover:text-[#244637] transition-colors lg:hidden"
+            >
+              <Menu className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <div className="h-4 w-px bg-[#dce2d8] mx-2" />
+            <div>
+              <p className="text-xs font-medium text-[#788277] leading-none">Government workspace</p>
+              <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-[#173c32] leading-none">
+                {activePage}
+              </h1>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            {userLoading && <span className="text-xs text-[#687468]">Loading session…</span>}
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => void loadReports()}
@@ -658,6 +730,7 @@ export default function GovernmentDashboard() {
             >
               {reportsLoading ? "Refreshing…" : "Refresh Reports"}
             </button>
+            <GovernmentProfilePill user={user} onProfileClick={() => setActivePage("Dashboard")} />
           </div>
         </header>
 
@@ -1102,7 +1175,7 @@ export default function GovernmentDashboard() {
             </div>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }
