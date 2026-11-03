@@ -8,6 +8,23 @@ const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 ).replace(/\/+$/, "");
 
+function getAdminToken() {
+  if (typeof window === "undefined") return null;
+  const keys = [
+    "crs_admin_access_token",
+    "crs_access_token",
+    "accessToken",
+    "access_token",
+    "authToken",
+    "token",
+  ];
+  for (const key of keys) {
+    const value = window.localStorage.getItem(key);
+    if (value) return value;
+  }
+  return null;
+}
+
 const PAGE_SIZE = 100;
 
 function normalizeStatus(status) {
@@ -102,7 +119,10 @@ export default function StatisticsPage() {
           `${API_BASE_URL}/api/reports?page=${page}&limit=${PAGE_SIZE}`,
           {
             method: "GET",
-            headers: { Accept: "application/json" },
+            headers: {
+              Accept: "application/json",
+              ...(getAdminToken() ? { Authorization: `Bearer ${getAdminToken()}` } : {}),
+            },
             credentials: "include",
             cache: "no-store",
           }
