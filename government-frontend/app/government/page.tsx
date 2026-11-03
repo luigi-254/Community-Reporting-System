@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import GovernmentMapLoader from "../../components/GovernmentMapLoader";
 import BrandLogo from "../../components/BrandLogo";
-import { X, CheckCircle, Clock, PanelLeftClose, PanelLeftOpen, Menu, LogOut } from "lucide-react";
+import { X, CheckCircle, Clock, PanelLeftClose, PanelLeftOpen, Menu, LogOut, LayoutDashboard, FileText, Users, BarChart3, Settings } from "lucide-react";
 import { StatusBadge, StatCard, EmptyState, LoadingState, ErrorState, GovernmentProfilePill } from "../../components";
 
 const API_URL = (
@@ -450,7 +450,20 @@ export default function GovernmentDashboard() {
     return { label: `Ward: ${user.wardId || "unassigned"}`, level: "ward" };
   }, [user]);
 
-  const menuItems = useMemo(() => MENU_BY_ROLE[user?.role ?? "OFFICER"] || DEFAULT_MENU, [user?.role]);
+  const menuItems = useMemo(() => {
+    const iconMap: Record<string, typeof LayoutDashboard> = {
+      Dashboard: LayoutDashboard,
+      Reports: FileText,
+      Users: Users,
+      Statistics: BarChart3,
+      "Audit Logs": FileText,
+      Settings: Settings,
+    };
+    return (MENU_BY_ROLE[user?.role ?? "OFFICER"] || DEFAULT_MENU).map((name) => ({
+      name,
+      icon: iconMap[name] || LayoutDashboard,
+    }));
+  }, [user?.role]);
   const welcome = useMemo(() => WELCOME_BY_ROLE[user?.role ?? "OFFICER"] || WELCOME_BY_ROLE.OFFICER, [user?.role]);
 
   const canChangeStatus = useMemo(
@@ -643,22 +656,26 @@ export default function GovernmentDashboard() {
             </p>
           )}
           <nav aria-label="Government navigation" className="space-y-0.5">
-            {menuItems.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setActivePage(item)}
-                aria-current={activePage === item ? "page" : undefined}
-                className={`flex items-center ${sidebarCollapsed ? "justify-center gap-3" : "justify-start gap-3"} w-full ${sidebarCollapsed ? "px-3" : "px-5"} py-3 text-sm transition-colors rounded-lg ${
-                  activePage === item
-                    ? "bg-white/10 text-white"
-                    : "text-[#d5dfd2] hover:bg-white/5 hover:text-white"
-                }`}
-                title={sidebarCollapsed ? item : undefined}
-              >
-                {item}
-              </button>
-            ))}
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => setActivePage(item.name)}
+                  aria-current={activePage === item.name ? "page" : undefined}
+                  className={`flex items-center gap-3 w-full ${sidebarCollapsed ? "px-3 justify-center" : "px-5 justify-start"} py-3 text-sm transition-colors rounded-lg ${activePage === item.name ? "bg-white/10 text-white" : "text-[#d5dfd2] hover:bg-white/5 hover:text-white"}`}
+                  title={sidebarCollapsed ? item.name : undefined}
+                >
+                  <Icon className={`w-5 h-5 flex-shrink-0 ${activePage === item.name ? "text-white" : "text-[#c4d3bf]"}`} />
+                  {!sidebarCollapsed && (
+                    <span className={`truncate ${activePage === item.name ? "text-white" : "text-[#d5dfd2]"}`}>
+                      {item.name}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
         </div>
 
