@@ -522,6 +522,14 @@ export default function GovernmentDashboard() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!userLoading && !user) {
+      const redirectTo = window.location.pathname;
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = `/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+    }
+  }, [userLoading, user]);
+
   const loadReports = useCallback(async (showLoading = true) => {
     if (showLoading) setReportsLoading(true);
     setReportsError("");

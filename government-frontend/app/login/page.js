@@ -18,7 +18,9 @@ export default function GovernmentLoginPage() {
     setError('');
     try {
       const user = await login(email, password);
-      router.push(user.role === 'CITIZEN' ? '/' : '/');
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectTo = searchParams.get("redirectTo") || "/";
+      router.push(redirectTo);
     } catch (err) {
       setError(err.message);
     } finally {
