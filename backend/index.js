@@ -25,6 +25,7 @@ import officialRoutes from './routes/officialroutes.js';
 import escalationRoutes from './routes/escalationroutes.js';
 import dashboardRoutes from './routes/dashboardroutes.js';
 import auditLogRoutes from './routes/auditlogroutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 import { autoEscalateOverdueReports } from './services/slaService.js';
 
 import {
@@ -171,6 +172,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/uploads', uploadRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/subcategories', subcategoryRoutes);
 app.use('/api/locations', locationRoutes);
