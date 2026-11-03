@@ -310,8 +310,8 @@ const MENU_BY_ROLE: Record<ApiRole, string[]> = {
   TECHNICAL_HEAD: ["Dashboard", "Reports", "Departments"],
   TECHNICAL_SUPERVISOR: ["Dashboard", "Reports", "Inspections", "Work Updates"],
   FIELD_OFFICER: ["Dashboard", "Reports", "Inspections", "Work Updates", "Resolutions"],
-  WARD_ADMIN: ["Dashboard", "Reports", "Follow-ups"],
-  SUBCOUNTY_ADMIN: ["Dashboard", "Reports", "Follow-ups"],
+  WARD_ADMIN: ["Dashboard", "Reports", "Follow-ups", "GIS Map"],
+  SUBCOUNTY_ADMIN: ["Dashboard", "Reports", "Follow-ups", "Departments", "Statistics"],
   DISASTER_MANAGER: ["Dashboard", "Reports", "Departments"],
   ENFORCEMENT_OFFICER: ["Dashboard", "Reports", "Departments"],
   OFFICER: ["Dashboard", "Reports"],
@@ -429,6 +429,27 @@ export default function GovernmentDashboard() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [updatingReportId, setUpdatingReportId] = useState<string | null>(null);
 
+  const [dashboardOverview, setDashboardOverview] = useState<any>(null);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+
+  async function loadOverview() {
+    setOverviewLoading(true);
+    try {
+      const token = getGovernmentToken();
+      const response = await fetch(`${API_URL}/api/dashboard/overview`, {
+        cache: "no-store",
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (!response.ok) throw new Error(`Could not load dashboard overview. HTTP ${response.status}.`);
+      const payload = await response.json();
+      setDashboardOverview(payload?.data ?? payload ?? {});
+    } catch {
+      setDashboardOverview(null);
+    } finally {
+      setOverviewLoading(false);
+    }
+  }
+
   const scope = useMemo<DashboardScope>(() => {
     if (!user) return { label: "Unauthenticated", level: "none" };
     if (user.role === "GOVERNOR") return { label: "County-wide (Kisii)", level: "county" };
@@ -495,22 +516,64 @@ export default function GovernmentDashboard() {
     });
   }, [reports, searchTerm, statusFilter]);
 
-  const stats = useMemo(() => {
-    const total = reports.length;
-    const open = reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length;
-    const resolved = reports.filter((r) => r.status === "Resolved").length;
-    const overdue = reports.filter((r) => {
+  const roleStats = useMemo(() => {
+    const overview = dashboardOverview || {};
+    const total = overview.totalReports ?? reports.length;
+    const open = overview.openReports ?? reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length;
+    const resolved = overview.resolvedReports ?? reports.filter((r) => r.status === "Resolved").length;
+    const overdue = overview.overdueReports ?? reports.filter((r) => {
       if (["RESOLVED", "REJECTED", "CLOSED", "CANCELLED"].includes(r.status)) return false;
       const ageDays = (now - new Date(r.createdAt).getTime()) / 86400000;
       return ageDays > 7;
     }).length;
+    const escalated = overview.openEscalations ?? 0;
+    const resolutionRate = overview.resolutionRate ?? (total > 0 ? Math.round((resolved / total) * 100) : 0);
+    const assignedToMe = overview.assignedToMe ?? reports.filter((r) => r.assignedOfficerId === user?.id).length;
+    const activeOfficers = overview.activeOfficers ?? 0;
+
+    const role = user?.role ?? "OFFICER";
+
+    // Role-specific metric configurations.
+    if (role === "GOVERNOR") {
+      return [
+        { title: "Total Reports", value: total, color: "text-[#173c32]" },
+        { title: "Open", value: open, color: "text-[#66572f]" },
+        { title: "Overdue", value: overdue, color: "text-[#8b392f]" },
+        { title: "Resolved", value: resolved, color: "text-[#187a58]" },
+        { title: "Escalated", value: escalated, color: "text-[#66572f]" },
+        { title: "Resolution Rate", value: `${resolutionRate}%`, color: "text-[#187a58]" },
+      ];
+    }
+    if (role === "CECM" || role === "CHIEF_OFFICER" || role === "TECHNICAL_HEAD" || role === "DISASTER_MANAGER" || role === "ENFORCEMENT_OFFICER") {
+      return [
+        { title: "Total Reports", value: total, color: "text-[#173c32]" },
+        { title: "Open", value: open, color: "text-[#66572f]" },
+        { title: "Overdue", value: overdue, color: "text-[#8b392f]" },
+        { title: "Resolved", value: resolved, color: "text-[#187a58]" },
+        { title: "Active Officers", value: activeOfficers, color: "text-[#173c32]" },
+        { title: "Escalated", value: escalated, color: "text-[#66572f]" },
+      ];
+    }
+    if (role === "TECHNICAL_SUPERVISOR" || role === "FIELD_OFFICER" || role === "OFFICER") {
+      return [
+        { title: "Total Reports", value: total, color: "text-[#173c32]" },
+        { title: "Assigned to Me", value: assignedToMe, color: "text-[#173c32]" },
+        { title: "Open", value: open, color: "text-[#66572f]" },
+        { title: "Overdue", value: overdue, color: "text-[#8b392f]" },
+        { title: "Resolved", value: resolved, color: "text-[#187a58]" },
+      ];
+    }
+    // WARD_ADMIN, SUBCOUNTY_ADMIN, DEPARTMENTAL_ADMIN, ADMIN, SUPER_ADMIN
     return [
       { title: "Total Reports", value: total, color: "text-[#173c32]" },
       { title: "Open", value: open, color: "text-[#66572f]" },
       { title: "Overdue", value: overdue, color: "text-[#8b392f]" },
       { title: "Resolved", value: resolved, color: "text-[#187a58]" },
+      { title: "Escalated", value: escalated, color: "text-[#66572f]" },
     ];
-  }, [reports]);
+  }, [dashboardOverview, reports, user]);
+
+  const stats = roleStats;
 
   const reportDepartments = useMemo(() => {
     const fromReports = reports.map((r) => r.department).filter(Boolean);
@@ -570,7 +633,8 @@ export default function GovernmentDashboard() {
 
   useEffect(() => {
     void loadReports();
-  }, [loadReports]);
+    void loadOverview();
+  }, [loadReports, loadOverview]);
 
   async function updateReportStatus(reportId: string, status: ReportStatus) {
     if (!canChangeStatus) {
@@ -807,6 +871,275 @@ export default function GovernmentDashboard() {
                 <StatCard key={stat.title} label={stat.title} value={reportsLoading ? "—" : stat.value} color={stat.color} />
               ))}
             </div>
+
+            {/* Role-specific overview sections */}
+            {overviewLoading ? null : (
+              <>
+                {user?.role === "GOVERNOR" && (
+                  <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#173c32]">County Oversight</h3>
+                        <p className="mt-1 text-sm text-[#687468]">
+                          County-wide service delivery performance across all departments and sub-counties.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Departments Reporting</p>
+                        <p className="mt-1 text-2xl font-bold text-[#173c32]">
+                          {reportDepartments.length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Open Escalations</p>
+                        <p className="mt-1 text-2xl font-bold text-[#8b392f]">
+                          {dashboardOverview.openEscalations ?? 0}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Resolution Rate</p>
+                        <p className="mt-1 text-2xl font-bold text-[#187a58]">
+                          {dashboardOverview.resolutionRate ?? 0}%
+                        </p>
+                      </div>
+                    </div>
+                    {reportDepartments.length > 0 && (
+                      <div className="mt-6">
+                        <h4 className="text-sm font-semibold text-[#173c32] mb-3">Reports by Department</h4>
+                        <div className="space-y-3">
+                          {reportDepartments.map((dept) => {
+                            const count = reports.filter((r) => r.department === dept).length;
+                            const pct = reports.length > 0 ? Math.round((count / reports.length) * 100) : 0;
+                            return (
+                              <div key={dept} className="flex items-center justify-between">
+                                <span className="text-sm text-[#687468]">{dept}</span>
+                                <div className="w-32 h-2 bg-[#eff1e9] rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-[#187a58]"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs font-medium text-[#173c32]">{count}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {[
+                  "CECM",
+                  "CHIEF_OFFICER",
+                  "TECHNICAL_HEAD",
+                ].includes(user?.role ?? "") && (
+                  <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#173c32]">Department Performance</h3>
+                        <p className="mt-1 text-sm text-[#687468]">
+                          Performance within your assigned department.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Total Reports</p>
+                        <p className="mt-1 text-2xl font-bold text-[#173c32]">
+                          {dashboardOverview.totalReports ?? reports.length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Open</p>
+                        <p className="mt-1 text-2xl font-bold text-[#66572f]">
+                          {dashboardOverview.openReports ?? reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Active Officers</p>
+                        <p className="mt-1 text-2xl font-bold text-[#187a58]">
+                          {dashboardOverview.activeOfficers ?? 0}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {user?.role === "DISASTER_MANAGER" && (
+                  <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#173c32]">Disaster Management</h3>
+                        <p className="mt-1 text-sm text-[#687468]">
+                          Monitor disaster-related incidents and hazard reports within your jurisdiction.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Hazard Reports</p>
+                        <p className="mt-1 text-2xl font-bold text-[#8b392f]">
+                          {dashboardOverview.totalReports ?? reports.length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Open Incidents</p>
+                        <p className="mt-1 text-2xl font-bold text-[#8b392f]">
+                          {dashboardOverview.openReports ?? reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Escalated</p>
+                        <p className="mt-1 text-2xl font-bold text-[#8b392f]">
+                          {dashboardOverview.openEscalations ?? 0}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {user?.role === "ENFORCEMENT_OFFICER" && (
+                  <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#173c32]">Enforcement Operations</h3>
+                        <p className="mt-1 text-sm text-[#687468]">
+                          Manage enforcement cases and compliance violations within your jurisdiction.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Assigned Cases</p>
+                        <p className="mt-1 text-2xl font-bold text-[#173c32]">
+                          {dashboardOverview.totalReports ?? reports.length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Open Cases</p>
+                        <p className="mt-1 text-2xl font-bold text-[#66572f]">
+                          {dashboardOverview.openReports ?? reports.filter((r) => !["RESOLVED", "REJECTED"].includes(r.status)).length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Resolved</p>
+                        <p className="mt-1 text-2xl font-bold text-[#187a58]">
+                          {dashboardOverview.resolvedReports ?? reports.filter((r) => r.status === "Resolved").length}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {user?.role === "TECHNICAL_SUPERVISOR" && (
+                  <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#173c32]">Team Overview</h3>
+                        <p className="mt-1 text-sm text-[#687468]">
+                          Supervise field officers and review technical work within your jurisdiction.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Pending Inspections</p>
+                        <p className="mt-1 text-2xl font-bold text-[#66572f]">
+                          {reports.filter((r) => ["SUBMITTED", "UNDER_REVIEW", "ASSIGNED"].includes(r.status)).length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Work in Progress</p>
+                        <p className="mt-1 text-2xl font-bold text-[#244637]">
+                          {reports.filter((r) => r.status === "In Progress").length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Awaiting Review</p>
+                        <p className="mt-1 text-2xl font-bold text-[#66572f]">
+                          {reports.filter((r) => r.status === "Pending").length}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {[
+                  "FIELD_OFFICER",
+                  "OFFICER",
+                ].includes(user?.role ?? "") && (
+                  <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#173c32]">My Assigned Tasks</h3>
+                        <p className="mt-1 text-sm text-[#687468]">
+                          Reports personally assigned to you within your jurisdiction.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Assigned to Me</p>
+                        <p className="mt-1 text-2xl font-bold text-[#173c32]">
+                          {dashboardOverview.assignedToMe ?? reports.filter((r) => r.assignedOfficerId === user?.id).length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Pending Field Work</p>
+                        <p className="mt-1 text-2xl font-bold text-[#66572f]">
+                          {reports.filter((r) => r.assignedOfficerId === user?.id && !["RESOLVED", "REJECTED", "CLOSED", "CANCELLED"].includes(r.status)).length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Completed</p>
+                        <p className="mt-1 text-2xl font-bold text-[#187a58]">
+                          {reports.filter((r) => r.assignedOfficerId === user?.id && r.status === "Resolved").length}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {[
+                  "WARD_ADMIN",
+                  "SUBCOUNTY_ADMIN",
+                ].includes(user?.role ?? "") && (
+                  <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#173c32]">Jurisdiction Overview</h3>
+                        <p className="mt-1 text-sm text-[#687468]">
+                          Monitor service delivery within your assigned geographic area.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Reports in Jurisdiction</p>
+                        <p className="mt-1 text-2xl font-bold text-[#173c32]">
+                          {dashboardOverview.totalReports ?? reports.length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Pending Follow-ups</p>
+                        <p className="mt-1 text-2xl font-bold text-[#66572f]">
+                          {reports.filter((r) => !["RESOLVED", "REJECTED", "CLOSED", "CANCELLED"].includes(r.status)).length}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#dce2d8] p-4">
+                        <p className="text-sm text-[#687468]">Escalated</p>
+                        <p className="mt-1 text-2xl font-bold text-[#8b392f]">
+                          {dashboardOverview.openEscalations ?? 0}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                )}
+              </>
+            )}
 
             {/* Action Required Section */}
             <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
@@ -1217,6 +1550,7 @@ function InspectionsWorkspace({ user, reports }: { user: DashboardUser | null; r
     actionTaken: "",
     status: "PENDING",
   });
+  const [inspectionFiles, setInspectionFiles] = useState<File[]>([]);
 
   useEffect(() => {
     loadInspections();
@@ -1252,6 +1586,27 @@ function InspectionsWorkspace({ user, reports }: { user: DashboardUser | null; r
     setError("");
     try {
       const token = getGovernmentToken();
+
+      // Upload any attached evidence files first.
+      const mediaUrls: string[] = [];
+      if (inspectionFiles.length > 0) {
+        for (const file of inspectionFiles) {
+          const formData = new FormData();
+          formData.append("image", file);
+          const uploadRes = await fetch(`${API_URL}/api/uploads/upload-image`, {
+            method: "POST",
+            headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: formData,
+          });
+          if (!uploadRes.ok) {
+            const uploadData = await uploadRes.json().catch(() => ({}));
+            throw new Error(uploadData.message || "Failed to upload evidence image.");
+          }
+          const uploadPayload = await uploadRes.json();
+          mediaUrls.push(uploadPayload?.data?.url ?? "");
+        }
+      }
+
       const response = await fetch(`${API_URL}/api/inspections`, {
         method: "POST",
         headers: {
@@ -1263,7 +1618,7 @@ function InspectionsWorkspace({ user, reports }: { user: DashboardUser | null; r
           findings: formData.findings,
           actionTaken: formData.actionTaken,
           status: formData.status,
-          mediaUrls: [],
+          mediaUrls,
         }),
       });
       if (!response.ok) {
@@ -1272,6 +1627,7 @@ function InspectionsWorkspace({ user, reports }: { user: DashboardUser | null; r
       }
       setFormOpen(false);
       setFormData({ reportId: "", findings: "", actionTaken: "", status: "PENDING" });
+      setInspectionFiles([]);
       await loadInspections();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create inspection.");
@@ -1385,6 +1741,25 @@ function InspectionsWorkspace({ user, reports }: { user: DashboardUser | null; r
                 className="w-full rounded-lg border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none focus:border-[#187a58]"
               />
             </div>
+            <div>
+              <label htmlFor="inspection-evidence" className="mb-2 block text-sm font-medium">
+                Evidence Photos
+              </label>
+              <input
+                id="inspection-evidence"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  setInspectionFiles((prev) => [...prev, ...files]);
+                }}
+                className="w-full rounded-lg border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none focus:border-[#187a58]"
+              />
+              <p className="mt-1 text-xs text-[#687468]">
+                Select photos to attach as inspection evidence. Files are uploaded when you record the inspection.
+              </p>
+            </div>
             <div className="flex gap-3">
               <button
                 type="submit"
@@ -1401,6 +1776,23 @@ function InspectionsWorkspace({ user, reports }: { user: DashboardUser | null; r
                 Cancel
               </button>
             </div>
+            {inspectionFiles.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {inspectionFiles.map((file, index) => (
+                  <div key={index} className="flex items-center gap-1 rounded bg-[#eff1e9] px-2 py-1">
+                    <span className="text-xs text-[#687468] truncate max-w-[200px]">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setInspectionFiles((prev) => prev.filter((_, i) => i !== index))}
+                      className="p-1 text-[#8b392f] hover:bg-[#fff3f0] rounded"
+                      aria-label={`Remove ${file.name}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </form>
         </div>
       )}
@@ -1673,6 +2065,7 @@ function ResolutionsWorkspace({ user, reports }: { user: DashboardUser | null; r
     status: "PENDING",
     notes: "",
   });
+  const [resolutionFiles, setResolutionFiles] = useState<File[]>([]);
 
   useEffect(() => {
     loadResolutions();
@@ -1707,6 +2100,27 @@ function ResolutionsWorkspace({ user, reports }: { user: DashboardUser | null; r
     setError("");
     try {
       const token = getGovernmentToken();
+
+      // Upload any attached evidence files first.
+      const mediaUrls: string[] = [];
+      if (resolutionFiles.length > 0) {
+        for (const file of resolutionFiles) {
+          const formData = new FormData();
+          formData.append("image", file);
+          const uploadRes = await fetch(`${API_URL}/api/uploads/upload-image`, {
+            method: "POST",
+            headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: formData,
+          });
+          if (!uploadRes.ok) {
+            const uploadData = await uploadRes.json().catch(() => ({}));
+            throw new Error(uploadData.message || "Failed to upload evidence image.");
+          }
+          const uploadPayload = await uploadRes.json();
+          mediaUrls.push(uploadPayload?.data?.url ?? "");
+        }
+      }
+
       const response = await fetch(`${API_URL}/api/resolutions`, {
         method: "POST",
         headers: {
@@ -1717,7 +2131,7 @@ function ResolutionsWorkspace({ user, reports }: { user: DashboardUser | null; r
           reportId: formData.reportId,
           status: formData.status,
           notes: formData.notes,
-          mediaUrls: [],
+          mediaUrls,
         }),
       });
       if (!response.ok) {
@@ -1726,6 +2140,7 @@ function ResolutionsWorkspace({ user, reports }: { user: DashboardUser | null; r
       }
       setFormOpen(false);
       setFormData({ reportId: "", status: "PENDING", notes: "" });
+      setResolutionFiles([]);
       await loadResolutions();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit resolution.");
@@ -1848,6 +2263,25 @@ function ResolutionsWorkspace({ user, reports }: { user: DashboardUser | null; r
                 className="w-full rounded-lg border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none focus:border-[#187a58]"
               />
             </div>
+            <div>
+              <label htmlFor="resolution-evidence" className="mb-2 block text-sm font-medium">
+                Evidence Photos
+              </label>
+              <input
+                id="resolution-evidence"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  setResolutionFiles((prev) => [...prev, ...files]);
+                }}
+                className="w-full rounded-lg border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none focus:border-[#187a58]"
+              />
+              <p className="mt-1 text-xs text-[#687468]">
+                Select photos to attach as resolution evidence. Files are uploaded when you submit the resolution.
+              </p>
+            </div>
             <div className="flex gap-3">
               <button
                 type="submit"
@@ -1864,6 +2298,23 @@ function ResolutionsWorkspace({ user, reports }: { user: DashboardUser | null; r
                 Cancel
               </button>
             </div>
+            {resolutionFiles.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {resolutionFiles.map((file, index) => (
+                  <div key={index} className="flex items-center gap-1 rounded bg-[#eff1e9] px-2 py-1">
+                    <span className="text-xs text-[#687468] truncate max-w-[200px]">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setResolutionFiles((prev) => prev.filter((_, i) => i !== index))}
+                      className="p-1 text-[#8b392f] hover:bg-[#fff3f0] rounded"
+                      aria-label={`Remove ${file.name}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </form>
         </div>
       )}
