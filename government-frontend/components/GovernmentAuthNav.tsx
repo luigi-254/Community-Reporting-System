@@ -2,29 +2,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import BrandLogo from "./BrandLogo";
+import { useAuth, AUTH_STATUS } from "../lib/auth-context";
 
 export default function GovernmentAuthNav() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [signedIn, setSignedIn] = useState(false);
+  const { status, logout } = useAuth();
 
-  useEffect(() => {
-    setSignedIn(
-      Boolean(localStorage.getItem("crs_government_access_token"))
-    );
-  }, [pathname]);
-
-  function handleSignOut() {
-    localStorage.removeItem("crs_government_access_token");
-    localStorage.removeItem("crs_government_user");
-
-    setSignedIn(false);
-    router.replace("/login");
-    router.refresh();
-  }
+  const signedIn = status === AUTH_STATUS.AUTHENTICATED;
 
   return (
     <>{pathname === "/login" ? null : (
@@ -56,7 +42,10 @@ export default function GovernmentAuthNav() {
           {signedIn ? (
             <button
               type="button"
-              onClick={handleSignOut}
+              onClick={() => {
+                // Aborts in-flight requests, clears the session, navigates once.
+                void logout();
+              }}
               className="rounded-lg bg-[#187a58] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#126448]"
             >
               Sign Out
@@ -71,7 +60,7 @@ export default function GovernmentAuthNav() {
           )}
         </nav>
       </div>
-      </header>
+    </header>
     )}</>
   );
 }

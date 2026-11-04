@@ -1,65 +1,221 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { apiFetch, getToken, setToken } from './api';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  apiFetch,
+  getToken,
+  setToken,
+  clearStoredToken,
+  clearSessionCookie,
+  persistSessionCookie,
+  onSessionExpired,
+} from './api';
+
+export const AUTH_STATUS = {
+  LOADING: 'loading',
+  AUTHENTICATED: 'authenticated',
+  UNAUTHENTICATED: 'unauthenticated',
+};
+
+/** Normalise a role string coming from the API into SCREAMING_SNAKE form. */
+export const normalizeRole = (role) =>
+  String(role || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
 
 const AuthContext = createContext(null);
 
+/**
+ * Full-page spinner shown while the session is still being resolved.
+ * The application tree is not mounted during this phase, so no dashboard page
+ * can paint and no redirect can fire before the session is known.
+ */
+function SessionLoadingScreen() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label="Loading your session"
+      className="flex min-h-screen items-center justify-center bg-[#f7f7f2]"
+    >
+      <div className="flex flex-col items-center gap-4">
+        <span className="h-10 w-10 animate-spin rounded-full border-4 border-[#dce2d8] border-t-[#187a58]" />
+        <p className="text-sm font-medium text-[#687468]">Loading your session…</p>
+      </div>
+    </div>
+  );
+}
+
 export function AuthProvider({ children }) {
+  const router = useRouter();
+  const [status, setStatus] = useState(AUTH_STATUS.LOADING);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  // Controllers for in-flight auth/session requests so logout can abort them.
+  const resolveControllerRef = useRef(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadUser() {
-      if (!getToken()) {
-        if (!cancelled) setLoading(false);
-        return;
-      }
-
-      try {
-        const res = await apiFetch('/api/auth/me');
-        if (!cancelled) setUser(res.data.user);
-      } catch {
-        setToken(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadUser();
-
+    mountedRef.current = true;
     return () => {
-      cancelled = true;
+      mountedRef.current = false;
     };
   }, []);
 
-  const login = async (email, password) => {
+  /**
+   * Resolve the session exactly once on app start.
+   *
+   * While the status is 'loading' the provider renders a spinner instead of
+   * the application tree, so no dashboard page is mounted and no redirect is
+   * attempted before we know whether the visitor is signed in.
+   */
+  useEffect(() => {
+    const controller = new AbortController();
+    resolveControllerRef.current = controller;
+    let cancelled = false;
+
+    async function resolveSession() {
+      if (!getToken()) {
+        if (cancelled) return;
+        // A stale httpOnly cookie would make the server-side guard bounce
+        // between /login and the protected route. Clear it once the client
+        // knows there is no usable session.
+        void clearSessionCookie();
+        setStatus(AUTH_STATUS.UNAUTHENTICATED);
+        return;
+      }
+      try {
+        const res = await apiFetch('/api/auth/me', { signal: controller.signal });
+        const resolvedUser = res?.data?.user ?? null;
+        if (cancelled) return;
+        if (resolvedUser) {
+          setUser(resolvedUser);
+          setStatus(AUTH_STATUS.AUTHENTICATED);
+        } else {
+          clearStoredToken();
+          void clearSessionCookie();
+          setStatus(AUTH_STATUS.UNAUTHENTICATED);
+        }
+      } catch (error) {
+        if (cancelled || error?.name === 'AbortError') return;
+        clearStoredToken();
+        void clearSessionCookie();
+        setStatus(AUTH_STATUS.UNAUTHENTICATED);
+      }
+    }
+
+    void resolveSession();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+      resolveControllerRef.current = null;
+    };
+  }, []);
+
+  /**
+   * A 401 on an authenticated request means the session expired. Abort
+   * in-flight work, clear the session, and navigate exactly once.
+   */
+  useEffect(() => {
+    const unsubscribe = onSessionExpired(() => {
+      resolveControllerRef.current?.abort();
+      resolveControllerRef.current = null;
+      clearStoredToken();
+      void clearSessionCookie();
+      setUser(null);
+      setStatus(AUTH_STATUS.UNAUTHENTICATED);
+      router.replace('/login?reason=session-expired');
+    });
+    return unsubscribe;
+  }, [router]);
+
+  /**
+   * Sign in: establish the session first, then hand control back to the caller.
+   *
+   * `allowedRoles` is checked *before* the session is established, so an
+   * account that is not allowed into this portal never receives a token or a
+   * session cookie.
+   */
+  const login = useCallback(async (email, password, { allowedRoles } = {}) => {
     const res = await apiFetch('/api/auth/login', { method: 'POST', body: { email, password } });
-    setToken(res.data.accessToken);
-    setUser(res.data.user);
-    return res.data.user;
-  };
+    const accessToken = res?.data?.accessToken;
+    const signedInUser = res?.data?.user;
+    if (!accessToken || !signedInUser) {
+      throw new Error('The backend did not return a valid login session.');
+    }
 
-  const register = async (payload) => {
+    const role = normalizeRole(signedInUser.role);
+    if (Array.isArray(allowedRoles) && allowedRoles.length > 0 && !allowedRoles.includes(role)) {
+      clearStoredToken();
+      await clearSessionCookie();
+      throw new Error(
+        `This account has the role "${role || 'UNKNOWN'}". A government officer or administrator account is required.`,
+      );
+    }
+
+    setToken(accessToken);
+    // The cookie is the source of truth for the server-side route guard.
+    await persistSessionCookie(accessToken);
+    if (mountedRef.current) {
+      setUser({ ...signedInUser, role });
+      setStatus(AUTH_STATUS.AUTHENTICATED);
+    }
+    return { ...signedInUser, role };
+  }, []);
+
+  const register = useCallback(async (payload) => {
     const res = await apiFetch('/api/auth/register', { method: 'POST', body: payload });
-    setToken(res.data.accessToken);
-    setUser(res.data.user);
-    return res.data.user;
-  };
+    const accessToken = res?.data?.accessToken;
+    const signedInUser = res?.data?.user;
+    if (!accessToken || !signedInUser) {
+      throw new Error('The backend did not return a valid registration session.');
+    }
+    setToken(accessToken);
+    await persistSessionCookie(accessToken);
+    if (mountedRef.current) {
+      setUser(signedInUser);
+      setStatus(AUTH_STATUS.AUTHENTICATED);
+    }
+    return signedInUser;
+  }, []);
 
-  const logout = async () => {
+  /** Sign out: abort in-flight requests, clear the session, navigate once. */
+  const logout = useCallback(async () => {
+    resolveControllerRef.current?.abort();
+    resolveControllerRef.current = null;
     try {
       await apiFetch('/api/auth/logout', { method: 'POST' });
-    } catch {}
-    setToken(null);
-    setUser(null);
-  };
+    } catch {
+      // A failed logout call must not block the client-side session reset.
+    }
+    clearStoredToken();
+    await clearSessionCookie();
+    if (mountedRef.current) {
+      setUser(null);
+      setStatus(AUTH_STATUS.UNAUTHENTICATED);
+    }
+    router.replace('/login');
+  }, [router]);
+
+  const value = useMemo(
+    () => ({
+      status,
+      user,
+      isAuthenticated: status === AUTH_STATUS.AUTHENTICATED,
+      isLoading: status === AUTH_STATUS.LOADING,
+      login,
+      register,
+      logout,
+    }),
+    [status, user, login, register, logout],
+  );
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {status === AUTH_STATUS.LOADING ? <SessionLoadingScreen /> : children}
     </AuthContext.Provider>
   );
 }
