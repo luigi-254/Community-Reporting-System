@@ -7,9 +7,11 @@ export const authenticate = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
-    } else if (req.cookies && req.cookies.accessToken) {
-      // 2. Check cookies
-      token = req.cookies.accessToken;
+    } else if (req.cookies) {
+      // 2. Check cookies. The government frontend writes the session under
+      // 'crs_government_access_token'; keep 'accessToken' as a fallback so
+      // other clients that set that name continue to work.
+      token = req.cookies['crs_government_access_token'] ?? req.cookies.accessToken;
     }
 
     if (!token) {

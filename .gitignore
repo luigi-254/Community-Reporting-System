@@ -7,3 +7,6 @@ dist/
 # Local temporary backups
 new-portal-backup.tsx
 old-admin-backup.js
+
+# Runtime logs
+*.log

@@ -67,7 +67,18 @@ export const tokenRepository = {
           data: { token, userId, expiresAt },
         });
       } catch (err) {
-        console.warn('[DB] Prisma createRefreshToken failed, using memory fallback:', err.message);
+        // Unique constraint on `token`: an existing record (possibly revoked)
+        // conflicts with the new value. Reactivate and reuse that record
+        // instead of silently falling back to the memory store, which would
+        // leave the token invisible to Prisma-based lookups.
+        const existing = await getPrismaClient().refreshToken.findUnique({ where: { token } });
+        if (existing) {
+          return await getPrismaClient().refreshToken.update({
+            where: { token },
+            data: { userId, expiresAt, revokedAt: null },
+          });
+        }
+        console.warn('[DB] Prisma createRefreshToken failed:', err.message);
       }
     }
 
@@ -80,10 +91,14 @@ export const tokenRepository = {
 
     if (checkIsPrisma()) {
       try {
-        return await getPrismaClient().refreshToken.findUnique({
+        const found = await getPrismaClient().refreshToken.findUnique({
           where: { token },
           include: { user: true },
         });
+        if (found) return found;
+        // Prisma is available but the token was not found in the database.
+        // Fall through to the memory store in case it was stored there via
+        // the createRefreshToken fallback path.
       } catch (err) {
         console.warn('[DB] Prisma findRefreshToken failed, using memory fallback:', err.message);
       }

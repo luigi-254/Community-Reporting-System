@@ -5,10 +5,8 @@ import { useRouter } from 'next/navigation';
 import {
   apiFetch,
   getToken,
-  setToken,
-  clearStoredToken,
-  clearSessionCookie,
-  persistSessionCookie,
+  setSession,
+  clearSession,
   onSessionExpired,
 } from './api';
 
@@ -52,6 +50,10 @@ export function AuthProvider({ children }) {
   const router = useRouter();
   const [status, setStatus] = useState(AUTH_STATUS.LOADING);
   const [user, setUser] = useState(null);
+  // Bumps whenever the authenticated account changes (login/logout/session
+  // expiry). Dashboard data-fetching effects depend on it so they re-run for
+  // the new account without requiring a full page reload.
+  const [sessionVersion, setSessionVersion] = useState(0);
 
   // Controllers for in-flight auth/session requests so logout can abort them.
   const resolveControllerRef = useRef(null);
@@ -82,7 +84,7 @@ export function AuthProvider({ children }) {
         // A stale httpOnly cookie would make the server-side guard bounce
         // between /login and the protected route. Clear it once the client
         // knows there is no usable session.
-        void clearSessionCookie();
+        void clearSession();
         setStatus(AUTH_STATUS.UNAUTHENTICATED);
         return;
       }
@@ -94,14 +96,12 @@ export function AuthProvider({ children }) {
           setUser(resolvedUser);
           setStatus(AUTH_STATUS.AUTHENTICATED);
         } else {
-          clearStoredToken();
-          void clearSessionCookie();
+          await clearSession();
           setStatus(AUTH_STATUS.UNAUTHENTICATED);
         }
       } catch (error) {
         if (cancelled || error?.name === 'AbortError') return;
-        clearStoredToken();
-        void clearSessionCookie();
+        await clearSession();
         setStatus(AUTH_STATUS.UNAUTHENTICATED);
       }
     }
@@ -123,10 +123,10 @@ export function AuthProvider({ children }) {
     const unsubscribe = onSessionExpired(() => {
       resolveControllerRef.current?.abort();
       resolveControllerRef.current = null;
-      clearStoredToken();
-      void clearSessionCookie();
+      void clearSession();
       setUser(null);
       setStatus(AUTH_STATUS.UNAUTHENTICATED);
+      setSessionVersion((v) => v + 1);
       router.replace('/login?reason=session-expired');
     });
     return unsubscribe;
@@ -149,19 +149,17 @@ export function AuthProvider({ children }) {
 
     const role = normalizeRole(signedInUser.role);
     if (Array.isArray(allowedRoles) && allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-      clearStoredToken();
-      await clearSessionCookie();
+      await clearSession();
       throw new Error(
         `This account has the role "${role || 'UNKNOWN'}". A government officer or administrator account is required.`,
       );
     }
 
-    setToken(accessToken);
-    // The cookie is the source of truth for the server-side route guard.
-    await persistSessionCookie(accessToken);
+    await setSession(accessToken);
     if (mountedRef.current) {
       setUser({ ...signedInUser, role });
       setStatus(AUTH_STATUS.AUTHENTICATED);
+      setSessionVersion((v) => v + 1);
     }
     return { ...signedInUser, role };
   }, []);
@@ -173,11 +171,11 @@ export function AuthProvider({ children }) {
     if (!accessToken || !signedInUser) {
       throw new Error('The backend did not return a valid registration session.');
     }
-    setToken(accessToken);
-    await persistSessionCookie(accessToken);
+    await setSession(accessToken);
     if (mountedRef.current) {
       setUser(signedInUser);
       setStatus(AUTH_STATUS.AUTHENTICATED);
+      setSessionVersion((v) => v + 1);
     }
     return signedInUser;
   }, []);
@@ -191,11 +189,11 @@ export function AuthProvider({ children }) {
     } catch {
       // A failed logout call must not block the client-side session reset.
     }
-    clearStoredToken();
-    await clearSessionCookie();
+    await clearSession();
     if (mountedRef.current) {
       setUser(null);
       setStatus(AUTH_STATUS.UNAUTHENTICATED);
+      setSessionVersion((v) => v + 1);
     }
     router.replace('/login');
   }, [router]);
@@ -204,13 +202,14 @@ export function AuthProvider({ children }) {
     () => ({
       status,
       user,
+      sessionVersion,
       isAuthenticated: status === AUTH_STATUS.AUTHENTICATED,
       isLoading: status === AUTH_STATUS.LOADING,
       login,
       register,
       logout,
     }),
-    [status, user, login, register, logout],
+    [status, user, sessionVersion, login, register, logout],
   );
 
   return (

@@ -7,6 +7,7 @@ import BrandLogo from "../../components/BrandLogo";
 import { X, CheckCircle, Clock, PanelLeftClose, PanelLeftOpen, Menu, LogOut, LayoutDashboard, FileText, Users, BarChart3, Settings } from "lucide-react";
 import { StatusBadge, StatCard, EmptyState, LoadingState, ErrorState, GovernmentProfilePill } from "../../components";
 import { useAuth, AUTH_STATUS } from "../../lib/auth-context";
+import { apiFetch } from "../../lib/api";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -213,9 +214,9 @@ function extractReports(payload: any): any[] {
 function getGovernmentToken(): string {
   if (typeof window === "undefined") return "";
   return (
-    localStorage.getItem("crs_government_access_token") ||
-    localStorage.getItem("crs_admin_access_token") ||
-    localStorage.getItem("crs_access_token") ||
+    sessionStorage.getItem("crs_government_access_token") ||
+    sessionStorage.getItem("crs_admin_access_token") ||
+    sessionStorage.getItem("crs_access_token") ||
     ""
   );
 }
@@ -402,7 +403,7 @@ const CAN_CHANGE_STATUS: ApiRole[] = [
 ];
 
 export default function GovernmentDashboard() {
-  const { status: authStatus, user: sessionUser, logout } = useAuth();
+  const { status: authStatus, user: sessionUser, logout, sessionVersion } = useAuth();
   const user = useMemo(() => toDashboardUser(sessionUser), [sessionUser]);
   const [activePage, setActivePage] = useState("Dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -424,13 +425,9 @@ export default function GovernmentDashboard() {
   const loadOverview = useCallback(async () => {
     setOverviewLoading(true);
     try {
-      const token = getGovernmentToken();
-      const response = await fetch(`${API_URL}/api/dashboard/overview`, {
+      const payload = await apiFetch("/api/dashboard/overview", {
         cache: "no-store",
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
-      if (!response.ok) throw new Error(`Could not load dashboard overview. HTTP ${response.status}.`);
-      const payload = await response.json();
       setDashboardOverview(payload?.data ?? payload ?? {});
     } catch {
       setDashboardOverview(null);
@@ -587,14 +584,9 @@ export default function GovernmentDashboard() {
     if (showLoading) setReportsLoading(true);
     setReportsError("");
     try {
-      const response = await fetch(`${API_URL}/api/dashboard/reports?page=1&limit=10`, {
+      const payload = await apiFetch("/api/dashboard/reports?page=1&limit=10", {
         cache: "no-store",
-        headers: { ...(getGovernmentToken() ? { Authorization: `Bearer ${getGovernmentToken() }` } : {}) },
       });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload?.message || `Could not load reports. HTTP ${response.status}.`);
-      }
       const allReports = extractReports(payload);
       setReports(
         allReports
@@ -615,7 +607,7 @@ export default function GovernmentDashboard() {
     if (authStatus !== AUTH_STATUS.AUTHENTICATED) return;
     void loadReports();
     void loadOverview();
-  }, [authStatus, loadReports, loadOverview]);
+  }, [authStatus, sessionVersion, loadReports, loadOverview]);
 
   async function updateReportStatus(reportId: string, status: ReportStatus) {
     if (!canChangeStatus) {
@@ -626,18 +618,10 @@ export default function GovernmentDashboard() {
     setActionMessage("");
     setActionError("");
     try {
-      const response = await fetch(`${API_URL}/api/reports/${encodeURIComponent(reportId)}/status`, {
+      const payload = await apiFetch(`/api/reports/${encodeURIComponent(reportId)}/status`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(getGovernmentToken() ? { Authorization: `Bearer ${getGovernmentToken() }` } : {}),
-        },
         body: JSON.stringify({ status: statusToApi[status] }),
       });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload?.message || `Could not update report status. HTTP ${response.status}.`);
-      }
       setActionMessage("Report status updated successfully.");
       await loadReports(false);
     } catch (error) {
@@ -1551,14 +1535,10 @@ function InspectionsWorkspace({ user, reports }: { user: DashboardUser | null; r
     setLoading(true);
     setError("");
     try {
-      const token = getGovernmentToken();
-      const response = await fetch(`${API_URL}/api/inspections`, {
+      const payload = await apiFetch("/api/inspections", {
         cache: "no-store",
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
-      if (!response.ok) throw new Error(`Failed to load inspections (${response.status})`);
-      const data = await response.json();
-      setInspections(data?.data?.inspections ?? data?.inspections ?? data ?? []);
+      setInspections(payload?.data?.inspections ?? payload?.inspections ?? payload ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load inspections.");
     } finally {
@@ -1598,12 +1578,8 @@ function InspectionsWorkspace({ user, reports }: { user: DashboardUser | null; r
         }
       }
 
-      const response = await fetch(`${API_URL}/api/inspections`, {
+      const response = await apiFetch("/api/inspections", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify({
           reportId: formData.reportId,
           findings: formData.findings,
@@ -1612,10 +1588,6 @@ function InspectionsWorkspace({ user, reports }: { user: DashboardUser | null; r
           mediaUrls,
         }),
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to create inspection.");
-      }
       setFormOpen(false);
       setFormData({ reportId: "", findings: "", actionTaken: "", status: "PENDING" });
       setInspectionFiles([]);
@@ -1846,14 +1818,10 @@ function WorkUpdatesWorkspace({ user, reports }: { user: DashboardUser | null; r
     setLoading(true);
     setError("");
     try {
-      const token = getGovernmentToken();
-      const response = await fetch(`${API_URL}/api/work-updates`, {
+      const payload = await apiFetch("/api/work-updates", {
         cache: "no-store",
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
-      if (!response.ok) throw new Error(`Failed to load work updates (${response.status})`);
-      const data = await response.json();
-      setUpdates(data?.data?.workUpdates ?? data?.workUpdates ?? data ?? []);
+      setUpdates(payload?.data?.workUpdates ?? payload?.workUpdates ?? payload ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load work updates.");
     } finally {
@@ -1871,23 +1839,14 @@ function WorkUpdatesWorkspace({ user, reports }: { user: DashboardUser | null; r
     setCreating(true);
     setError("");
     try {
-      const token = getGovernmentToken();
-      const response = await fetch(`${API_URL}/api/work-updates`, {
+      await apiFetch("/api/work-updates", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify({
           reportId: formData.reportId,
           note: formData.note,
           status: formData.status,
         }),
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to create work update.");
-      }
       setFormOpen(false);
       setFormData({ reportId: "", note: "", status: "IN_PROGRESS" });
       await loadUpdates();
@@ -2066,14 +2025,10 @@ function ResolutionsWorkspace({ user, reports }: { user: DashboardUser | null; r
     setLoading(true);
     setError("");
     try {
-      const token = getGovernmentToken();
-      const response = await fetch(`${API_URL}/api/resolutions`, {
+      const payload = await apiFetch("/api/resolutions", {
         cache: "no-store",
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
-      if (!response.ok) throw new Error(`Failed to load resolutions (${response.status})`);
-      const data = await response.json();
-      setResolutions(data?.data?.resolutions ?? data?.resolutions ?? data ?? []);
+      setResolutions(payload?.data?.resolutions ?? payload?.resolutions ?? payload ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load resolutions.");
     } finally {
@@ -2112,12 +2067,8 @@ function ResolutionsWorkspace({ user, reports }: { user: DashboardUser | null; r
         }
       }
 
-      const response = await fetch(`${API_URL}/api/resolutions`, {
+      const response = await apiFetch("/api/resolutions", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify({
           reportId: formData.reportId,
           status: formData.status,
@@ -2125,10 +2076,6 @@ function ResolutionsWorkspace({ user, reports }: { user: DashboardUser | null; r
           mediaUrls,
         }),
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to submit resolution.");
-      }
       setFormOpen(false);
       setFormData({ reportId: "", status: "PENDING", notes: "" });
       setResolutionFiles([]);
@@ -2143,18 +2090,9 @@ function ResolutionsWorkspace({ user, reports }: { user: DashboardUser | null; r
   async function handleReviewResolution(resolutionId: string, approve: boolean) {
     setError("");
     try {
-      const token = getGovernmentToken();
-      const response = await fetch(`${API_URL}/api/resolutions/${encodeURIComponent(resolutionId)}/${approve ? "approve" : "reject"}`, {
+      await apiFetch(`/api/resolutions/${encodeURIComponent(resolutionId)}/${approve ? "approve" : "reject"}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || `Failed to ${approve ? "approve" : "reject"} resolution.`);
-      }
       await loadResolutions();
     } catch (err) {
       setError(err instanceof Error ? err.message : `Failed to ${approve ? "approve" : "reject"} resolution.`);
@@ -2387,14 +2325,10 @@ function FollowUpsWorkspace({ user, reports }: { user: DashboardUser | null; rep
     setLoading(true);
     setError("");
     try {
-      const token = getGovernmentToken();
-      const response = await fetch(`${API_URL}/api/follow-ups`, {
+      const payload = await apiFetch("/api/follow-ups", {
         cache: "no-store",
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
-      if (!response.ok) throw new Error(`Failed to load follow-ups (${response.status})`);
-      const data = await response.json();
-      setFollowUps(data?.data?.followUps ?? data?.followUps ?? data ?? []);
+      setFollowUps(payload?.data?.followUps ?? payload?.followUps ?? payload ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load follow-ups.");
     } finally {
@@ -2410,23 +2344,14 @@ function FollowUpsWorkspace({ user, reports }: { user: DashboardUser | null; rep
     setCreating(true);
     setError("");
     try {
-      const token = getGovernmentToken();
-      const response = await fetch(`${API_URL}/api/follow-ups`, {
+      await apiFetch("/api/follow-ups", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify({
           reportId: formData.reportId,
           type: formData.type,
           note: formData.note,
         }),
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to create follow-up.");
-      }
       setFormOpen(false);
       setFormData({ reportId: "", type: "NOTE", note: "" });
       await loadFollowUps();

@@ -6,34 +6,64 @@ const SESSION_COOKIE_PATH = '/api/session';
 export const SESSION_EXPIRED_EVENT = 'crs:session-expired';
 
 export const getToken = () =>
-  typeof window === 'undefined' ? null : localStorage.getItem(TOKEN_KEY);
+  typeof window === 'undefined' ? null : sessionStorage.getItem(TOKEN_KEY);
 
 /**
  * Persist the access token for the API client's Authorization header.
  *
- * The httpOnly session cookie is the source of truth for the server-side route
- * guard; it is written separately through POST /api/session so it cannot be
- * read or tampered with by client-side script.
+ * Uses sessionStorage (tab-scoped) so that each browser tab can hold a
+ * different account's token — enabling concurrent multi-role login (e.g. one
+ * tab as GOVERNOR, another as CECM) without tabs overwriting each other.
+ *
+ * The httpOnly session cookie is intentionally NOT the source of truth for
+ * per-tab sessions: cookies are shared across all tabs on the same origin, so
+ * they cannot distinguish which tab issued which token. API calls authenticate
+ * via the Authorization header built from sessionStorage instead.
  */
 export const setToken = (token) => {
   if (typeof window === 'undefined') return;
   if (token) {
-    localStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.setItem(TOKEN_KEY, token);
   } else {
-    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
   }
 };
 
 /** Remove the locally stored token without touching the httpOnly cookie. */
 export const clearStoredToken = () => {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem('crs_government_user');
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem('crs_government_user');
 };
 
 /**
+ * Write the access token to sessionStorage (tab-scoped, used by apiFetch /
+ * dashboard fetch calls) and best-effort to the httpOnly session cookie.
+ * Both are written together when possible, but sessionStorage is the
+ * authoritative per-tab source; the shared cookie cannot be tab-specific.
+ */
+export async function setSession(token) {
+  if (typeof window === 'undefined') return;
+  if (token) {
+    sessionStorage.setItem(TOKEN_KEY, token);
+  } else {
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem('crs_government_user');
+  }
+  return persistSessionCookie(token);
+}
+
+/** Clear both sessionStorage and the httpOnly session cookie together. */
+export async function clearSession() {
+  clearStoredToken();
+  return clearSessionCookie();
+}
+
+/**
  * Write the httpOnly session cookie used by the server-side route guard.
- * Best-effort: the localStorage token still authenticates API calls.
+ * Best-effort: cookies are shared across all tabs on the origin, so they
+ * cannot hold a tab-specific token. API calls authenticate via the
+ * sessionStorage token instead; the cookie is only a best-effort hint.
  */
 export async function persistSessionCookie(accessToken) {
   if (typeof window === 'undefined') return false;
@@ -66,19 +96,33 @@ export async function clearSessionCookie() {
 
 /**
  * Notify the auth provider that the current session is no longer valid.
+ *
+ * The expired token is passed in the event detail so that each tab can
+ * verify whether the expiry applies to *its* own session. Without this, a
+ * 401 in one tab would wrongly clear every other tab's concurrent session.
  * The provider owns the redirect so it can use router.replace (no full
  * page reload, no ping-pong between /login and the protected route).
  */
-export function notifySessionExpired() {
+export function notifySessionExpired(expiredToken) {
   if (typeof window === 'undefined') return;
-  window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+  window.dispatchEvent(
+    new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { token: expiredToken } }),
+  );
 }
 
 /** Subscribe to session-expiry notifications. Returns an unsubscribe function. */
 export function onSessionExpired(listener) {
   if (typeof window === 'undefined') return () => {};
-  window.addEventListener(SESSION_EXPIRED_EVENT, listener);
-  return () => window.removeEventListener(SESSION_EXPIRED_EVENT, listener);
+  const handler = (event) => {
+    const currentToken = getToken();
+    // Only react when the expiring token matches this tab's own token.
+    // Other tabs may be logged in as different roles and must not be affected.
+    if (event.detail?.token && currentToken && event.detail.token === currentToken) {
+      listener(event.detail.token);
+    }
+  };
+  window.addEventListener(SESSION_EXPIRED_EVENT, handler);
+  return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handler);
 }
 
 /**
@@ -90,13 +134,23 @@ export function onSessionExpired(listener) {
  * caused the redirect ping-pong and the request storm.
  *
  * Retries are never attempted on 401; the caller decides how to recover.
+ *
+ * @param {string} path - API path (BASE_URL is prepended)
+ * @param {object} [options] - Fetch options
+ * @param {string} [options.method='GET'] - HTTP method
+ * @param {any} [options.body] - Request body (JSON-stringified when present)
+ * @param {object} [options.headers] - Additional headers
+ * @param {AbortSignal} [options.signal] - Abort signal
+ * @param {string} [options.cache] - Cache mode passed through to fetch
+ * @returns {Promise<any>} Parsed JSON response
  */
-export async function apiFetch(path, { method = 'GET', body, headers = {}, signal } = {}) {
+export async function apiFetch(path, { method = 'GET', body, headers = {}, signal, cache } = {}) {
   const token = getToken();
   const response = await fetch(`${BASE_URL}${path}`, {
     method,
     credentials: 'include',
     signal,
+    cache,
     headers: {
       ...(body ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -108,8 +162,11 @@ export async function apiFetch(path, { method = 'GET', body, headers = {}, signa
   if (response.status === 401) {
     const currentToken = getToken();
     if (token && currentToken && token === currentToken) {
+      // Notify before clearing so the originating tab can still match its
+      // own token in the expiry handler. Other tabs see a non-matching token
+      // and leave their sessions untouched.
+      notifySessionExpired(token);
       clearStoredToken();
-      notifySessionExpired();
     }
     throw new Error('Unauthorized - please sign in again.');
   }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import BrandLogo from "../../components/BrandLogo";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth, AUTH_STATUS } from "../../lib/auth-context";
+import { getRoleRoute } from "../../lib/roles-config";
 
 const ALLOWED_ROLES = [
   "GOVERNOR",
@@ -57,6 +58,8 @@ export default function GovernmentLoginPage() {
   );
 
   // Already signed in: leave the login screen once, without a full reload.
+  // When a session already exists, redirect to the role-specific dashboard
+  // rather than the generic /government shell.
   useEffect(() => {
     if (status === AUTH_STATUS.AUTHENTICATED) {
       navigateOnce(redirectTarget());
@@ -72,8 +75,14 @@ export default function GovernmentLoginPage() {
     try {
       // The session (token + httpOnly cookie) is established first; the
       // navigation happens exactly once afterwards.
-      await login(email.trim(), password, { allowedRoles: ALLOWED_ROLES });
-      navigateOnce(redirectTarget());
+      const result = await login(email.trim(), password, {
+        allowedRoles: ALLOWED_ROLES,
+      });
+      // Redirect to the role-specific dashboard when no explicit redirectTo
+      // was supplied, e.g. Governor -> /government/governor.
+      const target =
+        redirectTarget() === "/government" ? getRoleRoute(result.role) : redirectTarget();
+      navigateOnce(target);
     } catch (err) {
       setError(
         err instanceof Error
