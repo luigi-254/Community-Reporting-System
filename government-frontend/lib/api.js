@@ -167,6 +167,9 @@ export async function apiFetch(path, { method = 'GET', body, headers = {}, signa
       // and leave their sessions untouched.
       notifySessionExpired(token);
       clearStoredToken();
+      // Also clear the httpOnly session cookie so the server-side proxy guard
+      // no longer considers this tab authenticated on subsequent navigations.
+      void clearSessionCookie();
     }
     throw new Error('Unauthorized - please sign in again.');
   }
