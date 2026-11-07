@@ -1,5 +1,9 @@
 # Mtaa Fix
 
+<p align="center">
+  <img src="assets/brand/mtaa-fix-logo.png" alt="Mtaa Fix logo" width="120" height="120" />
+</p>
+
 Community Reporting & Accountability System for Kisii County, Kenya
 
 [![Node.js](https://img.shields.io/badge/Node.js-18.x-blue?logo=node.js)](https://nodejs.org/)
