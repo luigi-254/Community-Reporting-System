@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Camera as CameraIcon, Image as GalleryIcon, X } from "lucide-react";
 import {
   formatFileSize,
@@ -90,6 +91,7 @@ async function getKisiiCountyBoundary() {
 }
 
 export default function ReportForm({ token, onSubmitSuccess }) {
+  const router = useRouter();
   const [form, setForm] = useState({
     title: "",
     category: "",

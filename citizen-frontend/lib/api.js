@@ -26,6 +26,9 @@ export async function apiFetch(path, { method = 'GET', body, headers = {}, retry
   if (res.status === 401 && retry) {
     const refreshed = await refreshToken();
     if (refreshed) return apiFetch(path, { method, body, headers, retry: false });
+    // Refresh failed: surface the original 401 error without trying to parse
+    // the already-failed response body as JSON.
+    throw new Error("Unauthorized - please sign in again.");
   }
 
   const data = await res.json().catch(() => ({}));

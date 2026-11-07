@@ -198,12 +198,11 @@ export default function AdminDashboard() {
     return { title: "Admin Portal", subtitle: "" };
   }, [user]);
 
-  // Strict auth redirect: redirect unauthenticated users to /admin/login
+  // Strict auth redirect: redirect unauthenticated users to /login
   useEffect(() => {
     if (!authLoading && !user) {
       const redirectTo = window.location.pathname;
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.href = `/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+      router.replace(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
     }
   }, [authLoading, user, router]);
 
@@ -214,10 +213,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!systemHealthLoading && !user) {
       const redirectTo = window.location.pathname;
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.href = `/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+      router.replace(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
     }
-  }, [systemHealthLoading, user]);
+  }, [systemHealthLoading, user, router]);
 
   const checkSystemHealth = useCallback(async () => {
     setSystemHealthLoading(true);
