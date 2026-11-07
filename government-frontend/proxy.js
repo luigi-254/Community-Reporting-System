@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 const TOKEN_KEY = 'crs_government_access_token';
 const PROTECTED_PREFIXES = ['/government'];
 const AUTH_ROUTES = ['/login'];
-const DEFAULT_AUTHENTICATED_ROUTE = '/government';
+const DEFAULT_AUTHENTICATED_ROUTE = '/government/governor';
 
 /**
  * Server-side route guard.

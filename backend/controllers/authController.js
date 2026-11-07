@@ -206,6 +206,10 @@ export const login = async (req, res, next) => {
         message: 'Invalid credentials. Password incorrect.',
       });
     }
+    // Revoke any existing refresh tokens for this user so a previous
+    // account/session cannot survive an account switch (session leak).
+    await db.revokeAllUserRefreshTokens(user.id);
+
     const tokenPayload = {
       id: user.id,
       email: user.email,

@@ -2,6 +2,9 @@ import http from 'http';
 
 process.env.NODE_ENV = 'test';
 process.env.PORT = '5077';
+// Use the in-memory store so tests are deterministic and do not depend on a
+// live PostgreSQL connection (mirrors test-auth.js).
+process.env.DATABASE_URL = '';
 
 import app from '../index.js';
 import db from '../config/db.js';
@@ -73,12 +76,15 @@ async function runCategoryTests() {
     });
 
     // 1. POST /api/categories - createCategory
+    // Use a timestamp-suffixed code so the test does not collide with seeded
+    // categories (e.g. the seeded 'ROADS' category) when run repeatedly.
+    const testCode = `TEST_${Date.now()}`;
     const catRes = await request(
       'POST',
       '/api/categories',
       {
         name: 'Roads & Transport',
-        code: 'ROADS',
+        code: testCode,
         description: 'Potholes, road signs, traffic signals, sidewalks, and drainage.',
         icon: 'road',
       },
@@ -117,7 +123,7 @@ async function runCategoryTests() {
       {
         categoryId: categoryId,
         name: 'Dangerous Potholes',
-        code: 'POTHOLE',
+        code: `POTHOLE_${Date.now()}`,
         description: 'Deep road potholes causing vehicle damage or hazard.',
         defaultPriority: 'HIGH',
         slaHours: 24,

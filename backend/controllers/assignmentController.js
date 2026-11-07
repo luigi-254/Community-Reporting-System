@@ -25,6 +25,9 @@ export const reassignReport = async (req, res, next) => {
     const officer = await db.findOfficerById(officerId);
     if (!report) return res.status(404).json({ status: 'error', message: 'Report not found.' });
     if (!officer) return res.status(404).json({ status: 'error', message: 'Officer not found.' });
+    if (!canAccessReport(req.user, report)) {
+      return res.status(403).json({ status: 'error', message: 'Forbidden: Report is outside your jurisdiction.' });
+    }
     const updatedReport = await db.updateReport(req.params.reportId, { assignedOfficerId: officerId });
     const assignment = await db.createAssignment({ reportId: req.params.reportId, officerId, assignedById: req.user.id, reason });
     return res.status(200).json({ status: 'success', message: 'Report reassigned successfully.', data: { assignment, report: updatedReport } });
@@ -33,7 +36,18 @@ export const reassignReport = async (req, res, next) => {
 export const getAssignments = async (req, res, next) => {
   try {
     const assignments = await db.findAssignments(req.validatedQuery || req.query);
-    return res.status(200).json({ status: 'success', total: assignments.length, data: { assignments } });
+    // Scope assignments to reports within the caller's jurisdiction so a user
+    // cannot list assignments for reports outside their area of responsibility.
+    const accessibleReportIds = new Set();
+    for (const assignment of assignments) {
+      if (accessibleReportIds.has(assignment.reportId)) continue;
+      const report = await db.findReportById(assignment.reportId);
+      if (report && canAccessReport(req.user, report)) {
+        accessibleReportIds.add(assignment.reportId);
+      }
+    }
+    const scoped = assignments.filter((a) => accessibleReportIds.has(a.reportId));
+    return res.status(200).json({ status: 'success', total: scoped.length, data: { assignments: scoped } });
   } catch (error) { next(error); }
 };
 export const getAssignmentHistory = async (req, res, next) => {

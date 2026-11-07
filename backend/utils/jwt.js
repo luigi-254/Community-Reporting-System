@@ -29,6 +29,7 @@ export function generateAccessToken(payload) {
 export function generateRefreshToken(payload) {
   return jwt.sign(payload, JWT_REFRESH_SECRET, {
     expiresIn: REFRESH_TOKEN_EXPIRY,
+    jwtid: crypto.randomBytes(16).toString('hex'),
   });
 }
 

@@ -64,13 +64,29 @@ export default function GovernmentAuthCallbackPage() {
           .trim()
           .toUpperCase()
           .replace(/[\s-]+/g, "_");
-        if (!accessToken || !["OFFICER", "ADMIN", "SUPER_ADMIN"].includes(role)) {
+        const GOVERNMENT_ROLES = [
+          "GOVERNOR",
+          "CECM",
+          "CHIEF_OFFICER",
+          "TECHNICAL_HEAD",
+          "TECHNICAL_SUPERVISOR",
+          "FIELD_OFFICER",
+          "WARD_ADMIN",
+          "SUBCOUNTY_ADMIN",
+          "DEPARTMENTAL_ADMIN",
+          "DISASTER_MANAGER",
+          "ENFORCEMENT_OFFICER",
+          "OFFICER",
+          "ADMIN",
+          "SUPER_ADMIN",
+        ];
+        if (!accessToken || !GOVERNMENT_ROLES.includes(role)) {
           throw new Error("This account is not authorized for the government dashboard.");
         }
 
         if (cancelled) return;
-        window.localStorage.setItem("crs_government_access_token", accessToken);
-        window.localStorage.setItem("crs_government_user", JSON.stringify(user));
+        window.sessionStorage.setItem("crs_government_access_token", accessToken);
+        window.sessionStorage.setItem("crs_government_user", JSON.stringify(user));
         router.replace("/government");
       } catch (exchangeError) {
         if (!cancelled) {

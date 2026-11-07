@@ -6,3 +6,4 @@ export { default as LoadingState } from "./LoadingState";
 export { default as ErrorState } from "./ErrorState";
 export { default as FormField } from "./FormField";
 export { default as GovernmentProfilePill } from "./GovernmentProfilePill";
+export { GovernmentShell, ReportDetailsDialog } from "./GovernmentShell";
