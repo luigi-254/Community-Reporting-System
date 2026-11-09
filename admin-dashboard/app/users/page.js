@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AdminShell } from "../components/AdminShell";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -221,8 +222,8 @@ export default function UsersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f7f2] p-5 text-[#243329] md:p-10">
-      <div className="mx-auto max-w-7xl">
+    <AdminShell pageTitle="Government Officer Management">
+      <div className="mx-auto max-w-7xl p-5 md:p-8">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-5 border-b border-[#dce2d8] pb-7">
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#55745c]">
@@ -492,11 +493,7 @@ export default function UsersPage() {
                       <td className="px-3 py-4">Government Officer</td>
                       <td className="px-3 py-4">
                         <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            officer.isActive === false
-                              ? "bg-[#f0ebd9] text-[#66572f]"
-                              : "bg-[#dce8d8] text-[#244637]"
-                          }`}
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${officer.isActive === false ? "bg-[#f0ebd9] text-[#66572f]" : "bg-[#dce8d8] text-[#244637]"}`}
                         >
                           {officer.isActive === false ? "Inactive" : "Active"}
                         </span>
@@ -509,6 +506,6 @@ export default function UsersPage() {
           )}
         </section>
       </div>
-    </main>
+    </AdminShell>
   );
 }

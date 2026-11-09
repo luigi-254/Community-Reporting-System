@@ -7,3 +7,4 @@ export { default as ErrorState } from "./ErrorState";
 export { default as FormField } from "./FormField";
 export { default as AdminAuthNav } from "./AdminAuthNav";
 export { default as AdminProfilePill } from "./AdminProfilePill";
+export { AdminShell, ReportDetailsDialog } from "./AdminShell";

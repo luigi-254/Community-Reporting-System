@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { AdminShell } from "../components/AdminShell";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -332,176 +332,178 @@ export default function StatisticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
-      <header className="border-b border-white/10 bg-[#244637] px-5 py-6 text-white md:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c4d3bf]">
-              Mtaa Fix
-            </p>
-            <h1 className="mt-2 text-2xl font-bold md:text-3xl">
-              Statistics & Analytics
-            </h1>
-            <p className="mt-2 text-sm text-[#c4d3bf]">
-              Live analysis of citizen-submitted community reports.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={loadStatistics}
-              disabled={loading}
-              className="rounded-lg bg-[#187a58] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? "Refreshing..." : "Refresh Statistics"}
-            </button>
-
-            <Link
-              href="/"
-              className="rounded-lg border border-[#cbd6c8] bg-white px-4 py-2.5 text-sm font-semibold text-[#187a58] transition hover:bg-[#f5f8f5]"
-            >
-              Back to Dashboard
-            </Link>
-          </div>
-        </div>
-
-        <div className="mx-auto mt-4 max-w-7xl text-xs text-[#c4d3bf]">
-          {lastUpdated
-            ? `Last updated at ${lastUpdated}`
-            : "Waiting for backend data"}
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl space-y-8 p-5 md:p-8">
-        {error && (
-          <div
-            role="alert"
-            className="rounded-xl border border-[#f1c9c2] bg-[#fff3f0] p-5 text-sm text-[#8b392f]"
-          >
-            <p className="font-bold">Could not load statistics</p>
-            <p className="mt-2">{error}</p>
-            <p className="mt-2">
-              Check the backend terminal, then select Refresh Statistics.
-            </p>
-          </div>
-        )}
-
-        <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {summaryCards.map((card) => (
-            <div
-              key={card.label}
-              className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm"
-            >
-              <p className="text-sm text-[#687468]">{card.label}</p>
-              <p className={`mt-3 text-3xl font-bold ${card.color}`}>
-                {loading ? "—" : card.value}
+    <AdminShell pageTitle="Statistics & Analytics">
+      <div className="mx-auto max-w-7xl p-5 md:p-8">
+        <header className="mb-6 border-b border-[#dce2d8] pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c4d3bf]">
+                Mtaa Fix
               </p>
-              <p className="mt-2 text-xs text-[#687468]">{card.detail}</p>
+              <h1 className="mt-2 text-2xl font-bold md:text-3xl">
+                Statistics & Analytics
+              </h1>
+              <p className="mt-2 text-sm text-[#c4d3bf]">
+                Live analysis of citizen-submitted community reports.
+              </p>
             </div>
-          ))}
-        </section>
 
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-[#173c32]">
-                  Resolution Rate
-                </h2>
-                <p className="mt-1 text-sm text-[#687468]">
-                  Percentage of loaded reports marked as resolved
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={loadStatistics}
+                disabled={loading}
+                className="rounded-lg bg-[#187a58] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "Refreshing..." : "Refresh Statistics"}
+              </button>
+
+              <Link
+                href="/"
+                className="rounded-lg border border-[#cbd6c8] bg-white px-4 py-2.5 text-sm font-semibold text-[#187a58] transition hover:bg-[#f5f8f5]"
+              >
+                Back to Dashboard
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-4 text-xs text-[#c4d3bf]">
+            {lastUpdated
+              ? `Last updated at ${lastUpdated}`
+              : "Waiting for backend data"}
+          </div>
+        </header>
+
+        <main className="space-y-8">
+          {error && (
+            <div
+              role="alert"
+              className="rounded-xl border border-[#f1c9c2] bg-[#fff3f0] p-5 text-sm text-[#8b392f]"
+            >
+              <p className="font-bold">Could not load statistics</p>
+              <p className="mt-2">{error}</p>
+              <p className="mt-2">
+                Check the backend terminal, then select Refresh Statistics.
+              </p>
+            </div>
+          )}
+
+          <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {summaryCards.map((card) => (
+              <div
+                key={card.label}
+                className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm"
+              >
+                <p className="text-sm text-[#687468]">{card.label}</p>
+                <p className={`mt-3 text-3xl font-bold ${card.color}`}>
+                  {loading ? "—" : card.value}
+                </p>
+                <p className="mt-2 text-xs text-[#687468]">{card.detail}</p>
+              </div>
+            ))}
+          </section>
+
+          <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-[#173c32]">
+                    Resolution Rate
+                  </h2>
+                  <p className="mt-1 text-sm text-[#687468]">
+                    Percentage of loaded reports marked as resolved
+                  </p>
+                </div>
+
+                <p className="text-3xl font-bold text-[#244637]">
+                  {loading ? "—" : `${stats.resolutionRate}%`}
                 </p>
               </div>
 
-              <p className="text-3xl font-bold text-[#244637]">
-                {loading ? "—" : `${stats.resolutionRate}%`}
-              </p>
-            </div>
-
-            <div
-              className="mt-6 h-3 w-full overflow-hidden rounded-full bg-[#eff1e9]"
-              role="progressbar"
-              aria-label="Resolution rate"
-              aria-valuenow={stats.resolutionRate}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
               <div
-                className="h-full rounded-full bg-[#244637] transition-all"
-                style={{ width: `${stats.resolutionRate}%` }}
-              />
-            </div>
-
-            <p className="mt-3 text-sm text-[#687468]">
-              {loading
-                ? "Calculating resolution rate..."
-                : `${stats.resolved} of ${reports.length} loaded reports resolved`}
-            </p>
-
-            {!loading && reports.length !== totalFromApi && (
-              <p className="mt-2 text-xs text-[#66572f]">
-                The API reports {totalFromApi} total records but returned{" "}
-                {reports.length}. The rate uses the records successfully loaded.
-              </p>
-            )}
-          </div>
-
-          <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-[#173c32]">
-              Status Breakdown
-            </h2>
-            <p className="mb-5 mt-1 text-sm text-[#687468]">
-              Counts by the backend&apos;s report statuses
-            </p>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {statusBreakdown.map((item) => (
+                className="mt-6 h-3 w-full overflow-hidden rounded-full bg-[#eff1e9]"
+                role="progressbar"
+                aria-label="Resolution rate"
+                aria-valuenow={stats.resolutionRate}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
                 <div
-                  key={item.label}
-                  className="rounded-lg border border-[#dce2d8] bg-[#f5f8f5] p-4"
-                >
-                  <p className="text-xs text-[#687468]">{item.label}</p>
-                  <p className="mt-2 text-2xl font-bold text-[#173c32]">
-                    {loading ? "—" : item.value}
-                  </p>
-                </div>
-              ))}
+                  className="h-full rounded-full bg-[#244637] transition-all"
+                  style={{ width: `${stats.resolutionRate}%` }}
+                />
+              </div>
+
+              <p className="mt-3 text-sm text-[#687468]">
+                {loading
+                  ? "Calculating resolution rate..."
+                  : `${stats.resolved} of ${reports.length} loaded reports resolved`}
+              </p>
+
+              {!loading && reports.length !== totalFromApi && (
+                <p className="mt-2 text-xs text-[#66572f]">
+                  The API reports {totalFromApi} total records but returned{" "}
+                  {reports.length}. The rate uses the records successfully loaded.
+                </p>
+              )}
             </div>
-          </div>
-        </section>
 
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-[#173c32]">
-              Reports by Category
-            </h2>
-            <p className="mb-6 mt-1 text-sm text-[#687468]">
-              Number and proportion of reports for each category
-            </p>
+            <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-[#173c32]">
+                Status Breakdown
+              </h2>
+              <p className="mb-5 mt-1 text-sm text-[#687468]">
+                Counts by the backend&apos;s report statuses
+              </p>
 
-            {renderBreakdown(
-              stats.categories,
-              reports.length,
-              "No category data available."
-            )}
-          </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {statusBreakdown.map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-lg border border-[#dce2d8] bg-[#f5f8f5] p-4"
+                  >
+                    <p className="text-xs text-[#687468]">{item.label}</p>
+                    <p className="mt-2 text-2xl font-bold text-[#173c32]">
+                      {loading ? "—" : item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
 
-          <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-[#173c32]">
-              Reports by Location
-            </h2>
-            <p className="mb-6 mt-1 text-sm text-[#687468]">
-              Number and proportion of reports for each location
-            </p>
+          <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-[#173c32]">
+                Reports by Category
+              </h2>
+              <p className="mb-6 mt-1 text-sm text-[#687468]">
+                Number and proportion of reports for each category
+              </p>
 
-            {renderBreakdown(
-              stats.locations,
-              reports.length,
-              "No location data available."
-            )}
-          </div>
-        </section>
-      </main>
-    </div>
+              {renderBreakdown(
+                stats.categories,
+                reports.length,
+                "No category data available."
+              )}
+            </div>
+
+            <div className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-[#173c32]">
+                Reports by Location
+              </h2>
+              <p className="mb-6 mt-1 text-sm text-[#687468]">
+                Number and proportion of reports for each location
+              </p>
+
+              {renderBreakdown(
+                stats.locations,
+                reports.length,
+                "No location data available."
+              )}
+            </div>
+          </section>
+        </main>
+      </div>
+    </AdminShell>
   );
 }

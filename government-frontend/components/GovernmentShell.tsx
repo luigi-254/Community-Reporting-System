@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   PanelLeftClose,
   PanelLeftOpen,
@@ -77,22 +77,61 @@ export function GovernmentShell({
   roleConfig,
   children,
   pageTitle,
+  activeItem,
+  onNavItemClick,
 }: {
   user: DashboardUser | null;
   roleConfig: any;
   children: React.ReactNode;
   pageTitle?: string;
+  activeItem?: string;
+  onNavItemClick?: (item: string) => void;
 }) {
   const { logout, sessionVersion } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<string>(roleConfig.defaultPage);
+  const [internalActiveItem, setInternalActiveItem] = useState<string>(
+    roleConfig.defaultPage
+  );
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Resolve the active item: controlled prop > URL query param > default.
+  const resolvedActiveItem = useMemo(() => {
+    if (activeItem !== undefined) return activeItem;
+    const urlTab = searchParams.get("tab");
+    if (urlTab && roleConfig.sidebar.some((g: any) => g.items.includes(urlTab))) {
+      return urlTab;
+    }
+    return internalActiveItem;
+  }, [activeItem, searchParams, roleConfig]);
+
+  // Sync URL query param when the active item changes.
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (resolvedActiveItem && resolvedActiveItem !== roleConfig.defaultPage && tab !== resolvedActiveItem) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", resolvedActiveItem);
+      router.replace(`${pathname}?${params.toString()}`);
+    }
+  }, [resolvedActiveItem, searchParams, router, pathname, roleConfig]);
+
   const toggleSidebar = () => setSidebarCollapsed((prev) => !prev);
+
+  const handleNavItem = (item: string) => {
+    setInternalActiveItem(item);
+    if (onNavItemClick) {
+      onNavItemClick(item);
+    } else {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", item);
+      router.replace(`${pathname}?${params.toString()}`);
+    }
+  };
 
   const initials = String(user?.name || "C")
     .split(" ")
@@ -177,12 +216,12 @@ export function GovernmentShell({
                 )}
                 {group.items.map((item: string) => {
                   const Icon = iconMap[item] || LayoutDashboard;
-                  const isActive = activeItem === item;
+                  const isActive = resolvedActiveItem === item;
                   return (
                     <button
                       key={item}
                       type="button"
-                      onClick={() => setActiveItem(item)}
+                      onClick={() => handleNavItem(item)}
                       aria-current={isActive ? "page" : undefined}
                       className={`flex items-center gap-3 w-full ${sidebarCollapsed ? "px-3 justify-center" : "px-5 justify-start"} py-3 text-sm transition-colors rounded-lg ${isActive ? "bg-white/10 text-white" : "text-[#d5dfd2] hover:bg-white/5 hover:text-white"}`}
                       title={sidebarCollapsed ? item : undefined}
@@ -264,7 +303,7 @@ export function GovernmentShell({
             <div>
               <p className="text-xs font-medium text-[#788277] leading-none">Government workspace</p>
               <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-[#173c32] leading-none">
-                {pageTitle || activeItem}
+                {pageTitle || resolvedActiveItem}
               </h1>
             </div>
           </div>

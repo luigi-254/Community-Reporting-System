@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "../../lib/auth-context";
-import { StatusBadge, StatCard, EmptyState, LoadingState, ErrorState } from "../components";
+import { AdminShell } from "../components/AdminShell";
 
 export default function SettingsPage() {
   const { user, loading } = useAuth();
@@ -22,20 +22,25 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
-        <LoadingState message="Loading settings…" />
-      </div>
+      <AdminShell pageTitle="Settings">
+        <div className="mx-auto max-w-5xl p-5 md:p-8">
+          <div className="flex items-center gap-3 text-sm text-[#687468]">
+            Loading settings…
+          </div>
+        </div>
+      </AdminShell>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
-        <ErrorState
-          message="No active session. Please sign in to access settings."
-          onRetry={() => {}}
-        />
-      </div>
+      <AdminShell pageTitle="Settings">
+        <div className="mx-auto max-w-5xl p-5 md:p-8">
+          <div className="rounded-xl border border-[#f1c9c2] bg-[#fff3f0] p-5 text-sm text-[#8b392f]">
+            <p className="font-bold">No active session. Please sign in to access settings.</p>
+          </div>
+        </div>
+      </AdminShell>
     );
   }
 
@@ -58,31 +63,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
-      <header className="border-b border-[#dce2d8] bg-[#244637] px-5 py-6 text-white md:px-8">
-        <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c4d3bf]">
-              Mtaa Fix
-            </p>
-            <h1 className="mt-2 text-2xl font-bold md:text-3xl">Settings</h1>
-            <p className="mt-2 text-sm text-[#c4d3bf]">
-              Manage your platform administrator settings.
-            </p>
-          </div>
-
-          <Link
-            href="/"
-            className="inline-flex items-center rounded-lg border border-[#cbd6c8] bg-white px-4 py-2.5 text-sm font-semibold text-[#187a58] transition hover:bg-[#f5f8f5]"
-          >
-            Back to Dashboard
-          </Link>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl p-5 md:p-8">
+    <AdminShell pageTitle="Settings">
+      <div className="mx-auto max-w-5xl p-5 md:p-8">
         <div className="space-y-6">
-
           {/* Administrator Profile - real data from auth context */}
           <section className="rounded-xl border border-[#dce2d8] bg-white p-6 shadow-sm">
             <h2 className="text-xl font-bold text-[#173c32]">Administrator Profile</h2>
@@ -138,11 +121,11 @@ export default function SettingsPage() {
                 <label htmlFor="settings-status" className="mb-2 block text-sm font-medium">
                   Account Status
                 </label>
-                <StatusBadge
-                  status={user.isActive ? "ACTIVE" : "INACTIVE"}
-                  size="sm"
-                  className="text-xs"
-                />
+                <span
+                  className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${user.isActive === false ? "bg-[#f0ebd9] text-[#66572f]" : "bg-[#dce8d8] text-[#244637]"}`}
+                >
+                  {user.isActive === false ? "Inactive" : "Active"}
+                </span>
               </div>
             </div>
           </section>
@@ -173,14 +156,10 @@ export default function SettingsPage() {
                   }
                   aria-pressed={notifications}
                   onClick={() => setNotifications((value) => !value)}
-                  className={`h-6 w-12 rounded-full ${
-                    notifications ? "bg-[#187a58]" : "bg-[#cbd6c8]"
-                  }`}
+                  className={`h-6 w-12 rounded-full ${notifications ? "bg-[#187a58]" : "bg-[#cbd6c8]"}`}
                 >
                   <span
-                    className={`block h-5 w-5 rounded-full bg-white transition-transform ${
-                      notifications ? "translate-x-6" : "translate-x-1"
-                    }`}
+                    className={`block h-5 w-5 rounded-full bg-white transition-transform ${notifications ? "translate-x-6" : "translate-x-1"}`}
                   />
                 </button>
               </div>
@@ -200,14 +179,10 @@ export default function SettingsPage() {
                   }
                   aria-pressed={emailAlerts}
                   onClick={() => setEmailAlerts((value) => !value)}
-                  className={`h-6 w-12 rounded-full ${
-                    emailAlerts ? "bg-[#187a58]" : "bg-[#cbd6c8]"
-                  }`}
+                  className={`h-6 w-12 rounded-full ${emailAlerts ? "bg-[#187a58]" : "bg-[#cbd6c8]"}`}
                 >
                   <span
-                    className={`block h-5 w-5 rounded-full bg-white transition-transform ${
-                      emailAlerts ? "translate-x-6" : "translate-x-1"
-                    }`}
+                    className={`block h-5 w-5 rounded-full bg-white transition-transform ${emailAlerts ? "translate-x-6" : "translate-x-1"}`}
                   />
                 </button>
               </div>
@@ -239,14 +214,10 @@ export default function SettingsPage() {
                 }
                 aria-pressed={maintenanceMode}
                 onClick={() => setMaintenanceMode((value) => !value)}
-                className={`h-6 w-12 rounded-full ${
-                  maintenanceMode ? "bg-[#187a58]" : "bg-[#cbd6c8]"
-                }`}
+                className={`h-6 w-12 rounded-full ${maintenanceMode ? "bg-[#187a58]" : "bg-[#cbd6c8]"}`}
               >
                 <span
-                  className={`block h-5 w-5 rounded-full bg-white transition-transform ${
-                    maintenanceMode ? "translate-x-6" : "translate-x-1"
-                  }`}
+                  className={`block h-5 w-5 rounded-full bg-white transition-transform ${maintenanceMode ? "translate-x-6" : "translate-x-1"}`}
                 />
               </button>
             </div>
@@ -268,7 +239,7 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AdminShell>
   );
 }

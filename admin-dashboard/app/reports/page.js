@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -6,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { X } from "lucide-react";
+import { AdminShell, ReportDetailsDialog } from "../components/AdminShell";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -185,20 +185,16 @@ function exportToCSV(reports) {
   const escapeCSV = (value) =>
     `"${String(value ?? "").replace(/"/g, '""')}"`;
 
-  const rows = reports.map((report) =>
-    [
-      report.id,
-      report.issue,
-      report.category,
-      report.location,
-      statusLabel(report.status),
-      report.date,
-      report.reportedBy,
-      report.description,
-    ]
-      .map(escapeCSV)
-      .join(",")
-  );
+  const rows = reports.map((report) => [
+    report.id,
+    report.issue,
+    report.category,
+    report.location,
+    statusLabel(report.status),
+    report.date,
+    report.reportedBy,
+    report.description,
+  ].map(escapeCSV).join(","));
 
   const csv = [
     headers.map(escapeCSV).join(","),
@@ -359,396 +355,271 @@ export default function ReportsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f7f7f2] text-[#243329]">
-      <header className="border-b border-white/10 bg-[#244637] px-5 py-6 text-white md:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c4d3bf]">
-              Mtaa Fix
-            </p>
+    <AdminShell pageTitle="Community Reports">
+      <div className="mx-auto max-w-7xl p-5 md:p-8">
+        <header className="mb-6 border-b border-[#dce2d8] pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c4d3bf]">
+                Mtaa Fix
+              </p>
 
-            <h1 className="mt-2 text-2xl font-bold md:text-3xl">
-              Community Reports
-            </h1>
+              <h1 className="mt-2 text-2xl font-bold md:text-3xl">
+                Community Reports
+              </h1>
 
-            <p className="mt-2 text-sm text-[#c4d3bf]">
-              View citizen submissions received by the backend.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={loadReports}
-              disabled={loading}
-              className="rounded-lg bg-[#187a58] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? "Refreshing..." : "Refresh Reports"}
-            </button>
-
-            <Link
-              href="/"
-              className="rounded-lg border border-[#cbd6c8] bg-white px-4 py-2.5 text-sm font-semibold text-[#187a58] transition hover:bg-[#f5f8f5]"
-            >
-              Back to Dashboard
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl space-y-6 p-5 md:p-8">
-        {error && (
-          <div
-            role="alert"
-            className="rounded-xl border border-[#f1c9c2] bg-[#fff3f0] p-5 text-sm text-[#8b392f]"
-          >
-            <h2 className="font-bold">Could not load live reports</h2>
-            <p className="mt-2">{error}</p>
-            <p className="mt-2">
-              Check the backend terminal for errors, then select Refresh
-              Reports to try again.
-            </p>
-          </div>
-        )}
-
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className={`rounded-xl border border-[#dce2d8] bg-white p-5 shadow-sm ${stat.style}`}
-            >
-              <p className="text-sm text-[#687468]">{stat.label}</p>
-              <p className="mt-3 text-3xl font-bold text-[#173c32]">
-                {loading ? "—" : stat.value}
+              <p className="mt-2 text-sm text-[#c4d3bf]">
+                View citizen submissions received by the backend.
               </p>
             </div>
-          ))}
-        </section>
 
-        <section className="rounded-xl border border-[#dce2d8] bg-white p-5 shadow-sm md:p-6">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div className="flex-1">
-              <label
-                htmlFor="report-search"
-                className="mb-2 block text-sm font-semibold text-[#687468]"
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={loadReports}
+                disabled={loading}
+                className="rounded-lg bg-[#187a58] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Search Reports
-              </label>
+                {loading ? "Refreshing..." : "Refresh Reports"}
+              </button>
 
-              <input
-                id="report-search"
-                type="search"
-                placeholder="Search ID, issue, category, citizen or location..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 outline-none transition focus:border-[#187a58] focus:ring-2 focus:ring-[#187a58]/10"
-              />
+              <Link
+                href="/"
+                className="rounded-lg border border-[#cbd6c8] bg-white px-4 py-2.5 text-sm font-semibold text-[#187a58] transition hover:bg-[#f5f8f5]"
+              >
+                Back to Dashboard
+              </Link>
             </div>
+          </div>
+        </header>
 
-            <div className="w-full md:w-60">
-              <label
-                htmlFor="status-filter"
-                className="mb-2 block text-sm font-semibold text-[#687468]"
-              >
-                Filter by Status
-              </label>
-
-              <select
-                id="status-filter"
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
-                className="w-full rounded-lg border border-[#cbd6c8] bg-white px-4 py-3 outline-none transition focus:border-[#187a58] focus:ring-2 focus:ring-[#187a58]/10"
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button
-              onClick={() => exportToCSV(filteredReports)}
-              disabled={filteredReports.length === 0}
-              className="rounded-lg bg-[#187a58] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-50"
+        <main className="space-y-6">
+          {error && (
+            <div
+              role="alert"
+              className="rounded-xl border border-[#f1c9c2] bg-[#fff3f0] p-5 text-sm text-[#8b392f]"
             >
-              Export CSV
-            </button>
-          </div>
+              <h2 className="font-bold">Could not load live reports</h2>
+              <p className="mt-2">{error}</p>
+              <p className="mt-2">
+                Check the backend terminal for errors, then select Refresh
+                Reports to try again.
+              </p>
+            </div>
+          )}
 
-          <div className="mt-5 flex flex-col gap-1 border-t border-[#dce2d8] pt-4 text-sm text-[#687468] sm:flex-row sm:justify-between">
-            <p>
-              Showing{" "}
-              <span className="font-semibold text-[#243329]">
-                {filteredReports.length}
-              </span>{" "}
-              of {reports.length} reports
-            </p>
-
-            <p>
-              {lastUpdated
-                ? `Last updated at ${lastUpdated}`
-                : "Waiting for backend data"}
-            </p>
-          </div>
-        </section>
-
-        <section className="overflow-hidden rounded-xl border border-[#dce2d8] bg-white shadow-sm">
-          <div className="border-b border-[#dce2d8] px-5 py-5 md:px-6">
-            <h2 className="text-lg font-bold text-[#173d2d]">
-              Report Register
-            </h2>
-            <p className="mt-1 text-sm text-[#687468]">
-              Reports returned by the Mtaa Fix API.
-            </p>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[850px] text-left text-sm">
-              <thead className="bg-[#f5f4ec] text-[#687468]">
-                <tr>
-                  <th className="px-5 py-4 font-semibold">Report ID</th>
-                  <th className="px-5 py-4 font-semibold">Issue</th>
-                  <th className="px-5 py-4 font-semibold">Category</th>
-                  <th className="px-5 py-4 font-semibold">Location</th>
-                  <th className="px-5 py-4 font-semibold">Status</th>
-                  <th className="px-5 py-4 font-semibold">Date</th>
-                  <th className="px-5 py-4 font-semibold">Action</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-5 py-12 text-center text-[#687468]"
-                    >
-                      Loading reports from the backend...
-                    </td>
-                  </tr>
-                ) : filteredReports.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-5 py-12 text-center"
-                    >
-                      <p className="font-semibold text-[#687468]">
-                        {error
-                          ? "Reports could not be loaded."
-                          : reports.length === 0
-                            ? "No reports have been returned by the API."
-                            : "No reports match your search."}
-                      </p>
-                      <p className="mt-2 text-sm text-[#687468]">
-                        {error
-                          ? "Resolve the connection or authorization error and refresh."
-                          : reports.length === 0
-                            ? "Submit a test citizen report, then refresh this page."
-                            : "Try another search term or status filter."}
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredReports.map((report, index) => (
-                    <tr
-                      key={`${report.originalId || report.id}-${index}`}
-                      className="border-t border-[#dce2d8] transition hover:bg-[#f5f8f5]"
-                    >
-                      <td className="px-5 py-4 font-semibold text-[#173c32]">
-                        <span title={report.id}>
-                          {report.id.length > 16
-                            ? `${report.id.slice(0, 8)}...`
-                            : report.id}
-                        </span>
-                      </td>
-
-                      <td className="max-w-xs px-5 py-4 font-medium text-[#243329]">
-                        {report.issue}
-                      </td>
-
-                      <td className="px-5 py-4 text-[#687468]">
-                        {report.category}
-                      </td>
-
-                      <td className="max-w-xs px-5 py-4 text-[#687468]">
-                        {report.location}
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${getStatusStyle(report.status)}`}
-                        >
-                          {statusLabel(report.status)}
-                        </span>
-                      </td>
-
-                      <td className="whitespace-nowrap px-5 py-4 text-[#687468]">
-                        {report.date}
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <button
-                          onClick={() => setSelectedReport(report)}
-                          className="rounded-lg border border-[#cbd6c8] px-3 py-2 text-xs font-semibold text-[#173c32] transition hover:bg-[#e6f3eb]"
-                        >
-                          View Details
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </main>
-
-      {selectedReport && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
-          onClick={() => setSelectedReport(null)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="report-detail-title"
-            className="my-auto max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4 bg-[#244637] px-6 py-5 text-white">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#c4d3bf]">
-                  Report Details
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className={`rounded-xl border border-[#dce2d8] bg-white p-5 shadow-sm ${stat.style}`}
+              >
+                <p className="text-sm text-[#687468]">{stat.label}</p>
+                <p className="mt-3 text-3xl font-bold text-[#173c32]">
+                  {loading ? "—" : stat.value}
                 </p>
-                <h2
-                  id="report-detail-title"
-                  className="mt-1 text-xl font-bold"
+              </div>
+            ))}
+          </section>
+
+          <section className="rounded-xl border border-[#dce2d8] bg-white p-5 shadow-sm md:p-6">
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+              <div className="flex-1">
+                <label
+                  htmlFor="report-search"
+                  className="mb-2 block text-sm font-semibold text-[#687468]"
                 >
-                  {selectedReport.issue}
-                </h2>
-                <p className="mt-1 break-all text-sm text-[#c4d3bf]">
-                  Reference: {selectedReport.id}
-                </p>
+                  Search Reports
+                </label>
+
+                <input
+                  id="report-search"
+                  type="search"
+                  placeholder="Search ID, issue, category, citizen or location..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="w-full rounded-lg border border-[#cbd6c8] px-4 py-3 outline-none transition focus:border-[#187a58] focus:ring-2 focus:ring-[#187a58]/10"
+                />
+              </div>
+
+              <div className="w-full md:w-60">
+                <label
+                  htmlFor="status-filter"
+                  className="mb-2 block text-sm font-semibold text-[#687468]"
+                >
+                  Filter by Status
+                </label>
+
+                <select
+                  id="status-filter"
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                  className="w-full rounded-lg border border-[#cbd6c8] bg-white px-4 py-3 outline-none transition focus:border-[#187a58] focus:ring-2 focus:ring-[#187a58]/10"
+                >
+                  {STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <button
-                onClick={() => setSelectedReport(null)}
-                aria-label="Close report details"
-                className="rounded-lg px-3 py-1 text-2xl text-white/80 hover:bg-white/10 hover:text-white"
+                onClick={() => exportToCSV(filteredReports)}
+                disabled={filteredReports.length === 0}
+                className="rounded-lg bg-[#187a58] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#126448] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <X className="w-6 h-6" aria-hidden="true" />
+                Export CSV
               </button>
             </div>
 
-            <div className="space-y-6 p-6">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <div>
-                  <p className="text-sm text-[#687468]">Category</p>
-                  <p className="mt-1 font-semibold">
-                    {selectedReport.category}
-                  </p>
-                </div>
+            <div className="mt-5 flex flex-col gap-1 border-t border-[#dce2d8] pt-4 text-sm text-[#687468] sm:flex-row sm:justify-between">
+              <p>
+                Showing{" "}
+                <span className="font-semibold text-[#243329]">
+                  {filteredReports.length}
+                </span>{" "}
+                of {reports.length} reports
+              </p>
 
-                <div>
-                  <p className="text-sm text-[#687468]">Location</p>
-                  <p className="mt-1 font-semibold">
-                    {selectedReport.location}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-[#687468]">Reported By</p>
-                  <p className="mt-1 font-semibold">
-                    {selectedReport.reportedBy}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-[#687468]">Date Submitted</p>
-                  <p className="mt-1 font-semibold">
-                    {selectedReport.date}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm text-[#687468]">Current Status</p>
-                <span
-                  className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusStyle(selectedReport.status)}`}
-                >
-                  {statusLabel(selectedReport.status)}
-                </span>
-              </div>
-
-              <div>
-                <p className="text-sm text-[#687468]">Description</p>
-                <p className="mt-2 whitespace-pre-wrap leading-7 text-[#687468]">
-                  {selectedReport.description}
-                </p>
-              </div>
-
-              {selectedReport.mediaUrls.length > 0 && (
-                <div>
-                  <h3 className="mb-3 font-semibold text-[#173c32]">
-                    Attachments
-                  </h3>
-
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {selectedReport.mediaUrls.map((media, index) => {
-                      const url = getMediaUrl(media);
-                      const isImage =
-                        /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(url);
-
-                      return (
-                        <div
-                          key={`${url}-${index}`}
-                          className="overflow-hidden rounded-xl border border-[#cbd6c8]"
-                        >
-                          {isImage ? (
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="block"
-                            >
-                              <Image
-                                src={url}
-                                alt={`Attachment ${index + 1}`}
-                                width={800}
-                                height={416}
-                                unoptimized
-                                className="h-52 w-full object-cover"
-                              />
-                            </a>
-                          ) : (
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="block p-4 font-medium text-[#173c32] underline"
-                            >
-                              Open attachment {index + 1}
-                            </a>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end border-t border-[#dce2d8] pt-4">
-                <button
-                  onClick={() => setSelectedReport(null)}
-                  className="rounded-lg bg-[#187a58] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#126448]"
-                >
-                  Close Details
-                </button>
-              </div>
+              <p>
+                {lastUpdated
+                  ? `Last updated at ${lastUpdated}`
+                  : "Waiting for backend data"}
+              </p>
             </div>
-          </div>
-        </div>
+          </section>
+
+          <section className="overflow-hidden rounded-xl border border-[#dce2d8] bg-white shadow-sm">
+            <div className="border-b border-[#dce2d8] px-5 py-5 md:px-6">
+              <h2 className="text-lg font-bold text-[#173d2d]">
+                Report Register
+              </h2>
+              <p className="mt-1 text-sm text-[#687468]">
+                Reports returned by the Mtaa Fix API.
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[850px] text-left text-sm">
+                <thead className="bg-[#f5f4ec] text-[#687468]">
+                  <tr>
+                    <th className="px-5 py-4 font-semibold">
+                      Report ID
+                    </th>
+                    <th className="px-5 py-4 font-semibold">
+                      Issue
+                    </th>
+                    <th className="px-5 py-4 font-semibold">
+                      Category
+                    </th>
+                    <th className="px-5 py-4 font-semibold">
+                      Location
+                    </th>
+                    <th className="px-5 py-4 font-semibold">
+                      Status
+                    </th>
+                    <th className="px-5 py-4 font-semibold">
+                      Date
+                    </th>
+                    <th className="px-5 py-4 font-semibold">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-5 py-12 text-center text-[#687468]"
+                      >
+                        Loading reports from the backend...
+                      </td>
+                    </tr>
+                  ) : filteredReports.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-5 py-12 text-center"
+                      >
+                        <p className="font-semibold text-[#687468]">
+                          {error
+                            ? "Reports could not be loaded."
+                            : reports.length === 0
+                              ? "No reports have been returned by the API."
+                              : "No reports match your search."}
+                        </p>
+                        <p className="mt-2 text-sm text-[#687468]">
+                          {error
+                            ? "Resolve the connection or authorization error and refresh."
+                            : reports.length === 0
+                              ? "Submit a test citizen report, then refresh this page."
+                              : "Try another search term or status filter."}
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredReports.map((report, index) => (
+                      <tr
+                        key={`${report.originalId || report.id}-${index}`}
+                        className="border-t border-[#dce2d8] transition hover:bg-[#f5f8f5]"
+                      >
+                        <td className="px-5 py-4 font-semibold text-[#173c32]">
+                          <span title={report.id}>
+                            {report.id.length > 16
+                              ? `${report.id.slice(0, 8)}...`
+                              : report.id}
+                          </span>
+                        </td>
+
+                        <td className="max-w-xs px-5 py-4 font-medium text-[#243329]">
+                          {report.issue}
+                        </td>
+
+                        <td className="px-5 py-4 text-[#687468]">
+                          {report.category}
+                        </td>
+
+                        <td className="max-w-xs px-5 py-4 text-[#687468]">
+                          {report.location}
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <span
+                            className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${getStatusStyle(report.status)}`}
+                          >
+                            {statusLabel(report.status)}
+                          </span>
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-4 text-[#687468]">
+                          {report.date}
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <button
+                            onClick={() => setSelectedReport(report)}
+                            className="rounded-lg border border-[#cbd6c8] px-3 py-2 text-xs font-semibold text-[#173c32] transition hover:bg-[#e6f3eb]"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
+      {selectedReport && (
+        <ReportDetailsDialog
+          report={selectedReport}
+          onClose={() => setSelectedReport(null)}
+        />
       )}
-    </div>
+    </AdminShell>
   );
 }

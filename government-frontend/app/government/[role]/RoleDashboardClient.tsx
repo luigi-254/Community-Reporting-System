@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAuth } from "../../../lib/auth-context";
 import { apiFetch } from "../../../lib/api";
 import { isValidRole, getRoleConfig } from "../../../lib/roles-config";
@@ -176,6 +176,8 @@ export default function RoleDashboardClient() {
   const role = String((params as any)?.role ?? "").toUpperCase();
   const { status: authStatus, user: sessionUser, sessionVersion } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   if (!isValidRole(role)) {
     return null;
@@ -204,7 +206,16 @@ export default function RoleDashboardClient() {
     : null;
 
   const roleConfig = getRoleConfig(role);
-  const [activeItem, setActiveItem] = useState(roleConfig.defaultPage);
+  const urlTab = searchParams.get("tab");
+  const activeItem = (urlTab && roleConfig.sidebar.some((g: any) => g.items.includes(urlTab)))
+    ? urlTab
+    : roleConfig.defaultPage;
+
+  const handleNavItem = (item: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", item);
+    router.replace(`${pathname}?${params.toString()}`);
+  };
   const [reports, setReports] = useState<Report[]>([]);
   const [reportsLoading, setReportsLoading] = useState(true);
   const [reportsError, setReportsError] = useState("");
@@ -674,6 +685,8 @@ export default function RoleDashboardClient() {
       user={user}
       roleConfig={roleConfig}
       pageTitle={roleConfig.welcome.title}
+      activeItem={activeItem}
+      onNavItemClick={handleNavItem}
     >
       {content}
     </GovernmentShell>

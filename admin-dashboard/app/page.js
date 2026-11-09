@@ -2,11 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useAuth } from "../lib/auth-context";
-import { PanelLeftClose, PanelLeftOpen, Menu, LogOut, LayoutDashboard, FileText, Users, BarChart3, Settings } from "lucide-react";
-import BrandLogo from "./components/BrandLogo";
-import AdminProfilePill from "./components/AdminProfilePill";
+import { AdminShell, ReportDetailsDialog } from "./components/AdminShell";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -151,14 +148,14 @@ export default function AdminDashboard() {
   const router = useRouter();
   const { logout, user, loading: authLoading } = useAuth();
 
-  const [activePage, setActivePage] = useState("Dashboard");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [selectedReportId, setSelectedReportId] = useState(null);
   const [reports, setReports] = useState([]);
   const [totalFromApi, setTotalFromApi] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => setSidebarCollapsed((prev) => !prev);
 
@@ -168,9 +165,6 @@ export default function AdminDashboard() {
     .slice(0, 2)
     .join("")
     .toUpperCase();
-
-  const sidebarWidth = sidebarCollapsed ? "w-16" : "w-64";
-  const mainContentMargin = sidebarCollapsed ? "lg:ml-16" : "lg:ml-64";
 
   const adminScope = useMemo(() => {
     if (!user) return { label: "Unauthenticated", level: "none" };
@@ -365,21 +359,7 @@ export default function AdminDashboard() {
     };
   }, [reports]);
 
-  const handleNavigation = (page) => {
-    setActivePage(page);
-
-    const routes = {
-      Reports: "/reports",
-      Users: "/users",
-      Statistics: "/statistics",
-      "Audit Logs": "/audit-logs",
-      Settings: "/settings",
-    };
-
-    if (routes[page]) {
-      router.push(routes[page]);
-    }
-  };
+  const selectedReport = reports.find((report) => report.id === selectedReportId);
 
   const statCards = [
     {
@@ -409,193 +389,42 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-[#f7f7f2] text-[#243329]">
-      {mobileMenuOpen && (
-        <button
-          type="button"
-          aria-label="Close navigation menu"
-          onClick={() => setMobileMenuOpen(false)}
-          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
-        />
-      )}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#244637] text-[#f7f7f2] transition-all duration-300 overflow-hidden ${sidebarWidth} lg:translate-x-0 ${
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className={`border-b border-white/15 px-5 py-4 flex items-center ${sidebarCollapsed ? "justify-center" : "justify-start"} gap-3`}>
-          <BrandLogo className="h-8 w-8 flex-shrink-0" />
-          {!sidebarCollapsed && (
-            <div className="min-w-0">
-              <p className="text-xs font-semibold leading-tight">Mtaa Fix</p>
-              <p className="mt-0.5 text-[10px] text-[#d1d5db] leading-none">
-                Admin Portal
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className={`px-5 pt-8 ${!sidebarCollapsed ? "" : "pt-3"}`}>
-          {!sidebarCollapsed && (
-            <p className="mb-6 px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#bdcdbd]">
-              Main menu
-            </p>
-          )}
-          <nav aria-label="Admin navigation" className="space-y-0.5">
-            {[
-              { name: "Dashboard", icon: LayoutDashboard },
-              { name: "Reports", icon: FileText },
-              { name: "Users", icon: Users },
-              { name: "Statistics", icon: BarChart3 },
-              { name: "Audit Logs", icon: FileText },
-              { name: "Settings", icon: Settings },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.name}
-                  type="button"
-                  onClick={() => handleNavigation(item.name)}
-                  aria-current={activePage === item.name ? "page" : undefined}
-                  className={`flex items-center gap-3 w-full ${sidebarCollapsed ? "px-3 justify-center" : "px-5 justify-start"} py-3 text-sm transition-colors rounded-lg ${activePage === item.name ? "bg-white/10 text-white" : "text-[#d5dfd2] hover:bg-white/5 hover:text-white"}`}
-                  title={sidebarCollapsed ? item.name : undefined}
-                >
-                  <Icon className={`w-5 h-5 flex-shrink-0 ${activePage === item.name ? "text-white" : "text-[#c4d3bf]"}`} />
-                  {!sidebarCollapsed && (
-                    <span className={`truncate ${activePage === item.name ? "text-white" : "text-[#d5dfd2]"}`}>
-                      {item.name}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="mt-auto border-t border-white/15 p-4 pb-6">
-          <div className={`flex flex-col items-center gap-2 px-3 py-3 ${!sidebarCollapsed ? "flex-row justify-between items-center gap-3 px-3 py-2" : ""}`}>
-            <div className="flex size-8 items-center justify-center rounded-full bg-[#dce5d8] text-[#244637] text-xs font-semibold flex-shrink-0">
-              {initials}
-            </div>
-            {!sidebarCollapsed && (
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold leading-tight text-white">
-                  {user?.name || user?.email}
-                </p>
-                <p className="mt-0.5 text-[10px] text-[#d1d5db] leading-none truncate">
-                  {user?.email}
-                </p>
-                <p className="mt-0.5 text-[9px] text-[#bdcdbd] leading-none truncate uppercase">
-                  {String(user?.role || "").replace(/_/g, " ")}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </aside>
-
-      <div
-        id="main-content"
-        className={`min-h-screen min-w-0 w-full transition-all duration-300 ${mainContentMargin}`}
-      >
-        <header className="sticky top-0 z-30 flex min-h-[72px] items-center justify-between gap-4 border-b border-[#dce2d8] bg-[#fdfdf9] px-4 sm:px-6 py-2.5 sm:py-3">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              className="p-1.5 rounded-lg border border-[#dce2d8] text-[#687468] hover:bg-[#f5f8f5] hover:text-[#244637] transition-colors hidden lg:flex"
-            >
-              {sidebarCollapsed ? (
-                <PanelLeftOpen className="w-4 h-4" aria-hidden="true" />
-              ) : (
-                <PanelLeftClose className="w-4 h-4" aria-hidden="true" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(true)}
-              aria-label="Open navigation menu"
-              className="p-1.5 rounded-lg border border-[#dce2d8] text-[#687468] hover:bg-[#f5f8f5] hover:text-[#244637] transition-colors lg:hidden"
-            >
-              <Menu className="w-4 h-4" aria-hidden="true" />
-            </button>
-            <div className="h-4 w-px bg-[#dce2d8] mx-2" />
-            <div>
-              <p className="text-xs font-medium text-[#788277] leading-none">
-                Admin workspace
-              </p>
-              <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-[#173c32] leading-none">
-                {activePage}
-              </h1>
-              {adminWelcome.subtitle && (
-                <p className="mt-0.5 text-xs text-[#687468] leading-none">
-                  {adminWelcome.subtitle}
-                </p>
-              )}
-            </div>
-            <div className={`rounded-full border px-3 py-1 text-xs font-medium ${adminScope.level === "platform" ? "border-[#187a58] text-[#187a58] bg-[#e6f3eb]" : "border-[#55745c] text-[#55745c] bg-[#e8eee3]"}`}>
-              {adminScope.label}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                setLoading(true);
-                setError("");
-                loadReports();
-              }}
-              disabled={loading}
-              className="rounded-lg border border-[#cbd6c8] bg-white px-4 py-2 text-sm font-medium transition hover:bg-[#f5f8f5] disabled:opacity-60"
-            >
-              {loading ? "Loading..." : "Refresh Data"}
-            </button>
-            <Link
-              href="/users"
-              onClick={() => setActivePage("Users")}
-              className="rounded-lg border border-[#cbd6c8] bg-white px-4 py-2 text-sm font-medium transition hover:bg-[#f5f8f5] text-[#244637]"
-            >
-              Manage Officers
-            </Link>
-            <AdminProfilePill user={user} onProfileClick={() => setActivePage("Dashboard")} />
-          </div>
-        </header>
-
-        {systemHealthLoading ? (
-          <div className="p-5 md:p-8">
-            <div className="flex items-center gap-3 text-sm text-[#687468]">
-              Checking system health…
-            </div>
-          </div>
-        ) : systemHealth ? (
-          <div className="p-5 md:p-8">
-            <div
-              className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${
-                systemHealth.status === "healthy"
-                  ? "border-[#cfe2d5] bg-[#f1f8f3] text-[#31584b]"
-                  : systemHealth.status === "degraded"
-                    ? "border-[#f1c9c2] bg-[#fff3f0] text-[#8b392f]"
-                    : "border-[#f1c9c2] bg-[#fff3f0] text-[#8b392f]"
-              }`}
-            >
-              <span
-                className={`flex h-2.5 w-2.5 rounded-full ${
-                  systemHealth.status === "healthy"
-                    ? "bg-[#187a58]"
-                    : "bg-[#8b392f]"
-                }`}
-                aria-hidden="true"
-              />
-              <span className="font-medium">
-                System: {systemHealth.status.charAt(0).toUpperCase() + systemHealth.status.slice(1)}
-              </span>
-              <span className="font-normal">{systemHealth.message}</span>
-            </div>
-          </div>
-        ) : null}
-
+    <AdminShell user={user} pageTitle={adminWelcome.title}>
+      {authLoading || !user ? null : (
         <div className="space-y-8 p-5 md:p-8">
+          {systemHealthLoading ? (
+            <div className="p-5 md:p-8">
+              <div className="flex items-center gap-3 text-sm text-[#687468]">
+                Checking system health…
+              </div>
+            </div>
+          ) : systemHealth ? (
+            <div className="p-5 md:p-8">
+              <div
+                className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${
+                  systemHealth.status === "healthy"
+                    ? "border-[#cfe2d5] bg-[#f1f8f3] text-[#31584b]"
+                    : systemHealth.status === "degraded"
+                      ? "border-[#f1c9c2] bg-[#fff3f0] text-[#8b392f]"
+                      : "border-[#f1c9c2] bg-[#fff3f0] text-[#8b392f]"
+                }`}
+              >
+                <span
+                  className={`flex h-2.5 w-2.5 rounded-full ${
+                    systemHealth.status === "healthy"
+                      ? "bg-[#187a58]"
+                      : "bg-[#8b392f]"
+                  }`}
+                  aria-hidden="true"
+                />
+                <span className="font-medium">
+                  System: {systemHealth.status.charAt(0).toUpperCase() + systemHealth.status.slice(1)}
+                </span>
+                <span className="font-normal">{systemHealth.message}</span>
+              </div>
+            </div>
+          ) : null}
+
           {error && (
             <div
               role="alert"
@@ -704,11 +533,7 @@ export default function AdminDashboard() {
                         <div
                           className="h-full rounded-full bg-[#244637]"
                           style={{
-                            width: `${
-                              reports.length
-                                ? (count / reports.length) * 100
-                                : 0
-                            }%`,
+                            width: `${reports.length ? (count / reports.length) * 100 : 0}%`,
                           }}
                         />
                       </div>
@@ -744,7 +569,7 @@ export default function AdminDashboard() {
               </div>
 
               <button
-                onClick={() => handleNavigation("Reports")}
+                onClick={() => router.push("/reports")}
                 className="rounded-lg bg-[#187a58] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#126448]"
               >
                 View All Reports
@@ -843,7 +668,13 @@ export default function AdminDashboard() {
             </div>
           </section>
         </div>
-      </div>
-    </div>
+      )}
+      {selectedReport && (
+        <ReportDetailsDialog
+          report={selectedReport}
+          onClose={() => setSelectedReportId(null)}
+        />
+      )}
+    </AdminShell>
   );
 }
