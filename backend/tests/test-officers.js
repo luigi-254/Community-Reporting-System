@@ -4,9 +4,7 @@ import db from '../config/db.js';
 import { generateAccessToken } from '../utils/jwt.js';
 
 process.env.NODE_ENV = 'test';
-const port = 5082;
-
-const request = (method, path, body = null, token = null) =>
+const port = 5082;const request = (method, path, body = null, token = null) =>
   new Promise((resolve, reject) => {
     const payload = body ? JSON.stringify(body) : null;
     const req = http.request({
@@ -39,12 +37,17 @@ const server = app.listen(port, async () => {
     });
     const token = generateAccessToken({ id: admin.id, email: admin.email, role: admin.role });
 
+    // Look up a real department for the foreign key
+    const departments = await db.findDepartments ? await db.findDepartments() : [];
+    const infraDept = departments.find((d) => d.code === 'INFRA') || departments[0];
+    const departmentId = infraDept?.id;
+
     const created = await request('POST', '/api/officers', {
       name: 'Jane Officer',
       email: `jane.officer.${testId}@example.com`,
       phone: `+2547${String(testId).slice(-8)}`,
       password: 'secure-password',
-      departmentId: 'roads-department',
+      departmentId,
     }, token);
     if (created.status !== 201) throw new Error('createOfficer failed');
     const officerId = created.body.data.officer.id;

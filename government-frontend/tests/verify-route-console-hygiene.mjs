@@ -4,7 +4,7 @@
 const PLAYWRIGHT_MODULE = process.env.PLAYWRIGHT_MODULE || 'playwright';
 const { chromium } = await import(PLAYWRIGHT_MODULE);
 
-const FRONTEND = 'http://localhost:3002';
+const FRONTEND = 'http://localhost:3001';
 const ROUTES = ['/', '/login', '/government'];
 
 const browser = await chromium.launch({ channel: 'chrome', headless: true });

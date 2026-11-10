@@ -16,7 +16,7 @@ const PLAYWRIGHT_MODULE =
 
 const { chromium } = await import(PLAYWRIGHT_MODULE);
 
-const FRONTEND = 'http://localhost:3002';
+const FRONTEND = 'http://localhost:3001';
 const EMAIL = 'governor.kisii@example.com';
 const PASSWORD = 'TestPassword123!';
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import BrandLogo from "./components/BrandLogo";
 import {
   ArrowRight,
@@ -83,72 +84,7 @@ function Brand({ inverse = false }) {
   );
 }
 
-function CommunityIllustration() {
-  return (
-    <div className="relative mx-auto w-full max-w-xl" aria-hidden="true">
-      <div className="absolute -right-3 top-8 h-40 w-40 rounded-full bg-[#a6d8be]/50 blur-2xl sm:right-3" />
-      <div className="relative rounded-[2rem] border border-white/70 bg-white p-4 shadow-[0_28px_80px_-35px_rgba(13,48,37,0.5)] sm:p-6">
-        <div className="flex items-center justify-between border-b border-[#e7eee9] pb-4">
-          <div className="flex items-center gap-3">
-            <BrandLogo className="h-10 w-10" alt="" />
-            <div>
-              <p className="text-sm font-semibold text-[#173c32]">
-                Community reports
-              </p>
-              <p className="text-xs text-[#66776f]">A clearer path to action</p>
-            </div>
-          </div>
-          <span className="rounded-full bg-[#e5f3eb] px-3 py-1 text-xs font-semibold text-[#187a58]">
-            Live updates
-          </span>
-        </div>
 
-        <div className="relative mt-5 overflow-hidden rounded-2xl bg-[#e9f1ec]">
-          <svg
-            viewBox="0 0 560 300"
-            className="h-56 w-full sm:h-64"
-            fill="none"
-            role="presentation"
-          >
-            <path d="M0 45 170 0l110 40 120-23 160 52v231H0V45Z" fill="#E4EEE7" />
-            <path d="m-8 95 575 110M53-12l177 330M306-20 181 315m236-345 48 360" stroke="#fff" strokeWidth="20" />
-            <path d="M0 244c96-67 151-58 216-21s118 37 179-3 102-54 165-16v96H0v-56Z" fill="#CDE6D6" />
-            <path d="M285 127c0 44-54 101-54 101s-54-57-54-101a54 54 0 1 1 108 0Z" fill="#187A58" />
-            <circle cx="231" cy="126" r="17" fill="white" />
-            <circle cx="405" cy="187" r="11" fill="#3D8FC2" />
-            <circle cx="405" cy="187" r="21" stroke="#3D8FC2" strokeOpacity=".25" strokeWidth="8" />
-            <rect x="326" y="53" width="129" height="43" rx="12" fill="white" />
-            <circle cx="346" cy="74" r="7" fill="#3D8FC2" />
-            <path d="M362 70h72M362 78h48" stroke="#B5C5BC" strokeLinecap="round" strokeWidth="5" />
-          </svg>
-          <div className="absolute bottom-4 left-4 rounded-xl bg-white px-4 py-3 shadow-lg">
-            <p className="text-xs font-medium text-[#66776f]">Report status</p>
-            <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-[#173c32]">
-              <span className="h-2 w-2 rounded-full bg-[#187a58]" />
-              Under review
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center sm:gap-4">
-          {[
-            ["Report", "Share an issue"],
-            ["Follow", "See progress"],
-            ["Improve", "Support action"],
-          ].map(([title, caption]) => (
-            <div key={title} className="rounded-xl bg-[#f5f8f5] px-2 py-3">
-              <p className="text-sm font-semibold text-[#173c32]">{title}</p>
-              <p className="mt-1 text-[11px] text-[#66776f] sm:text-xs">{caption}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-      <span className="absolute -bottom-5 -left-2 hidden rounded-2xl border border-[#dbe8df] bg-white px-4 py-3 text-sm font-medium text-[#31584b] shadow-lg sm:block">
-        Your voice matters in every neighborhood.
-      </span>
-    </div>
-  );
-}
 
 export default function HomePage() {
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL?.trim();
@@ -187,17 +123,14 @@ export default function HomePage() {
         </nav>
       </header>
 
-      <section className="relative isolate bg-[#f2f7f3]">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_30%,rgba(196,230,207,0.45),transparent_35%)]" />
-        <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[1.02fr_0.98fr] lg:gap-10 lg:py-24">
+      <section className="relative isolate bg-gradient-to-br from-[#eaf4ed] to-[#f4f8f5]">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_30%,rgba(24,122,88,0.08),transparent_40%)]" />
+        <div className="mx-auto grid max-w-[1216px] items-center gap-[52px] px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24 lg:grid-cols-[1fr_1fr]">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-[#cfe2d5] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#187a58]">
-              Community reporting, made easier
-            </p>
             <h1 className="mt-6 max-w-2xl text-4xl font-bold leading-[1.08] tracking-tight text-[#173c32] sm:text-5xl lg:text-6xl">
               Make Your Community Better with <span className="text-[#187a58]">MtaaFix.</span>
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-8 text-[#53675d] sm:text-lg">
+            <p className="mt-6 max-w-xl text-[#4a6159] text-[17.5px] leading-1.6">
               Report community problems, track progress, and help local
               authorities deliver better services. Your voice can make a
               difference.
@@ -205,31 +138,54 @@ export default function HomePage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/report-issue"
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#187a58] px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#126448] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#187a58]"
+                className="inline-flex min-h-12 items-center justify-center rounded-[11px] bg-[#187a58] px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_16px_rgba(24,122,88,0.25)] transition hover:bg-[#126448] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#187a58]"
               >
                 Report an Issue
                 <ArrowRight className="ml-2 w-4 h-4" aria-hidden="true" />
               </Link>
               <Link
                 href="/create-account"
-                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#c8d9cf] bg-white px-6 py-3 text-sm font-semibold text-[#31584b] transition hover:border-[#187a58] hover:bg-[#f8fbf9]"
+                className="inline-flex min-h-12 items-center justify-center rounded-[11px] border border-[#d6e1db] bg-white px-6 py-3 text-sm font-semibold text-[#173c32] transition hover:border-[#187a58] hover:bg-[#f8fbf9]"
               >
                 Create an Account
               </Link>
             </div>
-            <p className="mt-3 text-sm text-[#53675d]">
-              No account needed to submit an anonymous report.
-            </p>
-            <div className="mt-8 flex items-center gap-3 text-sm text-[#53675d]">
-              <span className="flex -space-x-2" aria-hidden="true">
-                <span className="h-8 w-8 rounded-full border-2 border-[#f2f7f3] bg-[#b8d7c3]" />
-                <span className="h-8 w-8 rounded-full border-2 border-[#f2f7f3] bg-[#8bb9a0]" />
-                <span className="h-8 w-8 rounded-full border-2 border-[#f2f7f3] bg-[#d3e7d8]" />
-              </span>
-              <span>For residents and the teams serving them</span>
+          </div>
+          <div className="grid gap-[14px] lg:grid-cols-[1fr_1fr]">
+            <div className="aspect-[4/3] rounded-[20px] bg-white p-[6px] shadow-[0_16px_36px_rgba(23,60,50,0.09)]">
+              <div className="relative h-full w-full rounded-[14px] overflow-hidden">
+                <Image
+                  src="/hero/photo-1-resident-reporting.png"
+                  alt="Resident reporting a neighborhood issue on a smartphone"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 920px) 100vw, 50vw"
+                />
+              </div>
+            </div>
+            <div className="aspect-[4/3] rounded-[20px] bg-white p-[6px] shadow-[0_16px_36px_rgba(23,60,50,0.09)]">
+              <div className="relative h-full w-full rounded-[14px] overflow-hidden">
+                <Image
+                  src="/hero/photo-2-municipal-crew.png"
+                  alt="Municipal technicians repairing a solar streetlight"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 920px) 100vw, 50vw"
+                />
+              </div>
+            </div>
+            <div className="lg:grid-column-[1/-1] aspect-[16/9] rounded-[20px] bg-white p-[6px] shadow-[0_16px_36px_rgba(23,60,50,0.09)]">
+              <div className="relative h-full w-full rounded-[14px] overflow-hidden">
+                <Image
+                  src="/hero/photo-3-thriving-street.png"
+                  alt="Thriving neighborhood street with working solar streetlights"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 920px) 100vw, 100vw"
+                />
+              </div>
             </div>
           </div>
-          <CommunityIllustration />
         </div>
       </section>
 

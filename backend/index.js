@@ -34,6 +34,12 @@ import {
   errorHandler,
 } from './middlewares/errorMiddlewares.js';
 
+import {
+  getInitError,
+  getInitPromise,
+  isDatabaseConnected,
+} from './repositories/client.js';
+
 dotenv.config();
 
 const app = express();
@@ -205,38 +211,78 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(
-      `Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`
+// Ensure the database is initialized before accepting traffic. When a
+// DATABASE_URL is configured, an unreachable database is a hard startup error:
+// we never silently fall back to an empty in-memory store.
+async function startServer() {
+  await getInitPromise();
+
+  const initError = getInitError();
+  if (process.env.NODE_ENV === 'production' && !isDatabaseConnected()) {
+    const reason = initError
+      ? `database unreachable: ${initError.message}`
+      : 'DATABASE_URL / PG* not configured';
+    console.error(
+      `[DB] Aborting startup — no live database connection in production (${reason}). ` +
+        'Production must not fall back to the in-memory store.'
     );
+    process.exit(1);
+  }
 
-    console.log(`API base URL: http://localhost:${PORT}`);
-    console.log(`Health check: http://localhost:${PORT}/health`);
-    console.log(`Auth endpoints: http://localhost:${PORT}/api/auth`);
-    console.log(`Report endpoints: http://localhost:${PORT}/api/reports`);
-    console.log(`Category endpoints: http://localhost:${PORT}/api/categories`);
-    console.log(`Subcategory endpoints: http://localhost:${PORT}/api/subcategories`);
-  });
+  if (initError && process.env.NODE_ENV !== 'production') {
+    console.warn(
+      '[DB] Database initialization issue (non-production):', initError.message
+    );
+  }
 
-  // --------------------------------------------------
-  // AUTOMATIC ESCALATION SCHEDULER
-  // --------------------------------------------------
-  // Enabled via ENABLE_ESCALATION_SCHEDULER=true. Runs every 5 minutes by default.
-  if (process.env.ENABLE_ESCALATION_SCHEDULER === 'true') {
-    const intervalMs = Number(process.env.ESCALATION_SCHEDULER_INTERVAL_MS) || 300000;
-    setInterval(async () => {
-      try {
-        const created = await autoEscalateOverdueReports();
-        if (created.length > 0) {
-          console.log(`[SLA] Auto-escalated ${created.length} overdue report(s).`);
+  if (isDatabaseConnected()) {
+    console.log('[DB] Prisma connected to PostgreSQL.');
+  } else if (process.env.DATABASE_URL || process.env.PGHOST) {
+    console.warn(
+      '[DB] Running in degraded memory-store mode — database unreachable. ' +
+        'No data will persist across restarts.'
+    );
+  } else {
+    console.log(
+      '[DB] No DATABASE_URL configured — running in degraded memory-store mode (tests/dev only).'
+    );
+  }
+
+  if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => {
+      console.log(
+        `Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`
+      );
+
+      console.log(`API base URL: http://localhost:${PORT}`);
+      console.log(`Health check: http://localhost:${PORT}/health`);
+      console.log(`Auth endpoints: http://localhost:${PORT}/api/auth`);
+      console.log(`Report endpoints: http://localhost:${PORT}/api/reports`);
+      console.log(`Category endpoints: http://localhost:${PORT}/api/categories`);
+      console.log(`Subcategory endpoints: http://localhost:${PORT}/api/subcategories`);
+    });
+
+    // --------------------------------------------------
+    // AUTOMATIC ESCALATION SCHEDULER
+    // --------------------------------------------------
+    // Enabled via ENABLE_ESCALATION_SCHEDULER=true. Runs every 5 minutes by default.
+    if (process.env.ENABLE_ESCALATION_SCHEDULER === 'true') {
+      const intervalMs = Number(process.env.ESCALATION_SCHEDULER_INTERVAL_MS) || 300000;
+      setInterval(async () => {
+        try {
+          const created = await autoEscalateOverdueReports();
+          if (created.length > 0) {
+            console.log(`[SLA] Auto-escalated ${created.length} overdue report(s).`);
+          }
+        } catch (err) {
+          console.error('[SLA] Auto-escalation scheduler error:', err.message);
         }
-      } catch (err) {
-        console.error('[SLA] Auto-escalation scheduler error:', err.message);
-      }
-    }, intervalMs);
-    console.log(`[SLA] Escalation scheduler enabled (interval: ${intervalMs}ms).`);
+      }, intervalMs);
+      console.log(`[SLA] Escalation scheduler enabled (interval: ${intervalMs}ms).`);
+    }
   }
 }
+
+startServer();
 
 export default app;

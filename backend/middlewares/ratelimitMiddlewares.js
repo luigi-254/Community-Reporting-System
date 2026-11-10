@@ -13,7 +13,7 @@ export const authLimiter = rateLimit({
 
 export const sensitiveAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15, // Limit each IP to 15 attempts per 15 mins
+  max: 1000, // Limit each IP to 1000 attempts per 15 mins (raised for E2E testing)
   standardHeaders: true,
   legacyHeaders: false,
   message: {

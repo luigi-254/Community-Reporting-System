@@ -211,6 +211,7 @@ const TEST_ACCOUNTS = [
   },
 ];
 
+const sslDisabled = process.env.PGSSL_DISABLE === 'true';
 const prisma = new PrismaClient({
   adapter: new PrismaPg({
     host: process.env.PGHOST,
@@ -218,6 +219,7 @@ const prisma = new PrismaClient({
     user: process.env.PGUSER,
     password: process.env.PGPASSWORD,
     database: process.env.PGDATABASE,
+    ...(sslDisabled ? {} : { ssl: { rejectUnauthorized: false } }),
   }),
 });
 

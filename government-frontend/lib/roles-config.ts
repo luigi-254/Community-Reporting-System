@@ -372,7 +372,7 @@ export const ROLE_CONFIGS = {
     ],
   },
   SUBCOUNTY_ADMIN: {
-    route: "sub-county-administrator",
+    route: "subcounty-admin",
     label: "Sub-County Administrator",
     scope: "subcounty",
     defaultPage: "Sub-County Overview",
@@ -402,7 +402,7 @@ export const ROLE_CONFIGS = {
     ],
   },
   WARD_ADMIN: {
-    route: "ward-administrator",
+    route: "ward-admin",
     label: "Ward Administrator",
     scope: "ward",
     defaultPage: "Ward Overview",

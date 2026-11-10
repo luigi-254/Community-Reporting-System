@@ -173,7 +173,11 @@ const DEPARTMENT_LABELS: Record<string, string> = {
 
 export default function RoleDashboardClient() {
   const params = useParams();
-  const role = String((params as any)?.role ?? "").toUpperCase();
+  // URL route segments use hyphens (e.g. "chief-officer"), but role identifiers
+  // use underscores (e.g. "CHIEF_OFFICER"). Normalise before comparison.
+  const role = String((params as any)?.role ?? "")
+    .replace(/-/g, "_")
+    .toUpperCase();
   const { status: authStatus, user: sessionUser, sessionVersion } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -184,13 +188,18 @@ export default function RoleDashboardClient() {
   }
 
   const sessionRole = String(sessionUser?.role || "").toUpperCase();
-  if (sessionRole !== role) {
-    const config = getRoleConfig(sessionRole);
-    if (typeof window !== "undefined") {
+
+  // Redirect to the correct role dashboard when the URL role doesn't match
+  // the session user's role. Runs in an effect (not during render) to avoid
+  // React's "Cannot update a component while rendering" error, and only after
+  // the session is resolved so we don't redirect while still loading.
+  useEffect(() => {
+    if (!isValidRole(role) || !sessionUser) return;
+    if (sessionRole !== role) {
+      const config = getRoleConfig(sessionRole);
       router.replace(`/government/${config.route}`);
     }
-    return null;
-  }
+  }, [role, sessionRole, sessionUser, router]);
 
   const user: DashboardUser | null = sessionUser
     ? {
@@ -221,6 +230,19 @@ export default function RoleDashboardClient() {
   const [reportsError, setReportsError] = useState("");
   const [overview, setOverview] = useState<any>(null);
   const [overviewLoading, setOverviewLoading] = useState(true);
+
+  // Section-specific data (loaded on demand when the corresponding sidebar
+  // item is selected, so each tab shows real, distinct content).
+  const [inspections, setInspections] = useState<any[]>([]);
+  const [inspectionsLoading, setInspectionsLoading] = useState(false);
+  const [workUpdates, setWorkUpdates] = useState<any[]>([]);
+  const [workUpdatesLoading, setWorkUpdatesLoading] = useState(false);
+  const [followUps, setFollowUps] = useState<any[]>([]);
+  const [followUpsLoading, setFollowUpsLoading] = useState(false);
+  const [resolutions, setResolutions] = useState<any[]>([]);
+  const [resolutionsLoading, setResolutionsLoading] = useState(false);
+  const [escalations, setEscalations] = useState<any[]>([]);
+  const [escalationsLoading, setEscalationsLoading] = useState(false);
 
   const loadOverview = useCallback(async () => {
     setOverviewLoading(true);
@@ -256,11 +278,104 @@ export default function RoleDashboardClient() {
     }
   }, []);
 
+  const loadInspections = useCallback(async () => {
+    setInspectionsLoading(true);
+    try {
+      const payload = await apiFetch("/api/inspections?page=1&limit=20", {
+        cache: "no-store",
+      });
+      const items = extractReports(payload);
+      setInspections(items);
+    } catch {
+      setInspections([]);
+    } finally {
+      setInspectionsLoading(false);
+    }
+  }, []);
+
+  const loadWorkUpdates = useCallback(async () => {
+    setWorkUpdatesLoading(true);
+    try {
+      const payload = await apiFetch("/api/work-updates?page=1&limit=20", {
+        cache: "no-store",
+      });
+      const items = extractReports(payload);
+      setWorkUpdates(items);
+    } catch {
+      setWorkUpdates([]);
+    } finally {
+      setWorkUpdatesLoading(false);
+    }
+  }, []);
+
+  const loadFollowUps = useCallback(async () => {
+    setFollowUpsLoading(true);
+    try {
+      const payload = await apiFetch("/api/follow-ups?page=1&limit=20", {
+        cache: "no-store",
+      });
+      const items = extractReports(payload);
+      setFollowUps(items);
+    } catch {
+      setFollowUps([]);
+    } finally {
+      setFollowUpsLoading(false);
+    }
+  }, []);
+
+  const loadResolutions = useCallback(async () => {
+    setResolutionsLoading(true);
+    try {
+      const payload = await apiFetch("/api/resolutions?page=1&limit=20", {
+        cache: "no-store",
+      });
+      const items = extractReports(payload);
+      setResolutions(items);
+    } catch {
+      setResolutions([]);
+    } finally {
+      setResolutionsLoading(false);
+    }
+  }, []);
+
+  const loadEscalations = useCallback(async () => {
+    setEscalationsLoading(true);
+    try {
+      const payload = await apiFetch("/api/escalations?page=1&limit=20", {
+        cache: "no-store",
+      });
+      const items = extractReports(payload);
+      setEscalations(items);
+    } catch {
+      setEscalations([]);
+    } finally {
+      setEscalationsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (authStatus !== "authenticated") return;
     void loadOverview();
     void loadReports();
   }, [authStatus, sessionVersion, loadOverview, loadReports]);
+
+  // Load section-specific data when the corresponding sidebar item becomes
+  // active. Each tab loads its own data so every sidebar destination shows
+  // distinct, real content rather than the same dashboard shell.
+  useEffect(() => {
+    const item = activeItem.toLowerCase();
+    if (item.includes("inspection")) {
+      void loadInspections();
+    } else if (item.includes("work update") || item.includes("progress update") || item.includes("submit findings")) {
+      void loadWorkUpdates();
+    } else if (item.includes("follow-up") || item.includes("followup") || item.includes("awaiting action")) {
+      void loadFollowUps();
+    } else if (item.includes("resolution") || item.includes("resolved")) {
+      void loadResolutions();
+    } else if (item.includes("escalat")) {
+      void loadEscalations();
+    }
+  }, [activeItem, loadInspections, loadWorkUpdates, loadFollowUps, loadResolutions, loadEscalations]);
 
   const filteredReports = useMemo(() => reports, [reports]);
 
@@ -353,12 +468,15 @@ export default function RoleDashboardClient() {
       role === "CECM" ||
       role === "CHIEF_OFFICER" ||
       role === "TECHNICAL_HEAD" ||
+      role === "DEPARTMENTAL_ADMIN" ||
       role === "DISASTER_MANAGER" ||
       role === "ENFORCEMENT_OFFICER"
     )
       return `Department: ${DEPARTMENT_LABELS[String(user.departmentId)] || user.departmentId || "unassigned"}`;
     if (role === "SUBCOUNTY_ADMIN")
       return `Sub-County: ${user.subCountyId || "unassigned"}`;
+    if (role === "FIELD_OFFICER" || role === "OFFICER")
+      return "Personal:";
     return `Ward: ${user.wardId || "unassigned"}`;
   }, [user, role]);
 
@@ -677,6 +795,334 @@ export default function RoleDashboardClient() {
           )}
         </section>
       )}
+
+      {/* Inspections section */}
+      {((activeItem.toLowerCase().includes("inspection") || activeItem.includes("Scheduled Inspections") || activeItem.includes("Inspection Requests") || activeItem.includes("Inspection Results") || activeItem.includes("Inspection Evidence") || activeItem.includes("My Inspection History")) && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-[#173c32]">Field Inspections</h3>
+            <p className="mt-1 text-sm text-[#687468]">
+              Inspection records scoped to your jurisdiction and assignments.
+            </p>
+          </div>
+          {inspectionsLoading ? (
+            <LoadingState message="Loading inspections…" />
+          ) : inspections.length === 0 ? (
+            <EmptyState type="general" title="No inspections" description="There are no inspection records available for your jurisdiction." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                    <th className="p-3 font-semibold">Report</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold">Officer</th>
+                    <th className="p-3 font-semibold">Findings</th>
+                    <th className="p-3 font-semibold">Action Taken</th>
+                    <th className="p-3 font-semibold">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inspections.map((insp: any, index: number) => (
+                    <tr
+                      key={insp.id || `inspection-${index}`}
+                      className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]"
+                    >
+                      <td className="p-3">
+                        <p className="font-medium text-[#173c32]">
+                          {insp.reportId || `INS-${String(index + 1).padStart(3, "0")}`}
+                        </p>
+                        <p className="mt-1 text-xs text-[#7a8378]">
+                          {insp.reportTitle || "Field inspection"}
+                        </p>
+                      </td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                          statusStyles[String(insp.status || "PENDING").toUpperCase()] ||
+                          statusStyles.PENDING
+                        }`}>
+                          {insp.status || "Pending"}
+                        </span>
+                      </td>
+                      <td className="p-3 text-[#687468]">
+                        {insp.officerName || insp.officerId || "—"}
+                      </td>
+                      <td className="p-3 text-[#687468] max-w-[200px] truncate">
+                        {insp.findings || "No findings recorded"}
+                      </td>
+                      <td className="p-3 text-[#687468] max-w-[200px] truncate">
+                        {insp.actionTaken || "—"}
+                      </td>
+                      <td className="whitespace-nowrap p-3 text-[#687468]">
+                        {insp.createdAt ? formatDate(String(insp.createdAt)) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ))}
+
+      {/* Work Updates section */}
+      {((activeItem.toLowerCase().includes("work update") || activeItem.includes("progress update") || activeItem.includes("submit findings") || activeItem.includes("Work Updates")) && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-[#173c32]">Work Updates</h3>
+            <p className="mt-1 text-sm text-[#687468]">
+              Progress updates and evidence submissions for assigned field work.
+            </p>
+          </div>
+          {workUpdatesLoading ? (
+            <LoadingState message="Loading work updates…" />
+          ) : workUpdates.length === 0 ? (
+            <EmptyState type="general" title="No work updates" description="There are no work update records available for your jurisdiction." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                    <th className="p-3 font-semibold">Report</th>
+                    <th className="p-3 font-semibold">Officer</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold">Note</th>
+                    <th className="p-3 font-semibold">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workUpdates.map((wu: any, index: number) => (
+                    <tr
+                      key={wu.id || `work-update-${index}`}
+                      className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]"
+                    >
+                      <td className="p-3">
+                        <p className="font-medium text-[#173c32]">
+                          {wu.reportId || `WU-${String(index + 1).padStart(3, "0")}`}
+                        </p>
+                        <p className="mt-1 text-xs text-[#7a8378]">
+                          {wu.reportTitle || "Work update"}
+                        </p>
+                      </td>
+                      <td className="p-3 text-[#687468]">
+                        {wu.officerName || wu.officerId || "—"}
+                      </td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                          statusStyles[String(wu.status || "IN_PROGRESS").toUpperCase()] ||
+                          statusStyles["IN_PROGRESS"]
+                        }`}>
+                          {wu.status || "In Progress"}
+                        </span>
+                      </td>
+                      <td className="p-3 text-[#687468] max-w-[200px] truncate">
+                        {wu.note || "No note recorded"}
+                      </td>
+                      <td className="whitespace-nowrap p-3 text-[#687468]">
+                        {wu.createdAt ? formatDate(String(wu.createdAt)) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ))}
+
+      {/* Follow-ups section */}
+      {((activeItem.toLowerCase().includes("follow-up") || activeItem.includes("followup") || activeItem.includes("awaiting action") || activeItem.includes("Follow-ups")) && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-[#173c32]">Follow-ups</h3>
+            <p className="mt-1 text-sm text-[#687468]">
+              Follow-up notes and escalation requests for reports in your jurisdiction.
+            </p>
+          </div>
+          {followUpsLoading ? (
+            <LoadingState message="Loading follow-ups…" />
+          ) : followUps.length === 0 ? (
+            <EmptyState type="general" title="No follow-ups" description="There are no follow-up records available for your jurisdiction." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                    <th className="p-3 font-semibold">Report</th>
+                    <th className="p-3 font-semibold">Type</th>
+                    <th className="p-3 font-semibold">Note</th>
+                    <th className="p-3 font-semibold">Created By</th>
+                    <th className="p-3 font-semibold">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {followUps.map((fu: any, index: number) => (
+                    <tr
+                      key={fu.id || `follow-up-${index}`}
+                      className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]"
+                    >
+                      <td className="p-3">
+                        <p className="font-medium text-[#173c32]">
+                          {fu.reportId || `FU-${String(index + 1).padStart(3, "0")}`}
+                        </p>
+                        <p className="mt-1 text-xs text-[#7a8378]">
+                          {fu.reportTitle || "Follow-up"}
+                        </p>
+                      </td>
+                      <td className="p-3 text-[#687468] capitalize">
+                        {fu.type || "note"}
+                      </td>
+                      <td className="p-3 text-[#687468] max-w-[200px] truncate">
+                        {fu.note || "No note recorded"}
+                      </td>
+                      <td className="p-3 text-[#687468]">
+                        {fu.createdByName || fu.createdById || "—"}
+                      </td>
+                      <td className="whitespace-nowrap p-3 text-[#687468]">
+                        {fu.createdAt ? formatDate(String(fu.createdAt)) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ))}
+
+      {/* Resolutions section */}
+      {((activeItem.toLowerCase().includes("resolution") || activeItem.includes("resolved") || activeItem.includes("submit findings") || activeItem.includes("Completed")) && !activeItem.toLowerCase().includes("reports") && !activeItem.toLowerCase().includes("inspection") && !activeItem.toLowerCase().includes("follow-up") && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-[#173c32]">Resolutions</h3>
+            <p className="mt-1 text-sm text-[#687468]">
+              Resolution submissions and their approval status for reports in your jurisdiction.
+            </p>
+          </div>
+          {resolutionsLoading ? (
+            <LoadingState message="Loading resolutions…" />
+          ) : resolutions.length === 0 ? (
+            <EmptyState type="general" title="No resolutions" description="There are no resolution records available for your jurisdiction." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                    <th className="p-3 font-semibold">Report</th>
+                    <th className="p-3 font-semibold">Submitted By</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold">Notes</th>
+                    <th className="p-3 font-semibold">Resolved At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resolutions.map((res: any, index: number) => (
+                    <tr
+                      key={res.id || `resolution-${index}`}
+                      className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]"
+                    >
+                      <td className="p-3">
+                        <p className="font-medium text-[#173c32]">
+                          {res.reportId || `RES-${String(index + 1).padStart(3, "0")}`}
+                        </p>
+                        <p className="mt-1 text-xs text-[#7a8378]">
+                          {res.reportTitle || "Resolution"}
+                        </p>
+                      </td>
+                      <td className="p-3 text-[#687468]">
+                        {res.submittedByName || res.submittedById || "—"}
+                      </td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                          statusStyles[String(res.status || "PENDING").toUpperCase()] ||
+                          statusStyles.PENDING
+                        }`}>
+                          {res.status || "Pending"}
+                        </span>
+                      </td>
+                      <td className="p-3 text-[#687468] max-w-[200px] truncate">
+                        {res.notes || "No notes recorded"}
+                      </td>
+                      <td className="whitespace-nowrap p-3 text-[#687468]">
+                        {res.resolvedAt ? formatDate(String(res.resolvedAt)) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ))}
+
+      {/* Escalations section */}
+      {((activeItem.toLowerCase().includes("escalat") || activeItem.includes("Escalated") || activeItem.includes("Pending Approvals") || activeItem.includes("Escalated Issues")) && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-[#173c32]">Escalations</h3>
+            <p className="mt-1 text-sm text-[#687468]">
+              Escalated cases requiring attention within your jurisdiction.
+            </p>
+          </div>
+          {escalationsLoading ? (
+            <LoadingState message="Loading escalations…" />
+          ) : escalations.length === 0 ? (
+            <EmptyState type="general" title="No escalations" description="There are no escalated cases available for your jurisdiction." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                    <th className="p-3 font-semibold">Report</th>
+                    <th className="p-3 font-semibold">Reason</th>
+                    <th className="p-3 font-semibold">Priority</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold">Escalated By</th>
+                    <th className="p-3 font-semibold">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {escalations.map((esc: any, index: number) => (
+                    <tr
+                      key={esc.id || `escalation-${index}`}
+                      className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]"
+                    >
+                      <td className="p-3">
+                        <p className="font-medium text-[#173c32]">
+                          {esc.reportId || `ESC-${String(index + 1).padStart(3, "0")}`}
+                        </p>
+                        <p className="mt-1 text-xs text-[#7a8378]">
+                          {esc.reportTitle || "Escalation"}
+                        </p>
+                      </td>
+                      <td className="p-3 text-[#687468] max-w-[200px] truncate">
+                        {esc.reason || "No reason recorded"}
+                      </td>
+                      <td className="p-3 text-[#687468]">
+                        {esc.priority || "MEDIUM"}
+                      </td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                          statusStyles[String(esc.status || "OPEN").toUpperCase()] ||
+                          statusStyles.PENDING
+                        }`}>
+                          {esc.status || "Open"}
+                        </span>
+                      </td>
+                      <td className="p-3 text-[#687468]">
+                        {esc.escalatedByName || esc.escalatedById || "—"}
+                      </td>
+                      <td className="whitespace-nowrap p-3 text-[#687468]">
+                        {esc.createdAt ? formatDate(String(esc.createdAt)) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ))}
     </div>
   );
 

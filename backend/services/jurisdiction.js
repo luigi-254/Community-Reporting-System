@@ -2,7 +2,7 @@ import { isValidTransition } from './statusWorkflow.js';
 
 const ADMIN_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'GOVERNOR', 'CECM', 'CHIEF_OFFICER']);
 const WARD_SCOPED_ROLES = new Set(['OFFICER', 'FIELD_OFFICER', 'TECHNICAL_SUPERVISOR', 'WARD_ADMIN', 'SUBCOUNTY_ADMIN']);
-const DEPARTMENT_SCOPED_ROLES = new Set(['CHIEF_OFFICER', 'TECHNICAL_HEAD', 'CECM', 'DISASTER_MANAGER', 'ENFORCEMENT_OFFICER']);
+const DEPARTMENT_SCOPED_ROLES = new Set(['CHIEF_OFFICER', 'TECHNICAL_HEAD', 'CECM', 'DISASTER_MANAGER', 'ENFORCEMENT_OFFICER', 'DEPARTMENTAL_ADMIN']);
 const STATUS_CHANGE_ROLES = new Set(['OFFICER', 'FIELD_OFFICER', 'TECHNICAL_SUPERVISOR', 'TECHNICAL_HEAD', 'CHIEF_OFFICER', 'CECM', 'GOVERNOR', 'ADMIN', 'SUPER_ADMIN', 'DISASTER_MANAGER', 'ENFORCEMENT_OFFICER']);
 
 // Role-based transition permissions:
@@ -22,8 +22,8 @@ export function canPerformTransition(user, fromStatus, toStatus) {
   // ADMIN/SUPER_ADMIN can perform any valid transition
   if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return true;
 
-  // WARD_ADMIN and SUBCOUNTY_ADMIN: monitoring only, no status changes
-  if (user.role === 'WARD_ADMIN' || user.role === 'SUBCOUNTY_ADMIN') return false;
+  // WARD_ADMIN, SUBCOUNTY_ADMIN and DEPARTMENTAL_ADMIN: monitoring only, no status changes
+  if (user.role === 'WARD_ADMIN' || user.role === 'SUBCOUNTY_ADMIN' || user.role === 'DEPARTMENTAL_ADMIN') return false;
 
   // The transition must be valid per the workflow state machine
   if (!isValidTransition(fromStatus, toStatus)) return false;

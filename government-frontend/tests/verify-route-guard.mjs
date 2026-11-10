@@ -9,7 +9,7 @@
  */
 import http from 'http';
 
-const FRONTEND = 'http://localhost:3002';
+const FRONTEND = 'http://localhost:3001';
 const BACKEND = 'http://localhost:5000';
 const COOKIE_NAME = 'crs_government_access_token';
 
@@ -171,7 +171,7 @@ const run = async () => {
     const req = http.request(
       {
         hostname: 'localhost',
-        port: 3002,
+        port: 3001,
         path: '/api/session',
         method: 'POST',
         headers: {
@@ -203,7 +203,7 @@ const run = async () => {
     const req = http.request(
       {
         hostname: 'localhost',
-        port: 3002,
+        port: 3001,
         path: '/api/session',
         method: 'DELETE',
       },

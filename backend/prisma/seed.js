@@ -199,6 +199,7 @@ const SUBCATEGORY_SEED = {
   ],
 };
 
+const sslDisabled = process.env.PGSSL_DISABLE === 'true';
 const prisma = new PrismaClient({
   adapter: new PrismaPg({
     host: process.env.PGHOST,
@@ -206,7 +207,7 @@ const prisma = new PrismaClient({
     user: process.env.PGUSER,
     password: process.env.PGPASSWORD,
     database: process.env.PGDATABASE,
-    ssl: { rejectUnauthorized: false },
+    ...(sslDisabled ? {} : { ssl: { rejectUnauthorized: false } }),
   }),
 });
 

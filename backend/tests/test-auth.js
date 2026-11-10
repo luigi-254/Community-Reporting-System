@@ -2,11 +2,12 @@ import http from 'http';
 
 process.env.NODE_ENV = 'test';
 process.env.PORT = '5055';
-process.env.DATABASE_URL = '';
+// DATABASE_URL is loaded from .env (local PostgreSQL) — do not override to empty.
 
 const { default: app } = await import('../index.js');
-const { memoryStore } = await import('../repositories/memoryStore.js');
+const { getPrismaClient } = await import('../repositories/client.js');
 
+const prisma = getPrismaClient();
 let server;
 
 function request(method, path, body = null, headers = {}) {
@@ -91,9 +92,9 @@ async function runTests() {
       throw new Error('Public registration must assign the CITIZEN role');
     }
 
-    const verificationRecord = [...memoryStore.verificationTokens.values()].find(
-      (v) => v.identifier === testEmail
-    );
+    const verificationRecord = await prisma.verificationToken.findFirst({
+      where: { identifier: testEmail },
+    });
     const verificationCode = verificationRecord?.code;
     let accessToken = regRes.body.data.accessToken;
     let refreshToken = regRes.body.data.refreshToken;
@@ -172,9 +173,13 @@ async function runTests() {
     });
     console.log('✓ POST /api/auth/forgot-password:', forgotRes.status, forgotRes.body.message);
     if (forgotRes.status !== 200) throw new Error('Forgot password failed');
-    const resetRecord = [...memoryStore.passwordResetTokens.values()].find(
-      (r) => r.userId
-    ) || [...memoryStore.passwordResetTokens.values()][0];
+    // Reset password: look up the token for THIS user (not just any token)
+    const resetUser = await prisma.user.findUnique({
+      where: { email: testEmail.toLowerCase().trim() },
+    });
+    const resetRecord = await prisma.passwordResetToken.findFirst({
+      where: { userId: resetUser.id },
+    });
     const resetTokenValue = resetRecord?.token;
     const resetRes = await request('POST', '/api/auth/reset-password', {
       token: resetTokenValue,
