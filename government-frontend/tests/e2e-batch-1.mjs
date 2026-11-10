@@ -1,5 +1,6 @@
 /**
- * E2E Batch 1: GOVERNOR, CECM, CHIEF_OFFICER, TECHNICAL_HEAD, TECHNICAL_SUPERVISOR
+ * E2E batch 1: DISASTER_MANAGER, ENFORCEMENT_OFFICER, OFFICER
+ * Run with: node tests/e2e-batch-1.mjs
  */
 
 const { chromium } = await import('playwright');
@@ -8,20 +9,34 @@ const FRONTEND = 'http://localhost:3001';
 const PASSWORD = 'TestPassword123!';
 
 const ROLES = [
-  { role: 'GOVERNOR', email: 'governor.kisii@example.com', route: '/government/governor', welcome: 'County Executive Oversight', scope: 'County-wide' },
-  { role: 'CECM', email: 'cecm.infrastructure@example.com', route: '/government/cecm', welcome: 'Department Oversight', scope: 'Department:' },
-  { role: 'CHIEF_OFFICER', email: 'chief.officer.infra@example.com', route: '/government/chief-officer', welcome: 'Department Operations', scope: 'Department:' },
-  { role: 'TECHNICAL_HEAD', email: 'tech.head.infra@example.com', route: '/government/technical-head', welcome: 'Technical Operations', scope: 'Department:' },
-  { role: 'TECHNICAL_SUPERVISOR', email: 'tech.supervisor.infra@example.com', route: '/government/technical-supervisor', welcome: 'Field Team Supervision', scope: 'Ward:' },
+  { role: 'DISASTER_MANAGER', email: 'disaster.manager@example.com', route: '/government/disaster-manager', welcome: 'Disaster Management', scope: 'Department:' },
+  { role: 'ENFORCEMENT_OFFICER', email: 'enforcement.officer@example.com', route: '/government/enforcement-officer', welcome: 'Enforcement Operations', scope: 'Department:' },
+  { role: 'OFFICER', email: 'officer.general@example.com', route: '/government/officer', welcome: 'Government Officer', scope: 'Personal:' },
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 const assertions = [];
 let failures = 0;
 
 function assert(condition, message) {
-  if (condition) { console.log(`    ✓ ${message}`); assertions.push({ pass: true }); }
-  else { console.log(`    ✗ ${message}`); assertions.push({ pass: false }); failures += 1; }
+  if (condition) {
+    console.log(`    ✓ ${message}`);
+    assertions.push({ pass: true, message });
+  } else {
+    console.log(`    ✗ ${message}`);
+    assertions.push({ pass: false, message });
+    failures += 1;
+  }
+}
+
+async function waitForRoute(page, expectedRoute, maxMs = 15000) {
+  const start = Date.now();
+  while (Date.now() - start < maxMs) {
+    if (page.url().includes(expectedRoute)) return true;
+    await sleep(300);
+  }
+  return false;
 }
 
 async function testRole(login) {
@@ -30,92 +45,100 @@ async function testRole(login) {
   const page = await context.newPage();
 
   const consoleErrors = [];
+  const pageErrors = [];
   page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+  page.on('pageerror', (e) => pageErrors.push(e.message));
 
   console.log(`\n════════════════════════════════════════════════════════════════════`);
   console.log(`ROLE: ${login.role} (${login.email})`);
   console.log(`════════════════════════════════════════════════════════════════════`);
 
-  // Logged-out protected route
+  // ── 1. Logged-out visit to /government redirects to /login ─────────
   console.log('\n[1] Logged-out protected route');
   await page.goto(`${FRONTEND}/government`, { waitUntil: 'networkidle' });
   assert(page.url().includes('/login'), 'redirects to /login when logged out');
 
-  // Sign in
+  // ── 2. Sign in ─────────────────────────────────────────────────────
   console.log('\n[2] Sign in');
   await page.fill('#government-email', login.email);
   await page.fill('#government-password', PASSWORD);
-  await Promise.all([
-    page.waitForURL(`**${login.route}`, { timeout: 30000 }),
-    page.click('button[type="submit"]'),
-  ]);
+  await page.click('button[type="submit"]');
   await page.waitForLoadState('networkidle');
-  await sleep(1000);
+  await sleep(2500);
 
-  assert(page.url().includes(login.route), `auto-redirects to ${login.route} (got ${page.url()})`);
+  const urlOk = await waitForRoute(page, login.route);
+  assert(urlOk, `auto-redirects to ${login.route} (got ${page.url()})`);
 
-  // Welcome heading
+  // ── 3. Welcome heading ─────────────────────────────────────────────
   console.log('\n[3] Welcome heading');
-  await sleep(1000);
-  assert(await page.locator(`h3:has-text("${login.welcome}")`).count() > 0,
-    `welcome heading "${login.welcome}" rendered`);
+  await sleep(2000);
+  const welcomeLocator = page.locator(`h3:has-text("${login.welcome}")`);
+  const welcomeCount = await welcomeLocator.count();
+  assert(welcomeCount > 0, `welcome heading "${login.welcome}" is rendered`);
 
-  // Scope badge
+  // ── 4. Scope badge ─────────────────────────────────────────────────
   console.log('\n[4] Scope badge');
-  await sleep(500);
-  assert(await page.locator(`text=${login.scope}`).count() > 0,
-    `scope badge contains "${login.scope}"`);
-
-  // Sidebar navigation
-  console.log('\n[5] Sidebar navigation');
   await sleep(1000);
-  const allButtons = await page.getByRole('button').all();
+  const scopeLocator = page.locator(`text=${login.scope}`);
+  const scopeCount = await scopeLocator.count();
+  assert(scopeCount > 0, `scope badge contains "${login.scope}"`);
+
+  // ── 5. Sidebar navigation ─────────────────────────────────────────
+  console.log('\n[5] Sidebar navigation — every item opens correct content');
+  await sleep(2000);
+
+  const sidebarButtons = page.getByRole('button').filter({ has: page.locator('span') });
+  const allButtons = await sidebarButtons.all();
   const sidebarItemTexts = [];
   for (const btn of allButtons) {
     const text = (await btn.innerText().catch(() => '')).trim();
-    if (text && !['Sign Out','Log Out','My Profile','Notifications','Close navigation menu','View Details'].includes(text) && !sidebarItemTexts.includes(text)) {
+    if (text && text !== 'Sign Out' && text !== 'My Profile' && text !== 'Notifications' && text !== 'Close navigation menu' && !sidebarItemTexts.includes(text)) {
       sidebarItemTexts.push(text);
     }
   }
-  console.log(`    Found ${sidebarItemTexts.length} sidebar items`);
+
+  console.log(`    Found ${sidebarItemTexts.length} sidebar items: ${sidebarItemTexts.slice(0, 8).join(', ')}${sidebarItemTexts.length > 8 ? '...' : ''}`);
 
   for (const itemText of sidebarItemTexts) {
     try {
       const item = page.getByRole('button', { name: new RegExp(itemText, 'i') }).first();
       if ((await item.count()) === 0) continue;
-      const isActive = (await item.getAttribute('aria-current')) === 'page';
-      if (isActive) {
-        console.log(`    ⊚ sidebar item "${itemText}" already active (skipping navigation)`);
-        continue;
-      }
+
       const beforeUrl = page.url();
       await item.click();
       await page.waitForLoadState('networkidle');
-      await sleep(600);
+      await sleep(800);
+
       const afterUrl = page.url();
-      assert(afterUrl.includes('?tab=') || afterUrl !== beforeUrl,
-        `sidebar item "${itemText}" navigates`);
+      const hasTabParam = afterUrl.includes('?tab=');
+      const tabValue = hasTabParam ? afterUrl.split('?tab=')[1].split('&')[0] : '(same page)';
+
+      assert(
+        hasTabParam,
+        `sidebar item "${itemText}" navigates to tab=${tabValue}`
+      );
     } catch (err) {
       assert(false, `sidebar item "${itemText}" failed: ${err.message}`);
     }
   }
 
-  // Logout
+  // ── 6. Logout ──────────────────────────────────────────────────────
   console.log('\n[6] Logout');
-  const signOut = page.getByRole('button', { name: /Log Out|Sign Out/i }).first();
+  const signOut = page.getByRole('button', { name: /Sign Out/i }).first();
   if ((await signOut.count()) > 0) {
     await signOut.click();
     await page.waitForURL(/\/login/, { timeout: 15000 }).catch(() => {});
-    await sleep(800);
+    await sleep(1000);
     assert(page.url().includes('/login'), 'sign out redirects to /login');
+
     const cookies = await context.cookies(FRONTEND);
-    assert(!cookies.find((c) => c.name === 'crs_government_access_token' && c.value),
-      'session cookie cleared on sign out');
+    const remaining = cookies.find((c) => c.name === 'crs_government_access_token' && c.value);
+    assert(!remaining, 'session cookie cleared on sign out');
   } else {
     assert(false, 'no sign-out button found');
   }
 
-  // Console hygiene
+  // ── 7. Console hygiene ─────────────────────────────────────────────
   console.log('\n[7] Console hygiene');
   const noise = consoleErrors.filter((t) => !t.includes('NEXT_REDIRECT') && !t.includes('Failed to load resource'));
   assert(noise.length === 0, `no unexpected console errors (${noise.length})`);
@@ -125,15 +148,29 @@ async function testRole(login) {
 }
 
 async function main() {
+  let totalFailures = 0;
+
   for (const login of ROLES) {
-    failures += await testRole(login);
+    const roleFailures = await testRole(login);
+    totalFailures += roleFailures;
   }
 
   console.log(`\n════════════════════════════════════════════════════════════════════`);
-  console.log(`BATCH 1 SUMMARY`);
+  console.log(`E2E BATCH 1 TEST SUMMARY`);
   console.log(`════════════════════════════════════════════════════════════════════`);
-  console.log(`Assertions: ${assertions.length} | Passed: ${assertions.filter(a => a.pass).length} | Failed: ${failures}`);
-  process.exit(failures === 0 ? 0 : 1);
+  console.log(`Total assertions: ${assertions.length}`);
+  console.log(`Passed: ${assertions.filter((a) => a.pass).length}`);
+  console.log(`Failed: ${failures}`);
+  if (failures === 0) {
+    console.log('\n✅ BATCH 1 ALL TESTS PASSED');
+    process.exit(0);
+  } else {
+    console.log(`\n❌ ${failures} ASSERTION(S) FAILED`);
+    process.exit(1);
+  }
 }
 
-main().catch((err) => { console.error('FATAL:', err.message); process.exit(1); });
+main().catch((err) => {
+  console.error('\nFATAL:', err.message);
+  process.exit(1);
+});
