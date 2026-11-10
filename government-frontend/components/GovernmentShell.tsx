@@ -405,13 +405,13 @@ export function GovernmentShell({
           )}
         </div>
 
-        <div className={`px-5 pt-8 ${!sidebarCollapsed ? "" : "pt-3"}`}>
+        <div className={`flex-1 px-5 pt-8 ${!sidebarCollapsed ? "" : "pt-3"}`}>
           {!sidebarCollapsed && (
             <p className="mb-6 px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#bdcdbd]">
               Main menu
             </p>
           )}
-          <nav aria-label="Government navigation" className="space-y-0.5">
+          <nav aria-label="Government navigation" className="space-y-0.5 overflow-y-auto min-h-[0]">
             {roleConfig.sidebar.map((group: any) => (
               <div key={group.group} className="mb-4">
                 {!sidebarCollapsed && (
@@ -516,7 +516,7 @@ export function GovernmentShell({
             <button
               type="button"
               disabled={notificationsLoading}
-              className="relative rounded-lg border border-[#cbd6c8] bg-white px-4 py-2 text-sm font-medium transition hover:bg-[#f5f8f5] disabled:opacity-60"
+              className="relative rounded-lg border border-[#cbd6c8] bg-white px-4 py-2 text-sm font-medium whitespace-nowrap transition hover:bg-[#f5f8f5] disabled:opacity-60"
             >
               <Bell className="w-4 h-4 mr-2" aria-hidden="true" />
               Notifications

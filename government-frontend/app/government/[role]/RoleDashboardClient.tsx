@@ -380,6 +380,63 @@ export default function RoleDashboardClient() {
   const activeLower = activeItem.toLowerCase();
   const filteredReports = useMemo(() => reports, [reports]);
 
+  // Derived datasets for dedicated pages (computed from already-loaded backend data).
+  const reportsByDepartment = useMemo(() => {
+    const grouped: Record<string, Report[]> = {};
+    filteredReports.forEach((r) => {
+      const dept = r.department || "Unassigned";
+      if (!grouped[dept]) grouped[dept] = [];
+      grouped[dept].push(r);
+    });
+    return grouped;
+  }, [filteredReports]);
+
+  const reportsBySubCounty = useMemo(() => {
+    const grouped: Record<string, Report[]> = {};
+    filteredReports.forEach((r) => {
+      const sc = r.subCounty || "Unassigned";
+      if (!grouped[sc]) grouped[sc] = [];
+      grouped[sc].push(r);
+    });
+    return grouped;
+  }, [filteredReports]);
+
+  const reportsByWard = useMemo(() => {
+    const grouped: Record<string, Report[]> = {};
+    filteredReports.forEach((r) => {
+      const w = r.ward || "Unassigned";
+      if (!grouped[w]) grouped[w] = [];
+      grouped[w].push(r);
+    });
+    return grouped;
+  }, [filteredReports]);
+
+  const criticalReports = useMemo(
+    () => filteredReports.filter((r) => r.priority === "CRITICAL" || r.priority === "HIGH"),
+    [filteredReports]
+  );
+
+  const unresolvedReports = useMemo(
+    () => filteredReports.filter((r) => !["Resolved", "Rejected", "Closed", "Cancelled"].includes(r.status)),
+    [filteredReports]
+  );
+
+  const resolvedReports = useMemo(
+    () => filteredReports.filter((r) => r.status === "Resolved"),
+    [filteredReports]
+  );
+
+  const monthlyStats = useMemo(() => {
+    const grouped: Record<string, { total: number; resolved: number }> = {};
+    filteredReports.forEach((r) => {
+      const month = r.date ? r.date.slice(0, 7) : "unknown";
+      if (!grouped[month]) grouped[month] = { total: 0, resolved: 0 };
+      grouped[month].total += 1;
+      if (r.status === "Resolved") grouped[month].resolved += 1;
+    });
+    return Object.entries(grouped).map(([month, stats]) => ({ month, ...stats }));
+  }, [filteredReports]);
+
   const canChangeStatus = [
     "OFFICER",
     "FIELD_OFFICER",
@@ -582,6 +639,205 @@ export default function RoleDashboardClient() {
             </section>
           )}
 
+      {/* Sub-County Performance */}
+      {role === "GOVERNOR" && activeLower === "sub-county performance" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Sub-County Performance</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Compare service delivery performance across all sub-counties.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Sub-County</th>
+                  <th className="p-3 font-semibold">Reports Received</th>
+                  <th className="p-3 font-semibold">Resolved</th>
+                  <th className="p-3 font-semibold">Outstanding</th>
+                  <th className="p-3 font-semibold">Resolution Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(reportsBySubCounty).map(([subCounty, reports]) => {
+                  const resolvedCount = reports.filter((r) => r.status === "Resolved").length;
+                  const rate = reports.length > 0 ? Math.round((resolvedCount / reports.length) * 100) : 0;
+                  return (
+                    <tr key={subCounty} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3 font-medium text-[#173c32]">{subCounty}</td>
+                      <td className="p-3 text-[#687468]">{reports.length}</td>
+                      <td className="p-3 text-[#687468]">{resolvedCount}</td>
+                      <td className="p-3 text-[#687468]">{reports.length - resolvedCount}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${rate >= 70 ? "text-[#187a58] bg-[#e6f3eb]" : rate >= 40 ? "text-[#66572f] bg-[#f0ebd9]" : "text-[#8b392f] bg-[#fff3f0]"}`}>
+                          {rate}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Ward Performance */}
+      {role === "GOVERNOR" && activeLower === "ward performance" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Ward Performance</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Compare service delivery performance across all wards.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Ward</th>
+                  <th className="p-3 font-semibold">Reports Received</th>
+                  <th className="p-3 font-semibold">Resolved</th>
+                  <th className="p-3 font-semibold">Outstanding</th>
+                  <th className="p-3 font-semibold">Resolution Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(reportsByWard).map(([ward, reports]) => {
+                  const resolvedCount = reports.filter((r) => r.status === "Resolved").length;
+                  const rate = reports.length > 0 ? Math.round((resolvedCount / reports.length) * 100) : 0;
+                  return (
+                    <tr key={ward} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3 font-medium text-[#173c32]">{ward}</td>
+                      <td className="p-3 text-[#687468]">{reports.length}</td>
+                      <td className="p-3 text-[#687468]">{resolvedCount}</td>
+                      <td className="p-3 text-[#687468]">{reports.length - resolvedCount}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${rate >= 70 ? "text-[#187a58] bg-[#e6f3eb]" : rate >= 40 ? "text-[#66572f] bg-[#f0ebd9]" : "text-[#8b392f] bg-[#fff3f0]"}`}>
+                          {rate}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Departmental Performance */}
+      {role === "GOVERNOR" && activeLower === "departmental performance" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Departmental Performance</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Compare performance across all county departments.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Department</th>
+                  <th className="p-3 font-semibold">Reports Assigned</th>
+                  <th className="p-3 font-semibold">Resolved</th>
+                  <th className="p-3 font-semibold">Outstanding</th>
+                  <th className="p-3 font-semibold">Resolution Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(reportsByDepartment).map(([department, reports]) => {
+                  const resolvedCount = reports.filter((r) => r.status === "Resolved").length;
+                  const rate = reports.length > 0 ? Math.round((resolvedCount / reports.length) * 100) : 0;
+                  return (
+                    <tr key={department} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3 font-medium text-[#173c32]">{department}</td>
+                      <td className="p-3 text-[#687468]">{reports.length}</td>
+                      <td className="p-3 text-[#687468]">{resolvedCount}</td>
+                      <td className="p-3 text-[#687468]">{reports.length - resolvedCount}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${rate >= 70 ? "text-[#187a58] bg-[#e6f3eb]" : rate >= 40 ? "text-[#66572f] bg-[#f0ebd9]" : "text-[#8b392f] bg-[#fff3f0]"}`}>
+                          {rate}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Resolution Statistics */}
+      {role === "GOVERNOR" && activeLower === "resolution statistics" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Resolution Statistics</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Resolution trends and time-to-resolution analytics across reporting periods.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="rounded-lg border border-[#dce2d8] p-4">
+                <p className="text-sm text-[#687468]">Total Reports</p>
+                <p className="mt-1 text-2xl font-bold text-[#173c32]">{total}</p>
+              </div>
+              <div className="rounded-lg border border-[#dce2d8] p-4">
+                <p className="text-sm text-[#687468]">Resolved</p>
+                <p className="mt-1 text-2xl font-bold text-[#187a58]">{resolved}</p>
+              </div>
+              <div className="rounded-lg border border-[#dce2d8] p-4">
+                <p className="text-sm text-[#687468]">Resolution Rate</p>
+                <p className="mt-1 text-2xl font-bold text-[#187a58]">{resolutionRate}%</p>
+              </div>
+              <div className="rounded-lg border border-[#dce2d8] p-4">
+                <p className="text-sm text-[#687468]">Open</p>
+                <p className="mt-1 text-2xl font-bold text-[#66572f]">{open}</p>
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Reporting Period</th>
+                  <th className="p-3 font-semibold">Reports Received</th>
+                  <th className="p-3 font-semibold">Resolved</th>
+                  <th className="p-3 font-semibold">Resolution Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyStats.slice().reverse().map((stat) => {
+                  const rate = stat.total > 0 ? Math.round((stat.resolved / stat.total) * 100) : 0;
+                  return (
+                    <tr key={stat.month} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3 font-medium text-[#173c32]">{stat.month}</td>
+                      <td className="p-3 text-[#687468]">{stat.total}</td>
+                      <td className="p-3 text-[#687468]">{stat.resolved}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${rate >= 70 ? "text-[#187a58] bg-[#e6f3eb]" : rate >= 40 ? "text-[#66572f] bg-[#f0ebd9]" : "text-[#8b392f] bg-[#fff3f0]"}`}>
+                          {rate}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
           {role === "TECHNICAL_SUPERVISOR" && (
             <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
@@ -614,6 +870,272 @@ export default function RoleDashboardClient() {
               </div>
             </section>
           )}
+
+      {/* Department Directory */}
+      {role === "GOVERNOR" && activeLower === "department directory" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Department Directory</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                County departments, leadership, and responsible officers.
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#187a58] bg-[#e6f3eb] p-4">
+              <p className="text-sm text-[#687468]">Departments</p>
+              <p className="mt-1 text-2xl font-bold text-[#173c32]">{Object.keys(reportsByDepartment).length}</p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Department</th>
+                  <th className="p-3 font-semibold">Reports Assigned</th>
+                  <th className="p-3 font-semibold">Resolved</th>
+                  <th className="p-3 font-semibold">Open</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(reportsByDepartment).map(([department, reports]) => {
+                  const resolvedCount = reports.filter((r) => r.status === "Resolved").length;
+                  return (
+                    <tr key={department} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3 font-medium text-[#173c32]">{department}</td>
+                      <td className="p-3 text-[#687468]">{reports.length}</td>
+                      <td className="p-3 text-[#687468]">{resolvedCount}</td>
+                      <td className="p-3 text-[#687468]">{reports.length - resolvedCount}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Department Issues */}
+      {role === "GOVERNOR" && activeLower === "department issues" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Department Issues</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Open, overdue, and escalated issues grouped by department.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Department</th>
+                  <th className="p-3 font-semibold">Open Issues</th>
+                  <th className="p-3 font-semibold">Overdue</th>
+                  <th className="p-3 font-semibold">Escalated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(reportsByDepartment).map(([department, reports]) => {
+                  const openCount = reports.filter((r) => !["Resolved", "Rejected", "Closed", "Cancelled"].includes(r.status)).length;
+                  const overdueCount = reports.filter((r) => {
+                    if (["Resolved", "Rejected", "Closed", "Cancelled"].includes(r.status)) return false;
+                    const ageDays = (Date.now() - new Date(r.createdAt).getTime()) / 86400000;
+                    return ageDays > 7;
+                  }).length;
+                  const escalatedCount = reports.filter((r) => r.status === "Escalated").length;
+                  return (
+                    <tr key={department} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3 font-medium text-[#173c32]">{department}</td>
+                      <td className="p-3 text-[#687468]">{openCount}</td>
+                      <td className="p-3 text-[#687468]">{overdueCount}</td>
+                      <td className="p-3 text-[#687468]">{escalatedCount}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* County Map */}
+      {role === "GOVERNOR" && activeLower === "county map" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">County Map</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Geographical overview of reports across Kisii County.
+              </p>
+            </div>
+          </div>
+          <div className="rounded-lg border border-[#dce2d8] bg-[#eef4f1] h-[500px] flex items-center justify-center">
+            <p className="text-[#687468] text-sm">
+              Map visualization would render here using existing county boundary
+              and report-location data from the GIS service.
+            </p>
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Sub-Counties</p>
+              <p className="mt-1 text-2xl font-bold text-[#173c32]">{Object.keys(reportsBySubCounty).length}</p>
+            </div>
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Wards</p>
+              <p className="mt-1 text-2xl font-bold text-[#173c32]">{Object.keys(reportsByWard).length}</p>
+            </div>
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Departments</p>
+              <p className="mt-1 text-2xl font-bold text-[#173c32]">{Object.keys(reportsByDepartment).length}</p>
+            </div>
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Total Reports</p>
+              <p className="mt-1 text-2xl font-bold text-[#173c32]">{total}</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Reports by Sub-County */}
+      {role === "GOVERNOR" && activeLower === "reports by sub-county" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Reports by Sub-County</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Reports grouped and filtered by sub-county.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Sub-County</th>
+                  <th className="p-3 font-semibold">Reports</th>
+                  <th className="p-3 font-semibold">Resolved</th>
+                  <th className="p-3 font-semibold">Open</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(reportsBySubCounty).map(([subCounty, reports]) => {
+                  const resolvedCount = reports.filter((r) => r.status === "Resolved").length;
+                  return (
+                    <tr key={subCounty} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3 font-medium text-[#173c32]">{subCounty}</td>
+                      <td className="p-3 text-[#687468]">{reports.length}</td>
+                      <td className="p-3 text-[#687468]">{resolvedCount}</td>
+                      <td className="p-3 text-[#687468]">{reports.length - resolvedCount}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Reports by Ward */}
+      {role === "GOVERNOR" && activeLower === "reports by ward" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Reports by Ward</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Reports grouped and filtered by ward.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Ward</th>
+                  <th className="p-3 font-semibold">Reports</th>
+                  <th className="p-3 font-semibold">Resolved</th>
+                  <th className="p-3 font-semibold">Open</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(reportsByWard).map(([ward, reports]) => {
+                  const resolvedCount = reports.filter((r) => r.status === "Resolved").length;
+                  return (
+                    <tr key={ward} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3 font-medium text-[#173c32]">{ward}</td>
+                      <td className="p-3 text-[#687468]">{reports.length}</td>
+                      <td className="p-3 text-[#687468]">{resolvedCount}</td>
+                      <td className="p-3 text-[#687468]">{reports.length - resolvedCount}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Executive Approvals */}
+      {role === "GOVERNOR" && activeLower === "executive approvals" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Executive Approvals</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Cases requiring executive approval within your authority.
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#187a58] bg-[#e6f3eb] p-4">
+              <p className="text-sm text-[#687468]">Pending Approvals</p>
+              <p className="mt-1 text-2xl font-bold text-[#173c32]">{escalated}</p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Report</th>
+                  <th className="p-3 font-semibold">Category</th>
+                  <th className="p-3 font-semibold">Department</th>
+                  <th className="p-3 font-semibold">Location</th>
+                  <th className="p-3 font-semibold">Status</th>
+                  <th className="p-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredReports.filter((r) => r.status === "Escalated").map((report) => (
+                  <tr key={report.id} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                    <td className="p-3">
+                      <p className="font-medium text-[#173c32]">{report.title}</p>
+                      <p className="mt-1 text-xs text-[#7a8378]">{report.id}</p>
+                    </td>
+                    <td className="p-3 text-[#687468]">{report.category}</td>
+                    <td className="p-3 text-[#687468]">{report.department}</td>
+                    <td className="p-3 text-[#687468]">{report.location}</td>
+                    <td className="p-3">
+                      <span className="inline-block rounded-full px-3 py-1 text-xs font-semibold bg-[#f0ebd9] text-[#66572f]">
+                        Escalated
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <button type="button" className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">
+                        Approve Action
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {filteredReports.filter((r) => r.status === "Escalated").length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="p-3 text-center text-[#687468]">
+                      No cases requiring executive approval at this time.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
           {["FIELD_OFFICER", "OFFICER"].includes(role) && (
             <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
@@ -683,6 +1205,274 @@ export default function RoleDashboardClient() {
         </>
       )}
 
+      {/* All County Reports */}
+      {activeLower === "all county reports" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">All County Reports</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Comprehensive county-wide report management interface.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="rounded-lg border border-[#dce2d8] p-4">
+                <p className="text-sm text-[#687468]">Total Reports</p>
+                <p className="mt-1 text-2xl font-bold text-[#173c32]">{total}</p>
+              </div>
+              <div className="rounded-lg border border-[#dce2d8] p-4">
+                <p className="text-sm text-[#687468]">Open</p>
+                <p className="mt-1 text-2xl font-bold text-[#66572f]">{open}</p>
+              </div>
+              <div className="rounded-lg border border-[#dce2d8] p-4">
+                <p className="text-sm text-[#687468]">Resolved</p>
+                <p className="mt-1 text-2xl font-bold text-[#187a58]">{resolved}</p>
+              </div>
+              <div className="rounded-lg border border-[#dce2d8] p-4">
+                <p className="text-sm text-[#687468]">Escalated</p>
+                <p className="mt-1 text-2xl font-bold text-[#8b392f]">{escalated}</p>
+              </div>
+            </div>
+          </div>
+          {reportsLoading ? (
+            <LoadingState message="Loading reports…" />
+          ) : filteredReports.length === 0 ? (
+            <EmptyState type="reports" />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                    <th className="p-3 font-semibold">Reference</th>
+                    <th className="p-3 font-semibold">Title</th>
+                    <th className="p-3 font-semibold">Category</th>
+                    <th className="p-3 font-semibold">Location</th>
+                    <th className="p-3 font-semibold">Department</th>
+                    <th className="p-3 font-semibold">Date</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReports.map((report) => (
+                    <tr key={report.id} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3">
+                        <p className="font-medium text-[#173c32]">{report.title}</p>
+                        <p className="mt-1 text-xs text-[#7a8378]">{report.id}</p>
+                      </td>
+                      <td className="p-3 text-[#687468]">{report.category}</td>
+                      <td className="p-3 text-[#687468]">{report.location}</td>
+                      <td className="p-3 text-[#687468]">{report.department}</td>
+                      <td className="whitespace-nowrap p-3">{formatDate(report.date)}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[report.status]}`}>
+                          {report.status}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <button type="button" className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Critical Reports */}
+      {activeLower === "critical reports" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Critical Reports</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                High-priority cases requiring executive attention.
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#8b392f] bg-[#fff3f0] p-4">
+              <p className="text-sm text-[#687468]">Critical Cases</p>
+              <p className="mt-1 text-2xl font-bold text-[#8b392f]">{criticalReports.length}</p>
+            </div>
+          </div>
+          {criticalReports.length === 0 ? (
+            <EmptyState type="general" title="No critical reports" description="There are no critical reports within your jurisdiction." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                    <th className="p-3 font-semibold">Reference</th>
+                    <th className="p-3 font-semibold">Title</th>
+                    <th className="p-3 font-semibold">Category</th>
+                    <th className="p-3 font-semibold">Location</th>
+                    <th className="p-3 font-semibold">Department</th>
+                    <th className="p-3 font-semibold">Priority</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {criticalReports.map((report) => (
+                    <tr key={report.id} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3">
+                        <p className="font-medium text-[#173c32]">{report.title}</p>
+                        <p className="mt-1 text-xs text-[#7a8378]">{report.id}</p>
+                      </td>
+                      <td className="p-3 text-[#687468]">{report.category}</td>
+                      <td className="p-3 text-[#687468]">{report.location}</td>
+                      <td className="p-3 text-[#687468]">{report.department}</td>
+                      <td className="p-3 text-[#687468] capitalize">{report.priority}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[report.status]}`}>
+                          {report.status}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <button type="button" className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Unresolved Reports */}
+      {activeLower === "unresolved reports" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Unresolved Reports</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Reports that remain open and require follow-up action.
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#66572f] bg-[#f0ebd9] p-4">
+              <p className="text-sm text-[#687468]">Unresolved Cases</p>
+              <p className="mt-1 text-2xl font-bold text-[#66572f]">{unresolvedReports.length}</p>
+            </div>
+          </div>
+          {unresolvedReports.length === 0 ? (
+            <EmptyState type="general" title="No unresolved reports" description="All reports within your jurisdiction are resolved." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                    <th className="p-3 font-semibold">Reference</th>
+                    <th className="p-3 font-semibold">Title</th>
+                    <th className="p-3 font-semibold">Category</th>
+                    <th className="p-3 font-semibold">Location</th>
+                    <th className="p-3 font-semibold">Department</th>
+                    <th className="p-3 font-semibold">Days Outstanding</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unresolvedReports.map((report) => {
+                    const ageDays = report.createdAt
+                      ? Math.floor((Date.now() - new Date(report.createdAt).getTime()) / 86400000)
+                      : 0;
+                    return (
+                      <tr key={report.id} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                        <td className="p-3">
+                          <p className="font-medium text-[#173c32]">{report.title}</p>
+                          <p className="mt-1 text-xs text-[#7a8378]">{report.id}</p>
+                        </td>
+                        <td className="p-3 text-[#687468]">{report.category}</td>
+                        <td className="p-3 text-[#687468]">{report.location}</td>
+                        <td className="p-3 text-[#687468]">{report.department}</td>
+                        <td className="whitespace-nowrap p-3">{ageDays} days</td>
+                        <td className="p-3">
+                          <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[report.status]}`}>
+                            {report.status}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <button type="button" className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Resolved Reports */}
+      {activeLower === "resolved reports" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Resolved Reports</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Reports that have been resolved within your jurisdiction.
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#187a58] bg-[#e6f3eb] p-4">
+              <p className="text-sm text-[#687468]">Resolved Cases</p>
+              <p className="mt-1 text-2xl font-bold text-[#187a58]">{resolvedReports.length}</p>
+            </div>
+          </div>
+          {resolvedReports.length === 0 ? (
+            <EmptyState type="general" title="No resolved reports" description="There are no resolved reports within your jurisdiction." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                    <th className="p-3 font-semibold">Reference</th>
+                    <th className="p-3 font-semibold">Title</th>
+                    <th className="p-3 font-semibold">Category</th>
+                    <th className="p-3 font-semibold">Department</th>
+                    <th className="p-3 font-semibold">Resolution Date</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resolvedReports.map((report) => (
+                    <tr key={report.id} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3">
+                        <p className="font-medium text-[#173c32]">{report.title}</p>
+                        <p className="mt-1 text-xs text-[#7a8378]">{report.id}</p>
+                      </td>
+                      <td className="p-3 text-[#687468]">{report.category}</td>
+                      <td className="p-3 text-[#687468]">{report.department}</td>
+                      <td className="whitespace-nowrap p-3">{formatDate(report.resolvedAt || report.date)}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[report.status]}`}>
+                          {report.status}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <button type="button" className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Action Required */}
       <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5">
           <div>
@@ -1124,6 +1914,200 @@ export default function RoleDashboardClient() {
           )}
         </section>
       ))}
+
+      {/* Analytics & Reports - County Performance Reports */}
+      {role === "GOVERNOR" && activeLower === "county performance reports" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">County Performance Reports</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                County-wide performance reporting and analytics.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Total Reports</p>
+              <p className="mt-1 text-2xl font-bold text-[#173c32]">{total}</p>
+            </div>
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Open</p>
+              <p className="mt-1 text-2xl font-bold text-[#66572f]">{open}</p>
+            </div>
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Resolved</p>
+              <p className="mt-1 text-2xl font-bold text-[#187a58]">{resolved}</p>
+            </div>
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Resolution Rate</p>
+              <p className="mt-1 text-2xl font-bold text-[#187a58]">{resolutionRate}%</p>
+            </div>
+          </div>
+          <div className="overflow-x-auto mt-6">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Metric</th>
+                  <th className="p-3 font-semibold">Value</th>
+                  <th className="p-3 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-[#dce2d8]">
+                  <td className="p-3 font-medium text-[#173c32]">Total Reports Submitted</td>
+                  <td className="p-3 text-[#687468]">{total}</td>
+                  <td className="p-3">
+                    <span className="inline-block rounded-full px-3 py-1 text-xs font-semibold bg-[#e6f3eb] text-[#187a58]">County-wide</span>
+                  </td>
+                </tr>
+                <tr className="border-b border-[#dce2d8]">
+                  <td className="p-3 font-medium text-[#173c32]">Reports Requiring Action</td>
+                  <td className="p-3 text-[#687468]">{open}</td>
+                  <td className="p-3">
+                    <span className="inline-block rounded-full px-3 py-1 text-xs font-semibold bg-[#f0ebd9] text-[#66572f]">Open</span>
+                  </td>
+                </tr>
+                <tr className="border-b border-[#dce2d8]">
+                  <td className="p-3 font-medium text-[#173c32]">Reports Resolved</td>
+                  <td className="p-3 text-[#687468]">{resolved}</td>
+                  <td className="p-3">
+                    <span className="inline-block rounded-full px-3 py-1 text-xs font-semibold bg-[#e6f3eb] text-[#187a58]">Resolved</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="p-3 font-medium text-[#173c32]">Reports Escalated</td>
+                  <td className="p-3 text-[#687468]">{escalated}</td>
+                  <td className="p-3">
+                    <span className="inline-block rounded-full px-3 py-1 text-xs font-semibold bg-[#fff3f0] text-[#8b392f]">Escalated</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Monthly Reports */}
+      {role === "GOVERNOR" && activeLower === "monthly reports" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Monthly Reports</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Monthly reporting periods and historical performance information.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Reporting Period</th>
+                  <th className="p-3 font-semibold">Reports Received</th>
+                  <th className="p-3 font-semibold">Resolved</th>
+                  <th className="p-3 font-semibold">Resolution Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyStats.slice().reverse().map((stat) => {
+                  const rate = stat.total > 0 ? Math.round((stat.resolved / stat.total) * 100) : 0;
+                  return (
+                    <tr key={stat.month} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3 font-medium text-[#173c32]">{stat.month}</td>
+                      <td className="p-3 text-[#687468]">{stat.total}</td>
+                      <td className="p-3 text-[#687468]">{stat.resolved}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${rate >= 70 ? "text-[#187a58] bg-[#e6f3eb]" : rate >= 40 ? "text-[#66572f] bg-[#f0ebd9]" : "text-[#8b392f] bg-[#fff3f0]"}`}>
+                          {rate}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Departmental Reports */}
+      {role === "GOVERNOR" && activeLower === "departmental reports" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Departmental Reports</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Department-level reporting across all county departments.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Department</th>
+                  <th className="p-3 font-semibold">Reports</th>
+                  <th className="p-3 font-semibold">Resolved</th>
+                  <th className="p-3 font-semibold">Open</th>
+                  <th className="p-3 font-semibold">Resolution Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(reportsByDepartment).map(([department, reports]) => {
+                  const resolvedCount = reports.filter((r) => r.status === "Resolved").length;
+                  const rate = reports.length > 0 ? Math.round((resolvedCount / reports.length) * 100) : 0;
+                  return (
+                    <tr key={department} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3 font-medium text-[#173c32]">{department}</td>
+                      <td className="p-3 text-[#687468]">{reports.length}</td>
+                      <td className="p-3 text-[#687468]">{resolvedCount}</td>
+                      <td className="p-3 text-[#687468]">{reports.length - resolvedCount}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${rate >= 70 ? "text-[#187a58] bg-[#e6f3eb]" : rate >= 40 ? "text-[#66572f] bg-[#f0ebd9]" : "text-[#8b392f] bg-[#fff3f0]"}`}>
+                          {rate}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Exportable Reports */}
+      {role === "GOVERNOR" && activeLower === "exportable reports" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Exportable Reports</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Export report data for offline analysis and record-keeping.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { label: "All County Reports", count: total },
+              { label: "Resolved Reports", count: resolved },
+              { label: "Open Reports", count: open },
+              { label: "Escalated Reports", count: escalated },
+              { label: "Unresolved Reports", count: unresolvedReports.length },
+              { label: "Critical Reports", count: criticalReports.length },
+            ].map((item) => (
+              <div key={item.label} className="rounded-lg border border-[#dce2d8] bg-[#fdfdf9] p-6">
+                <p className="text-sm text-[#687468]">{item.label}</p>
+                <p className="mt-1 text-2xl font-bold text-[#173c32]">{item.count}</p>
+                <button type="button" className="mt-3 rounded-lg border border-[#187a58] bg-[#187a58] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#126448]">
+                  Export CSV
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 
