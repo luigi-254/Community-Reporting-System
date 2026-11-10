@@ -244,6 +244,341 @@ export default function RoleDashboardClient() {
   const [escalations, setEscalations] = useState<any[]>([]);
   const [escalationsLoading, setEscalationsLoading] = useState(false);
 
+  // Status change dialog state
+  const [dialogReport, setDialogReport] = useState<Report | null>(null);
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [statusDialogLoading, setStatusDialogLoading] = useState(false);
+
+  // Work update / evidence upload dialog state
+  const [workUpdateReport, setWorkUpdateReport] = useState<Report | null>(null);
+  const [showWorkUpdateDialog, setShowWorkUpdateDialog] = useState(false);
+  const [workUpdateDialogLoading, setWorkUpdateDialogLoading] = useState(false);
+  const [workUpdateImageUrl, setWorkUpdateImageUrl] = useState<string | null>(null);
+
+  const openWorkUpdateDialog = (report: Report) => {
+    setWorkUpdateReport(report);
+    setWorkUpdateImageUrl(null);
+    setShowWorkUpdateDialog(true);
+  };
+
+  const closeWorkUpdateDialog = () => {
+    setWorkUpdateReport(null);
+    setWorkUpdateImageUrl(null);
+    setShowWorkUpdateDialog(false);
+  };
+
+  const handleImageUpload = async (file: File) => {
+    setWorkUpdateDialogLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await apiFetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      const url = res?.data?.url;
+      if (url) {
+        setWorkUpdateImageUrl(url);
+      }
+    } catch (error) {
+      alert(`Image upload failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setWorkUpdateDialogLoading(false);
+    }
+  };
+
+  const handleWorkUpdateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!workUpdateReport) return;
+    setWorkUpdateDialogLoading(true);
+    try {
+      const formData = new FormData(e.currentTarget as HTMLFormElement);
+      const note = formData.get("note") as string;
+      const status = formData.get("status") as string;
+      const payload: Record<string, unknown> = {
+        reportId: workUpdateReport.id,
+        note,
+        status,
+      };
+      await apiFetch('/api/work-updates', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      closeWorkUpdateDialog();
+      void loadWorkUpdates();
+      void loadReports();
+    } catch (error) {
+      setWorkUpdateDialogLoading(false);
+      alert(`Work update failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (showWorkUpdateDialog) setWorkUpdateDialogLoading(false);
+    }
+  };
+
+  // Escalation dialog state
+  const [escalateReport, setEscalateReport] = useState<Report | null>(null);
+  const [showEscalateDialog, setShowEscalateDialog] = useState(false);
+  const [escalateDialogLoading, setEscalateDialogLoading] = useState(false);
+
+  const openEscalateDialog = (report: Report) => {
+    setEscalateReport(report);
+    setShowEscalateDialog(true);
+  };
+
+  const closeEscalateDialog = () => {
+    setEscalateReport(null);
+    setShowEscalateDialog(false);
+  };
+
+  const handleEscalateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!escalateReport) return;
+    setEscalateDialogLoading(true);
+    try {
+      const formData = new FormData(e.currentTarget as HTMLFormElement);
+      const reason = formData.get("reason") as string;
+      const priority = formData.get("priority") as string;
+      const payload: Record<string, unknown> = {
+        reportId: escalateReport.id,
+        reason,
+        priority,
+      };
+      await apiFetch('/api/escalations', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      closeEscalateDialog();
+      void loadEscalations();
+      void loadReports();
+    } catch (error) {
+      setEscalateDialogLoading(false);
+      alert(`Escalation failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (showEscalateDialog) setEscalateDialogLoading(false);
+    }
+  };
+
+  const openStatusDialog = (report: Report) => {
+    setDialogReport(report);
+    setShowStatusDialog(true);
+  };
+
+  const closeStatusDialog = () => {
+    setDialogReport(null);
+    setShowStatusDialog(false);
+  };
+
+  const handleStatusChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dialogReport) return;
+    setStatusDialogLoading(true);
+    try {
+      const formData = new FormData(e.currentTarget as HTMLFormElement);
+      const status = formData.get("status") as string;
+      const notes = formData.get("notes") as string;
+      const payload: Record<string, unknown> = { status };
+      if (notes) payload.notes = notes;
+      await apiFetch(`/api/reports/${dialogReport.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
+      closeStatusDialog();
+      // Refresh reports to reflect the status change
+      void loadReports();
+      void loadOverview();
+    } catch (error) {
+      setStatusDialogLoading(false);
+      alert(`Failed to change status: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (showStatusDialog) setStatusDialogLoading(false);
+    }
+  };
+
+  const STATUS_OPTIONS: { value: string; label: string }[] = [
+    { value: "SUBMITTED", label: "Submitted" },
+    { value: "UNDER_REVIEW", label: "Under Review" },
+    { value: "ASSIGNED", label: "Assigned" },
+    { value: "ACKNOWLEDGED", label: "Acknowledged" },
+    { value: "INSPECTION_IN_PROGRESS", label: "Inspection in Progress" },
+    { value: "IN_PROGRESS", label: "In Progress" },
+    { value: "RESOLUTION_SUBMITTED", label: "Resolution Submitted" },
+    { value: "AWAITING_CITIZEN_VERIFICATION", label: "Awaiting Citizen Verification" },
+    { value: "RESOLVED", label: "Resolved" },
+    { value: "REJECTED", label: "Rejected" },
+    { value: "CLOSED", label: "Closed" },
+    { value: "REOPENED", label: "Reopened" },
+    { value: "ESCALATED", label: "Escalated" },
+    { value: "DUPLICATE", label: "Duplicate" },
+    { value: "CANCELLED", label: "Cancelled" },
+  ];
+
+  // Assignment dialog state
+  const [assignReport, setAssignReport] = useState<Report | null>(null);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [assignDialogLoading, setAssignDialogLoading] = useState(false);
+  const [availableOfficers, setAvailableOfficers] = useState<any[]>([]);
+  const [officersLoading, setOfficersLoading] = useState(false);
+
+  const openAssignDialog = (report: Report) => {
+    setAssignReport(report);
+    setShowAssignDialog(true);
+    void loadAvailableOfficers();
+  };
+
+  const closeAssignDialog = () => {
+    setAssignReport(null);
+    setAvailableOfficers([]);
+    setShowAssignDialog(false);
+  };
+
+  const loadAvailableOfficers = useCallback(async () => {
+    setOfficersLoading(true);
+    try {
+      const res = await apiFetch('/api/users/officers', { cache: 'no-store' });
+      const officers = res?.data?.officers ?? res?.data?.users ?? [];
+      setAvailableOfficers(officers);
+    } catch {
+      setAvailableOfficers([]);
+    } finally {
+      setOfficersLoading(false);
+    }
+  }, []);
+
+  const handleAssignSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignReport) return;
+    setAssignDialogLoading(true);
+    try {
+      const formData = new FormData(e.currentTarget as HTMLFormElement);
+      const officerId = formData.get("officerId") as string;
+      const reason = formData.get("reason") as string;
+      const payload: Record<string, unknown> = {
+        reportId: assignReport.id,
+        officerId,
+      };
+      if (reason) payload.reason = reason;
+      await apiFetch('/api/assignments', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      closeAssignDialog();
+      void loadReports();
+      void loadOverview();
+    } catch (error) {
+      setAssignDialogLoading(false);
+      alert(`Assignment failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (showAssignDialog) setAssignDialogLoading(false);
+    }
+  };
+
+  // Platform Admin: User Management state
+  const [users, setUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
+  const [showEditUserDialog, setShowEditUserDialog] = useState(false);
+  const [editUser, setEditUser] = useState<any>(null);
+  const [userDialogLoading, setUserDialogLoading] = useState(false);
+  const [deactivateUserId, setDeactivateUserId] = useState<string | null>(null);
+  const [deactivateDialogLoading, setDeactivateDialogLoading] = useState(false);
+
+  const loadUsers = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const res = await apiFetch('/api/users?role=&isActive=&departmentId=&search=', { cache: 'no-store' });
+      const userList = res?.data?.users ?? res?.data ?? [];
+      setUsers(userList);
+    } catch {
+      setUsers([]);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  const openEditUserDialog = (user: any) => {
+    setEditUser(user);
+    setShowEditUserDialog(true);
+  };
+
+  const closeEditUserDialog = () => {
+    setEditUser(null);
+    setShowEditUserDialog(false);
+  };
+
+  const handleCreateUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUserDialogLoading(true);
+    try {
+      const formData = new FormData(e.currentTarget as HTMLFormElement);
+      const payload: Record<string, unknown> = {
+        name: formData.get('name'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+        role: formData.get('role'),
+        phone: formData.get('phone') || undefined,
+        county: formData.get('county') || undefined,
+        subCounty: formData.get('subCounty') || undefined,
+        ward: formData.get('ward') || undefined,
+        departmentId: formData.get('departmentId') || undefined,
+      };
+      await apiFetch('/api/users', { method: 'POST', body: JSON.stringify(payload) });
+      setShowCreateUserDialog(false);
+      void loadUsers();
+    } catch (error) {
+      setUserDialogLoading(false);
+      alert(`Create user failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (showCreateUserDialog) setUserDialogLoading(false);
+    }
+  };
+
+  const handleUpdateUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editUser) return;
+    setUserDialogLoading(true);
+    try {
+      const formData = new FormData(e.currentTarget as HTMLFormElement);
+      const payload: Record<string, unknown> = {};
+      const name = formData.get('name');
+      const phone = formData.get('phone');
+      const county = formData.get('county');
+      const subCounty = formData.get('subCounty');
+      const ward = formData.get('ward');
+      const departmentId = formData.get('departmentId');
+      const isActive = formData.get('isActive');
+      if (name) payload.name = name;
+      if (phone) payload.phone = phone;
+      if (county) payload.county = county;
+      if (subCounty) payload.subCounty = subCounty;
+      if (ward) payload.ward = ward;
+      if (departmentId) payload.departmentId = departmentId;
+      if (isActive !== undefined) payload.isActive = isActive === 'true';
+      await apiFetch(`/api/users/${editUser.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      closeEditUserDialog();
+      void loadUsers();
+    } catch (error) {
+      setUserDialogLoading(false);
+      alert(`Update user failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (showEditUserDialog) setUserDialogLoading(false);
+    }
+  };
+
+  const handleDeactivateUser = async (id: string, isActive: boolean) => {
+    setDeactivateUserId(id);
+    setDeactivateDialogLoading(true);
+    try {
+      await apiFetch(`/api/users/${id}/${isActive ? 'activate' : 'deactivate'}`, { method: 'PUT' });
+      setDeactivateUserId(null);
+      void loadUsers();
+    } catch (error) {
+      setDeactivateDialogLoading(false);
+      alert(`User status update failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setDeactivateDialogLoading(false);
+    }
+  };
+
   const loadOverview = useCallback(async () => {
     setOverviewLoading(true);
     try {
@@ -357,7 +692,10 @@ export default function RoleDashboardClient() {
     if (authStatus !== "authenticated") return;
     void loadOverview();
     void loadReports();
-  }, [authStatus, sessionVersion, loadOverview, loadReports]);
+    if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
+      void loadUsers();
+    }
+  }, [authStatus, sessionVersion, loadOverview, loadReports, loadUsers, user]);
 
   // Load section-specific data when the corresponding sidebar item becomes
   // active. Each tab loads its own data so every sidebar destination shows
@@ -366,7 +704,7 @@ export default function RoleDashboardClient() {
     const item = activeItem.toLowerCase();
     if (item.includes("inspection")) {
       void loadInspections();
-    } else if (item.includes("work update") || item.includes("progress update") || item.includes("submit findings")) {
+    } else if (item.includes("work update") || item.includes("progress update") || item.includes("submit findings") || item.includes("upload evidence")) {
       void loadWorkUpdates();
     } else if (item.includes("follow-up") || item.includes("followup") || item.includes("awaiting action")) {
       void loadFollowUps();
@@ -378,7 +716,63 @@ export default function RoleDashboardClient() {
   }, [activeItem, loadInspections, loadWorkUpdates, loadFollowUps, loadResolutions, loadEscalations]);
 
   const activeLower = activeItem.toLowerCase();
-  const filteredReports = useMemo(() => reports, [reports]);
+  const isOverviewPage = activeItem === roleConfig.defaultPage;
+  const filteredReports = useMemo(() => {
+    if (!activeLower) return reports;
+
+    // Status-based filters
+    if (activeLower.includes("critical") || activeLower.includes("high")) {
+      return reports.filter((r) => r.priority === "CRITICAL" || r.priority === "HIGH");
+    }
+    if (activeLower.includes("unresolved") || activeLower.includes("open")) {
+      return reports.filter((r) => !["Resolved", "Rejected", "Closed", "Cancelled"].includes(r.status));
+    }
+    if (activeLower.includes("resolved")) {
+      return reports.filter((r) => r.status === "Resolved");
+    }
+    if (activeLower.includes("pending")) {
+      return reports.filter((r) => r.status === "Pending" || r.status === "SUBMITTED");
+    }
+    if (activeLower.includes("in progress")) {
+      return reports.filter((r) => r.status === "In Progress");
+    }
+    if (activeLower.includes("overdue")) {
+      return reports.filter((r) => {
+        if (["Resolved", "Rejected", "Closed", "Cancelled"].includes(r.status)) return false;
+        const ageDays = (Date.now() - new Date(r.createdAt).getTime()) / 86400000;
+        return ageDays > 7;
+      });
+    }
+    if (activeLower.includes("escalat")) {
+      return reports.filter((r) => r.status === "Escalated");
+    }
+    if (activeLower.includes("assigned") && !activeLower.includes("unassigned")) {
+      return reports.filter((r) => r.assignedOfficerId === user?.id);
+    }
+    if (activeLower.includes("unassigned")) {
+      return reports.filter((r) => !r.assignedOfficerId);
+    }
+
+    // Category-based filters
+    const categoryMap: Record<string, string> = {
+      roads: "Roads, Traffic & Mobility",
+      water: "Water & Sewerage",
+      sewerage: "Water & Sewerage",
+      drainage: "Drainage & Flood Control",
+      waste: "Solid Waste & Environment",
+      lighting: "Street Lighting & Power",
+      facilities: "Public Facilities, Markets & Parks",
+      safety: "Public Safety & Hazards",
+    };
+    for (const [key, catName] of Object.entries(categoryMap)) {
+      if (activeLower.includes(key)) {
+        return reports.filter((r) => r.category === catName);
+      }
+    }
+
+    // "all reports" variants — show everything
+    return reports;
+  }, [reports, activeLower, user]);
 
   // Derived datasets for dedicated pages (computed from already-loaded backend data).
   const reportsByDepartment = useMemo(() => {
@@ -569,7 +963,7 @@ export default function RoleDashboardClient() {
 
       {overviewLoading ? null : (
         <>
-          {role === "GOVERNOR" && (
+          {isOverviewPage && role === "GOVERNOR" && (
             <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
                 <div>
@@ -602,7 +996,7 @@ export default function RoleDashboardClient() {
             </section>
           )}
 
-          {[
+          {isOverviewPage && [
             "CECM",
             "CHIEF_OFFICER",
             "TECHNICAL_HEAD",
@@ -777,6 +1171,58 @@ export default function RoleDashboardClient() {
         </section>
       )}
 
+      {/* Department Performance (Departments group) */}
+      {role === "GOVERNOR" && activeLower === "department performance" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Department Performance</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Performance breakdown for the selected department within your county.
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Departments</p>
+              <p className="mt-1 text-2xl font-bold text-[#173c32]">
+                {Object.keys(reportsByDepartment).length}
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Department</th>
+                  <th className="p-3 font-semibold">Reports Assigned</th>
+                  <th className="p-3 font-semibold">Resolved</th>
+                  <th className="p-3 font-semibold">Open</th>
+                  <th className="p-3 font-semibold">Resolution Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(reportsByDepartment).map(([department, reports]) => {
+                  const resolvedCount = reports.filter((r) => r.status === "Resolved").length;
+                  const rate = reports.length > 0 ? Math.round((resolvedCount / reports.length) * 100) : 0;
+                  return (
+                    <tr key={department} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3 font-medium text-[#173c32]">{department}</td>
+                      <td className="p-3 text-[#687468]">{reports.length}</td>
+                      <td className="p-3 text-[#687468]">{resolvedCount}</td>
+                      <td className="p-3 text-[#687468]">{reports.length - resolvedCount}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${rate >= 70 ? "text-[#187a58] bg-[#e6f3eb]" : rate >= 40 ? "text-[#66572f] bg-[#f0ebd9]" : "text-[#8b392f] bg-[#fff3f0]"}`}>
+                          {rate}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {/* Resolution Statistics */}
       {role === "GOVERNOR" && activeLower === "resolution statistics" && (
         <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
@@ -838,7 +1284,7 @@ export default function RoleDashboardClient() {
         </section>
       )}
 
-          {role === "TECHNICAL_SUPERVISOR" && (
+          {isOverviewPage && role === "TECHNICAL_SUPERVISOR" && (
             <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
                 <div>
@@ -1118,7 +1564,11 @@ export default function RoleDashboardClient() {
                       </span>
                     </td>
                     <td className="p-3">
-                      <button type="button" className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">
+                      <button
+                          type="button"
+                          onClick={() => openStatusDialog(report)}
+                          className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
                         Approve Action
                       </button>
                     </td>
@@ -1137,7 +1587,7 @@ export default function RoleDashboardClient() {
         </section>
       )}
 
-          {["FIELD_OFFICER", "OFFICER"].includes(role) && (
+          {isOverviewPage && ["FIELD_OFFICER", "OFFICER"].includes(role) && (
             <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
                 <div>
@@ -1170,7 +1620,7 @@ export default function RoleDashboardClient() {
             </section>
           )}
 
-          {["WARD_ADMIN", "SUBCOUNTY_ADMIN"].includes(role) && (
+          {isOverviewPage && ["WARD_ADMIN", "SUBCOUNTY_ADMIN"].includes(role) && (
             <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5 mb-4">
                 <div>
@@ -1270,8 +1720,35 @@ export default function RoleDashboardClient() {
                         </span>
                       </td>
                       <td className="p-3">
-                        <button type="button" className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">
+                        <button
+                          type="button"
+                          onClick={() => openStatusDialog(report)}
+                          className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
                           View Details
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openWorkUpdateDialog(report)}
+                          className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          Upload Evidence
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEscalateDialog(report)}
+                          className="ml-2 rounded-lg border border-[#8b392f] px-3 py-2 text-sm font-medium text-[#8b392f] transition hover:bg-[#fff3f0]"
+                        >
+                          Escalate
+                        </button>
+                      </td>
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={() => openAssignDialog(report)}
+                          className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          Assign
                         </button>
                       </td>
                     </tr>
@@ -1332,8 +1809,35 @@ export default function RoleDashboardClient() {
                         </span>
                       </td>
                       <td className="p-3">
-                        <button type="button" className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">
+                        <button
+                          type="button"
+                          onClick={() => openStatusDialog(report)}
+                          className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
                           View Details
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openWorkUpdateDialog(report)}
+                          className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          Upload Evidence
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEscalateDialog(report)}
+                          className="ml-2 rounded-lg border border-[#8b392f] px-3 py-2 text-sm font-medium text-[#8b392f] transition hover:bg-[#fff3f0]"
+                        >
+                          Escalate
+                        </button>
+                      </td>
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={() => openAssignDialog(report)}
+                          className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          Assign
                         </button>
                       </td>
                     </tr>
@@ -1398,9 +1902,20 @@ export default function RoleDashboardClient() {
                           </span>
                         </td>
                         <td className="p-3">
-                          <button type="button" className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">
+                          <button
+                          type="button"
+                          onClick={() => openStatusDialog(report)}
+                          className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
                             View Details
                           </button>
+                          <button
+                          type="button"
+                          onClick={() => openWorkUpdateDialog(report)}
+                          className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          Upload Evidence
+                        </button>
                         </td>
                       </tr>
                     );
@@ -1459,8 +1974,35 @@ export default function RoleDashboardClient() {
                         </span>
                       </td>
                       <td className="p-3">
-                        <button type="button" className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]">
+                        <button
+                          type="button"
+                          onClick={() => openStatusDialog(report)}
+                          className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
                           View Details
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openWorkUpdateDialog(report)}
+                          className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          Upload Evidence
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEscalateDialog(report)}
+                          className="ml-2 rounded-lg border border-[#8b392f] px-3 py-2 text-sm font-medium text-[#8b392f] transition hover:bg-[#fff3f0]"
+                        >
+                          Escalate
+                        </button>
+                      </td>
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={() => openAssignDialog(report)}
+                          className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          Assign
                         </button>
                       </td>
                     </tr>
@@ -1472,16 +2014,17 @@ export default function RoleDashboardClient() {
         </section>
       )}
 
-      {/* Action Required */}
-      <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5">
-          <div>
-            <h3 className="text-lg font-semibold text-[#173c32]">Action Required</h3>
-            <p className="mt-1 text-sm text-[#687468]">
-              Reports requiring your attention within your jurisdiction.
-            </p>
+      {/* Action Required (overview page only) */}
+      {isOverviewPage && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce2d8] pb-5">
+            <div>
+              <h3 className="text-lg font-semibold text-[#173c32]">Action Required</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Reports requiring your attention within your jurisdiction.
+              </p>
+            </div>
           </div>
-        </div>
         {reportsLoading ? (
           <LoadingState message="Loading reports…" />
         ) : filteredReports.length === 0 ? (
@@ -1503,12 +2046,36 @@ export default function RoleDashboardClient() {
                 <div className="flex items-center gap-2">
                   <StatusBadge status={report.status} size="sm" />
                   {canChangeStatus && (
-                    <button
-                      type="button"
-                      className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
-                    >
-                      View Details
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => openStatusDialog(report)}
+                        className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openWorkUpdateDialog(report)}
+                        className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                      >
+                        Upload Evidence
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openEscalateDialog(report)}
+                        className="ml-2 rounded-lg border border-[#8b392f] px-3 py-2 text-sm font-medium text-[#8b392f] transition hover:bg-[#fff3f0]"
+                      >
+                        Escalate
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openAssignDialog(report)}
+                        className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                      >
+                        Assign
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -1523,7 +2090,8 @@ export default function RoleDashboardClient() {
             )}
           </div>
         )}
-      </section>
+        </section>
+      )}
 
       {activeLower === "reports" && (
         <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
@@ -1573,9 +2141,33 @@ export default function RoleDashboardClient() {
                       <td className="p-3">
                         <button
                           type="button"
+                          onClick={() => openStatusDialog(report)}
                           className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
                         >
                           View Details
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openWorkUpdateDialog(report)}
+                          className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          Upload Evidence
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEscalateDialog(report)}
+                          className="ml-2 rounded-lg border border-[#8b392f] px-3 py-2 text-sm font-medium text-[#8b392f] transition hover:bg-[#fff3f0]"
+                        >
+                          Escalate
+                        </button>
+                      </td>
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={() => openAssignDialog(report)}
+                          className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          Assign
                         </button>
                       </td>
                     </tr>
@@ -1657,7 +2249,7 @@ export default function RoleDashboardClient() {
       ))}
 
       {/* Work Updates section */}
-      {((activeLower.includes("work update") || activeLower.includes("progress update") || activeLower.includes("submit findings") || activeLower.includes("work updates")) && (
+      {((activeLower.includes("work update") || activeLower.includes("progress update") || activeLower.includes("submit findings") || activeLower.includes("work updates") || activeLower.includes("upload evidence")) && (
         <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-[#173c32]">Work Updates</h3>
@@ -2107,6 +2699,1043 @@ export default function RoleDashboardClient() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Notifications */}
+      {activeLower === "notifications" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Notifications</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Recent notifications and alerts for your role and jurisdiction.
+              </p>
+            </div>
+          </div>
+          <div className="rounded-lg border border-[#dce2d8] p-6">
+            <p className="text-sm text-[#687468]">
+              View and manage notifications in the workspace header.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* My Profile */}
+      {activeLower === "my profile" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">My Profile</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Your account details and role information.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Name</p>
+              <p className="mt-1 font-medium text-[#173c32]">{user?.name || "—"}</p>
+            </div>
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Email</p>
+              <p className="mt-1 font-medium text-[#173c32]">{user?.email || "—"}</p>
+            </div>
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Role</p>
+              <p className="mt-1 font-medium text-[#173c32]">{user?.role || "—"}</p>
+            </div>
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Scope</p>
+              <p className="mt-1 font-medium text-[#173c32]">{scopeLabel}</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Catch-all: report-related tabs without dedicated sections */}
+      {!isOverviewPage &&
+        !activeLower.includes("inspection") &&
+        !activeLower.includes("work update") &&
+        !activeLower.includes("progress update") &&
+        !activeLower.includes("submit findings") &&
+        !activeLower.includes("upload evidence") &&
+        !activeLower.includes("follow-up") &&
+        !activeLower.includes("followup") &&
+        !activeLower.includes("awaiting action") &&
+        !activeLower.includes("follow-ups") &&
+        !activeLower.includes("resolution") &&
+        !activeLower.includes("resolved") &&
+        !activeLower.includes("completed") &&
+        !activeLower.includes("escalat") &&
+        !activeLower.includes("pending approvals") &&
+        !activeLower.includes("escalated issues") &&
+        !activeLower.includes("county performance reports") &&
+        !activeLower.includes("monthly reports") &&
+        !activeLower.includes("departmental reports") &&
+        !activeLower.includes("exportable reports") &&
+        activeLower !== "reports" &&
+        activeLower !== "notifications" &&
+        activeLower !== "my profile" &&
+        (activeLower.includes("report") ||
+          activeLower.includes("pending") ||
+          activeLower.includes("critical") ||
+          activeLower.includes("overdue") ||
+          activeLower.includes("assigned") ||
+          activeLower.includes("unassigned") ||
+          activeLower.includes("in progress") ||
+          activeLower.includes("roads") ||
+          activeLower.includes("water") ||
+          activeLower.includes("sewerage") ||
+          activeLower.includes("drainage") ||
+          activeLower.includes("waste") ||
+          activeLower.includes("lighting") ||
+          activeLower.includes("facilities") ||
+          activeLower.includes("safety")) && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">{activeItem}</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Reports filtered by "{activeItem}" within your jurisdiction.
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#dce2d8] p-4">
+              <p className="text-sm text-[#687468]">Reports</p>
+              <p className="mt-1 text-2xl font-bold text-[#173c32]">{filteredReports.length}</p>
+            </div>
+          </div>
+          {filteredReports.length === 0 ? (
+            <EmptyState type="reports" />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                    <th className="p-3 font-semibold">Reference</th>
+                    <th className="p-3 font-semibold">Title</th>
+                    <th className="p-3 font-semibold">Category</th>
+                    <th className="p-3 font-semibold">Location</th>
+                    <th className="p-3 font-semibold">Department</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReports.map((report) => (
+                    <tr key={report.id} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3">
+                        <p className="font-medium text-[#173c32]">{report.title}</p>
+                        <p className="mt-1 text-xs text-[#7a8378]">{report.id}</p>
+                      </td>
+                      <td className="p-3 text-[#687468]">{report.category}</td>
+                      <td className="p-3 text-[#687468]">{report.location}</td>
+                      <td className="p-3 text-[#687468]">{report.department}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[report.status]}`}>
+                          {report.status}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={() => openStatusDialog(report)}
+                          className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          View Details
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openWorkUpdateDialog(report)}
+                          className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          Upload Evidence
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEscalateDialog(report)}
+                          className="ml-2 rounded-lg border border-[#8b392f] px-3 py-2 text-sm font-medium text-[#8b392f] transition hover:bg-[#fff3f0]"
+                        >
+                          Escalate
+                        </button>
+                      </td>
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={() => openAssignDialog(report)}
+                          className="ml-2 rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb]"
+                        >
+                          Assign
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Status Change Dialog */}
+      {showStatusDialog && dialogReport && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="status-change-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeStatusDialog();
+          }}
+        >
+          <div className="max-w-md w-full bg-white rounded-2xl p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-[#187a58]">{dialogReport.id}</p>
+                <h3 id="status-change-title" className="mt-1 text-lg font-bold">
+                  Change Status
+                </h3>
+                <p className="mt-1 text-sm text-[#687468] truncate">
+                  {dialogReport.title}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeStatusDialog}
+                aria-label="Close dialog"
+                className="rounded-lg p-2 text-[#687468] hover:bg-[#f5f8f5] transition"
+              >
+                <span className="text-[20px]">✕</span>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Current Status
+                </p>
+                <span className={`mt-1 inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[dialogReport.status]}`}>
+                  {dialogReport.status}
+                </span>
+              </div>
+              {canChangeStatus && (
+                <form onSubmit={handleStatusChange} className="space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                      New Status
+                    </p>
+                    <select
+                      name="status"
+                      defaultValue={dialogReport.status}
+                      className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                    >
+                      {STATUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                      Notes (optional)
+                    </p>
+                    <textarea
+                      name="notes"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                    ></textarea>
+                  </div>
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={closeStatusDialog}
+                      className="px-4 py-2 text-sm font-medium text-[#687468] border border-[#cbd6c8] rounded-lg hover:bg-[#f5f8f5] transition disabled:opacity-50"
+                      disabled={statusDialogLoading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 text-sm font-medium text-white bg-[#187a58] rounded-lg hover:bg-[#126448] transition disabled:opacity-50"
+                      disabled={statusDialogLoading}
+                    >
+                      {statusDialogLoading ? "Updating…" : "Change Status"}
+                    </button>
+                  </div>
+                </form>
+              )}
+              {!canChangeStatus && (
+                <div className="rounded-lg border border-[#cbd6c8] bg-[#f0f2f1] p-4">
+                  <p className="text-sm text-[#687468]">
+                    You do not have permission to change the status of this report.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Work Update / Evidence Upload Dialog */}
+      {showWorkUpdateDialog && workUpdateReport && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="work-update-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeWorkUpdateDialog();
+          }}
+        >
+          <div className="max-w-md w-full bg-white rounded-2xl p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-[#187a58]">{workUpdateReport.id}</p>
+                <h3 id="work-update-title" className="mt-1 text-lg font-bold">
+                  Record Work Update
+                </h3>
+                <p className="mt-1 text-sm text-[#687468] truncate">
+                  {workUpdateReport.title}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeWorkUpdateDialog}
+                aria-label="Close dialog"
+                className="rounded-lg p-2 text-[#687468] hover:bg-[#f5f8f5] transition"
+              >
+                <span className="text-[20px]">✕</span>
+              </button>
+            </div>
+            <form onSubmit={handleWorkUpdateSubmit} className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Work Note
+                </p>
+                <textarea
+                  name="note"
+                  rows={4}
+                  required
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                  placeholder="Describe the work performed, findings, and next steps…"
+                ></textarea>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Status
+                </p>
+                <select
+                  name="status"
+                  defaultValue="IN_PROGRESS"
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                >
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="NEEDS_CORRECTION">Needs Correction</option>
+                </select>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Evidence Image (optional)
+                </p>
+                <div className="mt-1 space-y-2">
+                  <label
+                    className="block px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm text-[#687468] hover:bg-[#f5f8f5] cursor-pointer transition"
+                    onClick={() => {
+                      const input = document.getElementById('work-update-image-input');
+                      if (input) input.click();
+                    }}
+                  >
+                    {workUpdateImageUrl ? 'Image attached' : 'Choose image file'}
+                    <input
+                      id="work-update-image-input"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target?.files?.[0];
+                        if (file) {
+                          void handleImageUpload(file);
+                        }
+                      }}
+                    />
+                  </label>
+                  {workUpdateImageUrl && (
+                    <div className="rounded-lg border border-[#187a58] bg-[#e6f3eb] p-3">
+                      <img
+                        src={workUpdateImageUrl}
+                        alt="Evidence preview"
+                        className="w-16 h-16 rounded object-cover mb-2"
+                      />
+                      <p className="text-xs text-[#187a58] truncate">
+                        {workUpdateImageUrl.length > 40 ? workUpdateImageUrl.slice(0, 40) + '…' : workUpdateImageUrl}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setWorkUpdateImageUrl(null)}
+                        className="text-xs text-[#8b392f] hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeWorkUpdateDialog}
+                  className="px-4 py-2 text-sm font-medium text-[#687468] border border-[#cbd6c8] rounded-lg hover:bg-[#f5f8f5] transition disabled:opacity-50"
+                  disabled={workUpdateDialogLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#187a58] rounded-lg hover:bg-[#126448] transition disabled:opacity-50"
+                  disabled={workUpdateDialogLoading}
+                >
+                  {workUpdateDialogLoading ? "Recording…" : "Record Work Update"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Escalation Dialog */}
+      {showEscalateDialog && escalateReport && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="escalate-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeEscalateDialog();
+          }}
+        >
+          <div className="max-w-md w-full bg-white rounded-2xl p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-[#8b392f]">{escalateReport.id}</p>
+                <h3 id="escalate-title" className="mt-1 text-lg font-bold">
+                  Escalate Report
+                </h3>
+                <p className="mt-1 text-sm text-[#687468] truncate">
+                  {escalateReport.title}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEscalateDialog}
+                aria-label="Close dialog"
+                className="rounded-lg p-2 text-[#687468] hover:bg-[#f5f8f5] transition"
+              >
+                <span className="text-[20px]">✕</span>
+              </button>
+            </div>
+            <form onSubmit={handleEscalateSubmit} className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Reason (required)
+                </p>
+                <textarea
+                  name="reason"
+                  rows={4}
+                  required
+                  minLength={5}
+                  maxLength={500}
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#8b392f] bg-white"
+                  placeholder="Describe why this report needs escalation…"
+                ></textarea>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Priority
+                </p>
+                <select
+                  name="priority"
+                  defaultValue="HIGH"
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#8b392f] bg-white"
+                >
+                  <option value="HIGH">High</option>
+                  <option value="URGENT">Urgent</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeEscalateDialog}
+                  className="px-4 py-2 text-sm font-medium text-[#687468] border border-[#cbd6c8] rounded-lg hover:bg-[#f5f8f5] transition disabled:opacity-50"
+                  disabled={escalateDialogLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#8b392f] rounded-lg hover:bg-[#6b2d1f] transition disabled:opacity-50"
+                  disabled={escalateDialogLoading}
+                >
+                  {escalateDialogLoading ? "Escalating…" : "Escalate Report"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assignment Dialog */}
+      {showAssignDialog && assignReport && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="assign-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeAssignDialog();
+          }}
+        >
+          <div className="max-w-md w-full bg-white rounded-2xl p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-[#173c32]">{assignReport.id}</p>
+                <h3 id="assign-title" className="mt-1 text-lg font-bold">
+                  Assign Report
+                </h3>
+                <p className="mt-1 text-sm text-[#687468] truncate">
+                  {assignReport.title}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeAssignDialog}
+                aria-label="Close dialog"
+                className="rounded-lg p-2 text-[#687468] hover:bg-[#f5f8f5] transition"
+              >
+                <span className="text-[20px]">✕</span>
+              </button>
+            </div>
+            <form onSubmit={handleAssignSubmit} className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Assign To Officer
+                </p>
+                <select
+                  name="officerId"
+                  required
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                >
+                  <option value="">Select an officer…</option>
+                  {officersLoading ? (
+                    <option disabled>Loading officers…</option>
+                  ) : availableOfficers.length === 0 ? (
+                    <option disabled>No officers available</option>
+                  ) : (
+                    availableOfficers.map((officer) => (
+                      <option key={officer.id} value={officer.id}>
+                        {officer.name} ({officer.email})
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Reason (optional)
+                </p>
+                <textarea
+                  name="reason"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                  placeholder="Reason for this assignment…"
+                ></textarea>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeAssignDialog}
+                  className="px-4 py-2 text-sm font-medium text-[#687468] border border-[#cbd6c8] rounded-lg hover:bg-[#f5f8f5] transition disabled:opacity-50"
+                  disabled={assignDialogLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#187a58] rounded-lg hover:bg-[#126448] transition disabled:opacity-50"
+                  disabled={assignDialogLoading || !availableOfficers.length}
+                >
+                  {assignDialogLoading ? "Assigning…" : "Assign Report"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Platform Admin: All Users */}
+      {(activeLower === "all users" || activeLower === "government users") && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">
+                {activeLower === "all users" ? "All Users" : "Government Users"}
+              </h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Manage platform users and their roles.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCreateUserDialog(true)}
+              className="rounded-lg border border-[#187a58] bg-[#187a58] px-4 py-2 text-sm font-medium text-white hover:bg-[#126448] transition"
+            >
+              Create User
+            </button>
+          </div>
+          {usersLoading ? (
+            <LoadingState message="Loading users…" />
+          ) : users.length === 0 ? (
+            <EmptyState type="general" title="No users" description="No users found." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                    <th className="p-3 font-semibold">Name</th>
+                    <th className="p-3 font-semibold">Email</th>
+                    <th className="p-3 font-semibold">Role</th>
+                    <th className="p-3 font-semibold">Department</th>
+                    <th className="p-3 font-semibold">Ward</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u: any) => (
+                    <tr key={u.id} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                      <td className="p-3">
+                        <p className="font-medium text-[#173c32]">{u.name}</p>
+                      </td>
+                      <td className="p-3 text-[#687468]">{u.email}</td>
+                      <td className="p-3 text-[#687468]">{u.role}</td>
+                      <td className="p-3 text-[#687468]">{u.departmentId || "—"}</td>
+                      <td className="p-3 text-[#687468]">{u.wardId || "—"}</td>
+                      <td className="p-3">
+                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${u.isActive ? "bg-[#e6f3eb] text-[#187a58]" : "bg-[#fff3f0] text-[#8b392f]"}`}>
+                          {u.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={() => openEditUserDialog(u)}
+                          className="rounded-lg border border-[#187a58] px-3 py-2 text-sm font-medium text-[#187a58] transition hover:bg-[#e6f3eb] mr-2"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeactivateUser(u.id, u.isActive)}
+                          className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                            u.isActive
+                              ? "border-[#dc2626] text-[#dc2626] hover:bg-[#fef2f2]"
+                              : "border-[#187a58] text-[#187a58] hover:bg-[#e6f3eb]"
+                          }`}
+                        >
+                          {u.isActive ? "Deactivate" : "Activate"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Platform Admin: Roles */}
+      {activeLower === "roles" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Roles</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Government roles and their jurisdiction levels.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Role</th>
+                  <th className="p-3 font-semibold">Scope</th>
+                  <th className="p-3 font-semibold">Jurisdiction</th>
+                  <th className="p-3 font-semibold">Can Change Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { role: "GOVERNOR", scope: "county", jurisdiction: "Kisii County", canChangeStatus: true },
+                  { role: "CECM", scope: "department", jurisdiction: "Assigned department", canChangeStatus: true },
+                  { role: "CHIEF_OFFICER", scope: "department", jurisdiction: "Assigned department", canChangeStatus: true },
+                  { role: "TECHNICAL_HEAD", scope: "department", jurisdiction: "Assigned department", canChangeStatus: true },
+                  { role: "TECHNICAL_SUPERVISOR", scope: "ward", jurisdiction: "Assigned ward + department", canChangeStatus: true },
+                  { role: "SUBCOUNTY_ADMIN", scope: "subcounty", jurisdiction: "Assigned sub-county", canChangeStatus: false },
+                  { role: "WARD_ADMIN", scope: "ward", jurisdiction: "Assigned ward", canChangeStatus: false },
+                  { role: "FIELD_OFFICER", scope: "none", jurisdiction: "Personally assigned cases", canChangeStatus: true },
+                  { role: "OFFICER", scope: "none", jurisdiction: "Assigned ward", canChangeStatus: true },
+                  { role: "DISASTER_MANAGER", scope: "department", jurisdiction: "Disaster Management department", canChangeStatus: true },
+                  { role: "ENFORCEMENT_OFFICER", scope: "department", jurisdiction: "Enforcement department", canChangeStatus: true },
+                  { role: "DEPARTMENTAL_ADMIN", scope: "department", jurisdiction: "Assigned department", canChangeStatus: false },
+                  { role: "ADMIN", scope: "system", jurisdiction: "Platform-wide", canChangeStatus: true },
+                  { role: "SUPER_ADMIN", scope: "system", jurisdiction: "Platform-wide", canChangeStatus: true },
+                ].map((r) => (
+                  <tr key={r.role} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                    <td className="p-3 font-medium text-[#173c32]">{r.role}</td>
+                    <td className="p-3 text-[#687468]">{r.scope}</td>
+                    <td className="p-3 text-[#687468]">{r.jurisdiction}</td>
+                    <td className="p-3">
+                      <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${r.canChangeStatus ? "bg-[#e6f3eb] text-[#187a58]" : "bg-[#f0ebd9] text-[#66572f]"}`}>
+                        {r.canChangeStatus ? "Yes" : "Monitor only"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Platform Admin: Permissions */}
+      {activeLower === "permissions" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Permissions</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                Role-based action permissions and restrictions.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#dce2d8] bg-[#eff1e9] text-[#687468]">
+                  <th className="p-3 font-semibold">Action</th>
+                  <th className="p-3 font-semibold">Allowed Roles</th>
+                  <th className="p-3 font-semibold">Restricted Roles</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  {
+                    action: "View reports",
+                    allowed: "All government roles",
+                    restricted: "CITIZEN (own reports only)",
+                  },
+                  {
+                    action: "Change report status",
+                    allowed: "All except WARD_ADMIN, SUBCOUNTY_ADMIN, DEPARTMENTAL_ADMIN",
+                    restricted: "WARD_ADMIN, SUBCOUNTY_ADMIN, DEPARTMENTAL_ADMIN (monitor only)",
+                  },
+                  {
+                    action: "Assign reports",
+                    allowed: "CHIEF_OFFICER, TECHNICAL_HEAD, CECM, GOVERNOR, ADMIN, SUPER_ADMIN",
+                    restricted: "All other roles",
+                  },
+                  {
+                    action: "Escalate reports",
+                    allowed: "All government roles",
+                    restricted: "None",
+                  },
+                  {
+                    action: "User management",
+                    allowed: "ADMIN, SUPER_ADMIN",
+                    restricted: "All other roles",
+                  },
+                  {
+                    action: "System configuration",
+                    allowed: "ADMIN, SUPER_ADMIN",
+                    restricted: "All other roles",
+                  },
+                ].map((p, i) => (
+                  <tr key={i} className="border-b border-[#dce2d8] hover:bg-[#f5f8f5]">
+                    <td className="p-3 font-medium text-[#173c32]">{p.action}</td>
+                    <td className="p-3 text-[#687468]">{p.allowed}</td>
+                    <td className="p-3 text-[#687468]">{p.restricted}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Platform Admin: Audit Logs */}
+      {activeLower === "audit logs" && (
+        <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#173c32]">Audit Logs</h3>
+              <p className="mt-1 text-sm text-[#687468]">
+                System audit trail of administrative actions.
+              </p>
+            </div>
+          </div>
+          <div className="rounded-lg border border-[#dce2d8] p-6">
+            <p className="text-sm text-[#687468]">
+              Audit log entries are recorded server-side for status changes,
+              escalations, assignments, and user management actions. View the
+              full audit trail in the system audit logs.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* Platform Admin: Create User Dialog */}
+      {showCreateUserDialog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-user-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCreateUserDialog(false);
+          }}
+        >
+          <div className="max-w-md w-full bg-white rounded-2xl p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <h3 id="create-user-title" className="text-lg font-bold text-[#173c32]">
+                  Create User
+                </h3>
+                <p className="mt-1 text-sm text-[#687468]">
+                  Create a new government platform account.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateUserDialog(false)}
+                aria-label="Close dialog"
+                className="rounded-lg p-2 text-[#687468] hover:bg-[#f5f8f5] transition"
+              >
+                <span className="text-[20px]">✕</span>
+              </button>
+            </div>
+            <form onSubmit={handleCreateUserSubmit} className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Full Name
+                </p>
+                <input
+                  name="name"
+                  required
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Email
+                </p>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Password
+                </p>
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  minLength={6}
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Role
+                </p>
+                <select
+                  name="role"
+                  defaultValue="OFFICER"
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                >
+                  <option value="OFFICER">Government Officer</option>
+                  <option value="FIELD_OFFICER">Field Officer</option>
+                  <option value="TECHNICAL_SUPERVISOR">Technical Supervisor</option>
+                  <option value="TECHNICAL_HEAD">Technical Head</option>
+                  <option value="CHIEF_OFFICER">Chief Officer</option>
+                  <option value="CECM">CECM</option>
+                  <option value="GOVERNOR">Governor</option>
+                  <option value="WARD_ADMIN">Ward Administrator</option>
+                  <option value="SUBCOUNTY_ADMIN">Sub-County Administrator</option>
+                  <option value="DISASTER_MANAGER">Disaster Manager</option>
+                  <option value="ENFORCEMENT_OFFICER">Enforcement Officer</option>
+                  <option value="DEPARTMENTAL_ADMIN">Departmental Admin</option>
+                  <option value="ADMIN">Administrator</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
+                </select>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Department ID (optional)
+                </p>
+                <input
+                  name="departmentId"
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateUserDialog(false)}
+                  className="px-4 py-2 text-sm font-medium text-[#687468] border border-[#cbd6c8] rounded-lg hover:bg-[#f5f8f5] transition disabled:opacity-50"
+                  disabled={userDialogLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#187a58] rounded-lg hover:bg-[#126448] transition disabled:opacity-50"
+                  disabled={userDialogLoading}
+                >
+                  {userDialogLoading ? "Creating…" : "Create User"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Platform Admin: Edit User Dialog */}
+      {showEditUserDialog && editUser && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-user-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeEditUserDialog();
+          }}
+        >
+          <div className="max-w-md w-full bg-white rounded-2xl p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <h3 id="edit-user-title" className="text-lg font-bold text-[#173c32]">
+                  Edit User
+                </h3>
+                <p className="mt-1 text-sm text-[#687468]">{editUser.email}</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEditUserDialog}
+                aria-label="Close dialog"
+                className="rounded-lg p-2 text-[#687468] hover:bg-[#f5f8f5] transition"
+              >
+                <span className="text-[20px]">✕</span>
+              </button>
+            </div>
+            <form onSubmit={handleUpdateUserSubmit} className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Full Name
+                </p>
+                <input
+                  name="name"
+                  defaultValue={editUser.name}
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Phone
+                </p>
+                <input
+                  name="phone"
+                  defaultValue={editUser.phone || ""}
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  County
+                </p>
+                <input
+                  name="county"
+                  defaultValue={editUser.county || ""}
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Sub-County
+                </p>
+                <input
+                  name="subCounty"
+                  defaultValue={editUser.subCounty || ""}
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Ward
+                </p>
+                <input
+                  name="ward"
+                  defaultValue={editUser.ward || ""}
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Department ID
+                </p>
+                <input
+                  name="departmentId"
+                  defaultValue={editUser.departmentId || ""}
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#687468] uppercase tracking-wider">
+                  Active Status
+                </p>
+                <select
+                  name="isActive"
+                  defaultValue={editUser.isActive ? "true" : "false"}
+                  className="w-full px-3 py-2 border border-[#cbd6c8] rounded-lg text-sm focus:outline-none focus:border-[#187a58] bg-white"
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeEditUserDialog}
+                  className="px-4 py-2 text-sm font-medium text-[#687468] border border-[#cbd6c8] rounded-lg hover:bg-[#f5f8f5] transition disabled:opacity-50"
+                  disabled={userDialogLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#187a58] rounded-lg hover:bg-[#126448] transition disabled:opacity-50"
+                  disabled={userDialogLoading}
+                >
+                  {userDialogLoading ? "Saving…" : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

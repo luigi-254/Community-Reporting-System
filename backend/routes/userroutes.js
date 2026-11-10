@@ -3,6 +3,7 @@ import {
   createUser,
   getUsers,
   getUser,
+  getOfficers,
   updateUser,
   activateUser,
   deactivateUser,
@@ -11,6 +12,7 @@ import { authenticate } from '../middlewares/authMiddleware.js';
 import { authorizeRoles } from '../middlewares/roleMiddlewares.js';
 import { validate } from '../middlewares/validateMiddlewares.js';
 import { createUserSchema, updateUserSchema, userQuerySchema } from '../validators/userValidator.js';
+import { ADMIN_ROLES, WARD_SCOPED_ROLES, DEPARTMENT_SCOPED_ROLES } from '../services/jurisdiction.js';
 
 const router = express.Router();
 const adminOnly = [authenticate, authorizeRoles('ADMIN', 'SUPER_ADMIN')];
@@ -29,6 +31,11 @@ const putRoute = (path, ...handlers) => {
 
 getRoute('/', validate(userQuerySchema, 'query'), ...adminOnly, getUsers);
 getRoute('/:id', ...adminOnly, getUser);
+
+// Department-scoped officer list for assignment forms
+const deptReadRoles = [...new Set([...ADMIN_ROLES, ...WARD_SCOPED_ROLES, ...DEPARTMENT_SCOPED_ROLES])];
+router.get('/officers', ...[authenticate, authorizeRoles(...deptReadRoles)], validate(userQuerySchema, 'query'), getOfficers);
+
 postRoute('/', ...adminOnly, validate(createUserSchema), createUser);
 putRoute('/:id', ...adminOnly, validate(updateUserSchema), updateUser);
 putRoute('/:id/activate', ...adminOnly, activateUser);

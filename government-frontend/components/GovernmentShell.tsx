@@ -405,13 +405,13 @@ export function GovernmentShell({
           )}
         </div>
 
-        <div className={`flex-1 px-5 pt-8 ${!sidebarCollapsed ? "" : "pt-3"}`}>
+        <div className={`flex-1 min-h-[0] px-5 pt-8 ${!sidebarCollapsed ? "" : "pt-3"} overflow-y-auto scrollbar-thin scrollbar-thumb-[#94a3b2] scrollbar-track-transparent`}>
           {!sidebarCollapsed && (
             <p className="mb-6 px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#bdcdbd]">
               Main menu
             </p>
           )}
-          <nav aria-label="Government navigation" className="space-y-0.5 overflow-y-auto min-h-[0]">
+          <nav aria-label="Government navigation" className="space-y-0.5 min-h-[0]">
             {roleConfig.sidebar.map((group: any) => (
               <div key={group.group} className="mb-4">
                 {!sidebarCollapsed && (
@@ -516,9 +516,9 @@ export function GovernmentShell({
             <button
               type="button"
               disabled={notificationsLoading}
-              className="relative rounded-lg border border-[#cbd6c8] bg-white px-4 py-2 text-sm font-medium whitespace-nowrap transition hover:bg-[#f5f8f5] disabled:opacity-60"
+              className="relative flex items-center gap-2 rounded-lg border border-[#cbd6c8] bg-white px-4 py-2 text-sm font-medium whitespace-nowrap transition hover:bg-[#f5f8f5] disabled:opacity-60"
             >
-              <Bell className="w-4 h-4 mr-2" aria-hidden="true" />
+              <Bell className="w-4 h-4" aria-hidden="true" />
               Notifications
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#8b392f] text-[10px] font-bold text-white">

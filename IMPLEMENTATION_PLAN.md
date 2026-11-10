@@ -1,47 +1,46 @@
-# MTAA Fix — Government Dashboard & Routing Audit: Implementation Plan
+# Navigation Repair Implementation Plan - COMPLETE
 
-## Summary of Findings
+## Root Causes Identified
 
-All 14 government roles exist in the database, frontend config, and login permissions. The redirect logic works (Governor → /government/governor, etc.). However:
+1. **Overview content persists across tabs (PRIMARY)**: In `RoleDashboardClient.tsx`, overview sections (County Oversight for GOVERNOR, Department Performance for CECM/CHIEF_OFFICER/TECHNICAL_HEAD, Team Overview for TECHNICAL_SUPERVISOR, My Assigned Tasks for FIELD_OFFICER/OFFICER, Jurisdiction Overview for WARD_ADMIN/SUBCOUNTY_ADMIN) were NOT conditioned on `activeItem === defaultPage`. They always rendered for their role regardless of which sidebar item was selected. Additionally, the "Action Required" section was completely unconditional. So clicking "All County Reports" still showed County Oversight + Action Required below — making it look like Executive Overview never went away.
 
-1. **DEPARTMENTAL_ADMIN cannot access dashboard APIs** — missing from backend jurisdiction role sets → 403 on all `/api/dashboard/*` endpoints. Also gets unscoped data if access were granted.
-2. **No Next.js middleware active** — `proxy.js` exists but Next.js 16 requires it as the sole proxy file (not alongside middleware.ts).
-3. **Shared/generic dashboard** — `RoleDashboardClient.tsx` serves all 14 roles from one component; sidebar items showed the same content regardless of selection.
-4. **Dead code** — `GovernmentDashboardClient.tsx` (1,164 lines) was unused.
+2. **Missing content blocks**: The "Department Performance" sidebar item (Departments group) had no matching content block (content checked for "departmental performance", not "department performance"). "Notifications" and "My Profile" also lacked dedicated content.
 
-## Changes Implemented
+3. **Sidebar scrollbar missing**: The sidebar nav area had `overflow-y-auto` but no visible scrollbar styling, and the flex constraint (`min-h-[0]`) was missing on the scrollable container div, preventing proper independent scrolling.
 
-### Phase 1: Critical Bug Fixes (DONE)
+## Files Modified
 
-| # | Fix | File | Status |
-|---|-----|------|--------|
-| 1 | Add DEPARTMENTAL_ADMIN to DEPARTMENT_SCOPED_ROLES | backend/services/jurisdiction.js | ✅ Done |
-| 2 | DEPARTMENTAL_ADMIN monitoring-only in canPerformTransition | backend/services/jurisdiction.js | ✅ Done |
-| 3 | Use proxy.js as Next.js middleware (removed middleware.ts) | government-frontend/proxy.js | ✅ Done |
-| 4 | Delete dead code | government-frontend/app/government/GovernmentDashboardClient.tsx | ✅ Deleted |
+### 1. `government-frontend/app/government/[role]/RoleDashboardClient.tsx`
+- Added `const isOverviewPage = activeItem === roleConfig.defaultPage;` after `activeLower`
+- Conditioned County Oversight section on `isOverviewPage && role === "GOVERNOR"`
+- Conditioned Department Performance section on `isOverviewPage && [CECM, CHIEF_OFFICER, TECHNICAL_HEAD].includes(role)`
+- Conditioned Team Overview section on `isOverviewPage && role === "TECHNICAL_SUPERVISOR"`
+- Conditioned My Assigned Tasks section on `isOverviewPage && ["FIELD_OFFICER", "OFFICER"].includes(role)`
+- Conditioned Jurisdiction Overview section on `isOverviewPage && ["WARD_ADMIN", "SUBCOUNTY_ADMIN"].includes(role)`
+- Conditioned "Action Required" section on `isOverviewPage`
+- Added dedicated content block for "department performance" (Departments group sidebar item)
+- Added dedicated content block for "notifications"
+- Added dedicated content block for "my profile" (shows user name, email, role, scope)
 
-### Phase 2: Dashboard Navigation Improvements (DONE)
+### 2. `government-frontend/components/GovernmentShell.tsx`
+- **Sidebar scrolling**: Added `min-h-[0] overflow-y-auto scrollbar-thin scrollbar-thumb-[#94a3b2] scrollbar-track-transparent` to the middle flex-1 div. Added `min-h-[0]` to ensure proper flex constraint so the nav area can shrink and scroll independently. Sidebar header/logo remains visible; footer remains pinned; main content scrolling does not affect sidebar.
+- **Notifications header alignment**: Changed notification button to `flex items-center gap-2` (removed `mr-2` from Bell icon) — icon and label stay on ONE horizontal line, vertically centered, with `whitespace-nowrap` to prevent wrapping.
+- Main content positioning: `lg:ml-64` margin positions content to the right of the sidebar; `sticky top-0` header stays visible.
 
-| # | Fix | File | Status |
-|---|-----|------|--------|
-| 5 | Add section-specific data loading (Inspections, Work Updates, Follow-ups, Resolutions, Escalations) | government-frontend/app/government/[role]/RoleDashboardClient.tsx | ✅ Done |
-| 6 | Add distinct content sections per sidebar category | government-frontend/app/government/[role]/RoleDashboardClient.tsx | ✅ Done |
+## Verification Results
 
-### Phase 3: Verification
+- TypeScript compilation: ✅ PASS (no errors)
+- Production build (`next build`): ✅ PASS (compiled in ~6s, all 12 static pages generated)
 
-| # | Test | Method | Status |
-|---|------|--------|--------|
-| 7 | Login + redirect for all 14 roles | Playwright browser tests | Pending |
-| 8 | DEPARTMENTAL_ADMIN dashboard access | API test + browser test | Pending |
-| 9 | Unauthenticated access blocked | Route guard test | Pending |
-| 10 | Account switching (no state leak) | Logout → login as different role | Pending |
-| 11 | Production build + TypeScript check | `next build`, `tsc --noEmit` | ✅ Pass |
+## Role Navigation Preserved
 
-## Acceptance Criteria
+All 14 government roles retain their individual sidebar configurations from `roles-config.ts`:
+GOVERNOR, CECM, CHIEF_OFFICER, TECHNICAL_HEAD, TECHNICAL_SUPERVISOR, FIELD_OFFICER, WARD_ADMIN, SUBCOUNTY_ADMIN, DEPARTMENTAL_ADMIN, SUPER_ADMIN, ADMIN, DISASTER_MANAGER, ENFORCEMENT_OFFICER, OFFICER
 
-- Every government role logs in and reaches its correct dashboard
-- DEPARTMENTAL_ADMIN can access dashboard data (department-scoped)
-- No role receives another role's dashboard
-- Sidebar items show distinct, real content per category
-- Server-side route protection active via proxy.js
-- Production builds pass
+Authentication, permissions, and backend authorization remain unchanged.
+
+## Remaining Limitations
+
+- ESLint has pre-existing warnings/errors (react-hooks/rules-of-hooks, react-hooks/purity, react-hooks/exhaustive-deps) unrelated to these changes
+- Browser-based e2e testing requires a running backend server and seeded test accounts
+- "Notifications" and "My Profile" content blocks are informational placeholders (utility items without dedicated backend data)

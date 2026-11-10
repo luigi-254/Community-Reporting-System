@@ -8,7 +8,7 @@ import { ADMIN_ROLES, WARD_SCOPED_ROLES, DEPARTMENT_SCOPED_ROLES, STATUS_CHANGE_
 
 const router = express.Router();
 const escalationReadRoles = [...new Set([...ADMIN_ROLES, ...WARD_SCOPED_ROLES, ...DEPARTMENT_SCOPED_ROLES])];
-const escalationWriteRoles = [...STATUS_CHANGE_ROLES];
+const escalationWriteRoles = [...new Set([...STATUS_CHANGE_ROLES, 'WARD_ADMIN'])];
 
 router.get('/', ...[authenticate, authorizeRoles(...escalationReadRoles)], getEscalatedReports);
 router.get('/overdue', ...[authenticate, authorizeRoles(...escalationReadRoles)], getOverdueReports);

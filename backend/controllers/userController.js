@@ -63,6 +63,42 @@ export const getUsers = async (req, res, next) => {
   }
 };
 
+export const getOfficers = async (req, res, next) => {
+  try {
+    const { departmentId, search } = req.validatedQuery || req.query;
+    const user = req.user;
+
+    // Build scope filter based on caller's jurisdiction
+    let scopeFilter = {};
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN' || user.role === 'GOVERNOR') {
+      // No scope — can see all officers
+      scopeFilter = {};
+    } else if (user.departmentId) {
+      scopeFilter = { departmentId: user.departmentId };
+    }
+
+    // Merge with caller-provided filters (caller can't override their own scope)
+    const filters = {
+      ...scopeFilter,
+      ...(departmentId && scopeFilter.departmentId ? {} : { departmentId }),
+      ...(search && { search }),
+    };
+
+    const officers = await db.findUsers(filters);
+
+    // Exclude CITIZEN roles — only government officers can be assigned
+    const governmentOfficers = officers.filter((u) => u.role !== 'CITIZEN');
+
+    return res.status(200).json({
+      status: 'success',
+      total: governmentOfficers.length,
+      data: { officers: governmentOfficers.map(withoutPassword) },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getUser = async (req, res, next) => {
   try {
     const user = await db.findUserById(req.params.id);
@@ -116,6 +152,7 @@ export const deactivateUser = setUserStatus(false, 'User deactivated successfull
 export default {
   createUser,
   getUsers,
+  getOfficers,
   getUser,
   updateUser,
   activateUser,
