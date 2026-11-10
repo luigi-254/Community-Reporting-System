@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   PanelLeftClose,
@@ -16,6 +16,38 @@ import {
   User,
   ChevronDown,
   X,
+  AlertTriangle,
+  Share2,
+  CheckCircle,
+  Map,
+  MapPin,
+  Building2,
+  PieChart,
+  Building,
+  Calendar,
+  CheckCircle2,
+  Download,
+  UserPlus,
+  UserCheck,
+  Loader,
+  AlertCircle,
+  UserMinus,
+  History,
+  Search,
+  TrendingUp,
+  Clock,
+  Activity,
+  Road,
+  Droplets,
+  Waves,
+  Trash2,
+  Lightbulb,
+  Shield,
+  Plus,
+  Upload,
+  LogIn,
+  Key,
+  List,
 } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 import { useAuth } from "../lib/auth-context";
@@ -93,6 +125,26 @@ export function GovernmentShell({
   const searchParams = useSearchParams();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!profileDropdownOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setProfileDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [profileDropdownOpen]);
   const [internalActiveItem, setInternalActiveItem] = useState<string>(
     roleConfig.defaultPage
   );
@@ -170,6 +222,159 @@ export function GovernmentShell({
     Settings: Settings,
     Notifications: Bell,
     "My Profile": User,
+    "All County Reports": FileText,
+    "Critical Reports": AlertTriangle,
+    "Escalated Reports": Share2,
+    "Unresolved Reports": Clock,
+    "Resolved Reports": CheckCircle,
+    "Sub-County Performance": Map,
+    "Ward Performance": MapPin,
+    "Departmental Performance": Building2,
+    "Resolution Statistics": PieChart,
+    "Department Directory": Building,
+    "Department Issues": FileText,
+    "County Map": Map,
+    "Reports by Sub-County": MapPin,
+    "Reports by Ward": MapPin,
+    "Executive Approvals": CheckCircle2,
+    "County Performance Reports": FileText,
+    "Monthly Reports": Calendar,
+    "Departmental Reports": FileText,
+    "Exportable Reports": Download,
+    "Department Overview": LayoutDashboard,
+    "All Reports": FileText,
+    "Pending Reports": Clock,
+    "Chief Officers": Users,
+    "Departmental Teams": Users,
+    "Workload Distribution": PieChart,
+    "Officer Performance": User,
+    "Resolution Trends": TrendingUp,
+    "Pending Approvals": Clock,
+    "Escalated Issues": Share2,
+    "Decisions History": History,
+    "Department Reports": FileText,
+    "Performance Reports": BarChart3,
+    "Export Reports": Download,
+    "Operations Overview": LayoutDashboard,
+    "All Department Reports": FileText,
+    "Unassigned Reports": UserPlus,
+    "Assigned Reports": UserCheck,
+    "In Progress": Loader,
+    "Pending Verification": Clock,
+    "Overdue Reports": AlertCircle,
+    "Assign Reports": UserPlus,
+    "Reassign Reports": UserMinus,
+    "Assignment History": History,
+    "Field Officers": User,
+    "Technical Supervisors": User,
+    "Team Workload": PieChart,
+    "Inspection Requests": Search,
+    "Inspection Schedule": Calendar,
+    "Inspection Results": FileText,
+    "Incoming Escalations": Share2,
+    "Outgoing Escalations": Share2,
+    "Operational Reports": FileText,
+    "Technical Overview": LayoutDashboard,
+    "All Technical Reports": FileText,
+    "Pending Assessment": Clock,
+    "Completed Assessments": CheckCircle,
+    "Technical Reviews": FileText,
+    "Awaiting Review": Clock,
+    "Approved Assessments": CheckCircle,
+    "Rejected Assessments": AlertTriangle,
+    "Technical Officers": User,
+    "Team Performance": BarChart3,
+    "Active Projects": Activity,
+    "Completed Projects": CheckCircle,
+    "Delayed Projects": AlertCircle,
+    "Assessment Statistics": PieChart,
+    "Inspection Performance": BarChart3,
+    "Technical Resolution Reports": FileText,
+    "Team Overview": LayoutDashboard,
+    "My Assignments": FileText,
+    "New Assignments": UserPlus,
+    Completed: CheckCircle,
+    "Field Inspections": Search,
+    "Scheduled Inspections": Calendar,
+    "My Inspection History": History,
+    "Report Updates": FileText,
+    "Submit Progress Update": Plus,
+    "Upload Evidence": Upload,
+    "Submit Findings": FileText,
+    "My Performance": BarChart3,
+    "Resolution History": History,
+    "Performance Summary": PieChart,
+    "Sub-County Overview": LayoutDashboard,
+    "Ward Management": Map,
+    "Ward Directory": Map,
+    "Service Delivery": Building2,
+    Roads: Road,
+    "Water & Sewerage": Droplets,
+    Drainage: Waves,
+    "Waste Management": Trash2,
+    Lighting: Lightbulb,
+    "Public Facilities": Building,
+    Safety: Shield,
+    "Pending Escalations": Clock,
+    "Escalation History": History,
+    "Ward Reports": FileText,
+    "Ward Overview": LayoutDashboard,
+    "Community Reports": FileText,
+    "Critical Issues": AlertTriangle,
+    "Follow-ups": Clock,
+    "Reports Awaiting Action": Clock,
+    "Delayed Reports": AlertCircle,
+    "Follow-up History": History,
+    "Escalate Report": Share2,
+    "Category Statistics": PieChart,
+    "Department Administration": LayoutDashboard,
+    "Department Personnel": Users,
+    "Personnel Directory": Users,
+    "Authorized User Management": UserPlus,
+    "Role Assignments": UserCheck,
+    "Assignment Monitoring": UserCheck,
+    "Workload Monitoring": PieChart,
+    "Operational Status": Activity,
+    "System Overview": LayoutDashboard,
+    "User Management": Users,
+    "Government Users": User,
+    "Create User": UserPlus,
+    "Edit User": User,
+    "Deactivate User": UserMinus,
+    "Role & Permissions": Shield,
+    Roles: Shield,
+    Permissions: Key,
+    "Government Structure": Building,
+    Departments: Building,
+    "Sub-Counties": Map,
+    Wards: MapPin,
+    "Administrative Assignments": UserPlus,
+    "Reports Administration": FileText,
+    "Report Categories": FileText,
+    "Status Configuration": Settings,
+    "System Audit": Activity,
+    "Authentication Activity": LogIn,
+    "Administrative Actions": List,
+    "System Configuration": Settings,
+    "Application Settings": Settings,
+    "Notifications Configuration": Bell,
+    "GIS Map": Map,
+    Inspections: Search,
+    "Work Updates": FileText,
+    Resolutions: FileText,
+    "All Sub-County Reports": FileText,
+    "All Ward Reports": FileText,
+    "Resolved": CheckCircle,
+    "Critical": AlertTriangle,
+    "Escalated": Share2,
+    "Team Assignments": UserCheck,
+    "Verified Work": CheckCircle,
+    "Rejected Work": AlertTriangle,
+    "Task Completion Reports": FileText,
+    "Inspection Reports": FileText,
+    "Completed Tasks": CheckCircle,
+    "All Assignments": FileText,
+    "Pending": Clock,
   };
 
   return (
@@ -275,7 +480,7 @@ export function GovernmentShell({
 
       <div
         id="main-content"
-        className={`min-h-screen min-w-0 transition-all duration-300 ${mainContentMargin}`}
+        className={`min-h-screen min-w-0 transition-all duration-300 ${mainContentMargin} px-6 sm:px-8 lg:px-10`}
       >
         <header className="sticky top-0 z-30 flex min-h-[72px] items-center justify-between gap-4 border-b border-[#dce2d8] bg-[#fdfdf9] px-4 sm:px-6 py-2.5 sm:py-3">
           <div className="flex items-center gap-2">
@@ -324,8 +529,10 @@ export function GovernmentShell({
             <div className="relative inline-block">
               <button
                 type="button"
+                onClick={() => setProfileDropdownOpen((prev) => !prev)}
                 className="flex items-center gap-2 rounded-full border border-gray-200 hover:bg-gray-50 px-3 py-1.5 transition-colors"
                 aria-label="User profile"
+                aria-expanded={profileDropdownOpen}
               >
                 <div className="flex size-6 items-center justify-center rounded-full bg-[#dce5d8] text-[#244637] text-xs font-semibold">
                   {initials}
@@ -333,9 +540,17 @@ export function GovernmentShell({
                 <p className="text-sm font-medium text-[#173c32] truncate">
                   {user?.name || "Officer"}
                 </p>
-                <ChevronDown className="w-4 h-4 text-[#687468]" />
+                <ChevronDown
+                  className={`w-4 h-4 text-[#687468] transition-transform duration-200 ${
+                    profileDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
               </button>
-              <div className="absolute right-0 mt-2 w-64 border border-[#dce2d8] bg-white rounded-lg shadow-lg z-50 overflow-hidden">
+              {profileDropdownOpen && (
+                <div
+                  ref={profileDropdownRef}
+                  className="absolute right-0 mt-2 w-64 border border-[#dce2d8] bg-white rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+                >
                 <div className="px-4 py-3 border-b border-[#e5e7e5]">
                   <p className="text-sm font-semibold text-[#173c32]">
                     {user?.name || "Officer"}
@@ -367,6 +582,7 @@ export function GovernmentShell({
                   </button>
                 </div>
               </div>
+            )}
             </div>
           </div>
         </header>

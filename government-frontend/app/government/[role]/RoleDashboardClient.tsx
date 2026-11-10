@@ -377,6 +377,7 @@ export default function RoleDashboardClient() {
     }
   }, [activeItem, loadInspections, loadWorkUpdates, loadFollowUps, loadResolutions, loadEscalations]);
 
+  const activeLower = activeItem.toLowerCase();
   const filteredReports = useMemo(() => reports, [reports]);
 
   const canChangeStatus = [
@@ -734,7 +735,7 @@ export default function RoleDashboardClient() {
         )}
       </section>
 
-      {activeItem === "Reports" && (
+      {activeLower === "reports" && (
         <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-[#173c32]">Reports Management</h3>
@@ -797,7 +798,7 @@ export default function RoleDashboardClient() {
       )}
 
       {/* Inspections section */}
-      {((activeItem.toLowerCase().includes("inspection") || activeItem.includes("Scheduled Inspections") || activeItem.includes("Inspection Requests") || activeItem.includes("Inspection Results") || activeItem.includes("Inspection Evidence") || activeItem.includes("My Inspection History")) && (
+      {((activeLower.includes("inspection") || activeLower.includes("scheduled inspections") || activeLower.includes("inspection requests") || activeLower.includes("inspection results") || activeLower.includes("inspection evidence") || activeLower.includes("my inspection history")) && (
         <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-[#173c32]">Field Inspections</h3>
@@ -866,7 +867,7 @@ export default function RoleDashboardClient() {
       ))}
 
       {/* Work Updates section */}
-      {((activeItem.toLowerCase().includes("work update") || activeItem.includes("progress update") || activeItem.includes("submit findings") || activeItem.includes("Work Updates")) && (
+      {((activeLower.includes("work update") || activeLower.includes("progress update") || activeLower.includes("submit findings") || activeLower.includes("work updates")) && (
         <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-[#173c32]">Work Updates</h3>
@@ -931,7 +932,7 @@ export default function RoleDashboardClient() {
       ))}
 
       {/* Follow-ups section */}
-      {((activeItem.toLowerCase().includes("follow-up") || activeItem.includes("followup") || activeItem.includes("awaiting action") || activeItem.includes("Follow-ups")) && (
+      {((activeLower.includes("follow-up") || activeLower.includes("followup") || activeLower.includes("awaiting action") || activeLower.includes("follow-ups")) && (
         <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-[#173c32]">Follow-ups</h3>
@@ -991,7 +992,7 @@ export default function RoleDashboardClient() {
       ))}
 
       {/* Resolutions section */}
-      {((activeItem.toLowerCase().includes("resolution") || activeItem.includes("resolved") || activeItem.includes("submit findings") || activeItem.includes("Completed")) && !activeItem.toLowerCase().includes("reports") && !activeItem.toLowerCase().includes("inspection") && !activeItem.toLowerCase().includes("follow-up") && (
+      {((activeLower.includes("resolution") || activeLower.includes("resolved") || activeLower.includes("submit findings") || activeLower.includes("completed")) && !activeLower.includes("reports") && !activeLower.includes("inspection") && !activeLower.includes("follow-up") && (
         <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-[#173c32]">Resolutions</h3>
@@ -1056,7 +1057,7 @@ export default function RoleDashboardClient() {
       ))}
 
       {/* Escalations section */}
-      {((activeItem.toLowerCase().includes("escalat") || activeItem.includes("Escalated") || activeItem.includes("Pending Approvals") || activeItem.includes("Escalated Issues")) && (
+      {((activeLower.includes("escalat") || activeLower.includes("escalated") || activeLower.includes("pending approvals") || activeLower.includes("escalated issues")) && (
         <section className="rounded-xl border border-[#dce2d8] bg-[#fdfdf9] p-5 md:p-6">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-[#173c32]">Escalations</h3>
