@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Camera as CameraIcon, Image as GalleryIcon, X } from "lucide-react";
+import { Camera as CameraIcon, Image as GalleryIcon, Lock, X } from "lucide-react";
 import {
   formatFileSize,
   resolveMediaUrl,
@@ -95,6 +95,7 @@ export default function ReportForm({ token, onSubmitSuccess }) {
   const [form, setForm] = useState({
     title: "",
     category: "",
+    subCategory: "",
     location: "",
     description: "",
     county: "",
@@ -103,7 +104,9 @@ export default function ReportForm({ token, onSubmitSuccess }) {
     isAnonymous: false,
   });
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [subcategoriesLoading, setSubcategoriesLoading] = useState(false);
   const [counties, setCounties] = useState([]);
   const [subCounties, setSubCounties] = useState([]);
   const [wards, setWards] = useState([]);
@@ -143,6 +146,29 @@ export default function ReportForm({ token, onSubmitSuccess }) {
         if (!cancelled) setCategories([]);
       } finally {
         if (!cancelled) setCategoriesLoading(false);
+      }
+    }
+
+    async function loadSubcategories(categoryId) {
+      setSubcategoriesLoading(true);
+      setSubcategories([]);
+      setForm((prev) => ({ ...prev, subCategory: "" }));
+      if (!categoryId) {
+        setSubcategoriesLoading(false);
+        return;
+      }
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/subcategories?categoryId=${encodeURIComponent(categoryId)}`,
+          { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
+        );
+        const data = await response.json().catch(() => ({}));
+        const raw = Array.isArray(data?.data?.subcategories) ? data.data.subcategories : [];
+        if (!cancelled) setSubcategories(raw.map((s) => s.name || s.title || "Other"));
+      } catch {
+        if (!cancelled) setSubcategories([]);
+      } finally {
+        if (!cancelled) setSubcategoriesLoading(false);
       }
     }
 
@@ -521,6 +547,7 @@ export default function ReportForm({ token, onSubmitSuccess }) {
       const formData = new FormData();
       formData.append("title", toSentenceCase(form.title.trim()));
       formData.append("category", form.category);
+      if (form.subCategory) formData.append("subCategory", form.subCategory);
       formData.append("location", toSentenceCase(form.location.trim()));
       formData.append("description", toSentenceCase(form.description.trim()));
       formData.append("priority", "MEDIUM");
@@ -550,6 +577,7 @@ export default function ReportForm({ token, onSubmitSuccess }) {
       setForm({
         title: "",
         category: "",
+        subCategory: "",
         location: "",
         description: "",
         county: form.county || "",
@@ -626,9 +654,11 @@ export default function ReportForm({ token, onSubmitSuccess }) {
             <select
               id="report-category"
               value={form.category}
-              onChange={(event) =>
-                setForm({ ...form, category: event.target.value })
-              }
+              onChange={(event) => {
+                const category = event.target.value;
+                setForm({ ...form, category, subCategory: "" });
+                void loadSubcategories(category);
+              }}
               className="w-full border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none focus:border-[#55745c]"
             >
               {categoriesLoading ? (
@@ -643,6 +673,40 @@ export default function ReportForm({ token, onSubmitSuccess }) {
                 ))
               )}
             </select>
+          </div>
+
+          {/* Sub-issue selection */}
+          <div>
+            <label htmlFor="report-subcategory" className="mb-2 block text-sm font-semibold">
+              Sub-issue *
+            </label>
+            <select
+              id="report-subcategory"
+              value={form.subCategory}
+              onChange={(event) =>
+                setForm({ ...form, subCategory: event.target.value })}
+              disabled={subcategoriesLoading || subcategories.length === 0}
+              className={`w-full border border-[#cbd6c8] bg-white px-4 py-3 text-sm outline-none focus:border-[#55745c] ${subcategoriesLoading || subcategories.length === 0 ? "cursor-not-allowed opacity-60" : ""}`}
+            >
+              <option value="">Select sub-issue…</option>
+              {subcategoriesLoading ? (
+                <option disabled>Loading sub-issues…</option>
+              ) : subcategories.length === 0 ? (
+                <option disabled>No sub-issues available</option>
+              ) : (
+                subcategories.map((subcategory) => (
+                  <option key={subcategory} value={subcategory}>
+                    {subcategory}
+                  </option>
+                ))
+              )}
+            </select>
+            {subcategories.length > 0 && form.subCategory === "" && (
+              <p className="mt-1 text-xs text-[#7a8378]">
+                Please select a sub-issue for &quot;{form.category}&quot; to help route
+                your report to the right department.
+              </p>
+            )}
           </div>
 
           <div>
@@ -870,6 +934,20 @@ export default function ReportForm({ token, onSubmitSuccess }) {
               </span>
             </span>
           </label>
+
+          {form.isAnonymous && (
+            <div className="mt-4 rounded-xl border border-[#dce2d8] bg-[#e8eee3] p-4 text-sm leading-6 text-[#244637]">
+              <p className="font-semibold flex items-center gap-1.5">
+                <Lock className="w-4 h-4" />
+                Anonymous Submission
+              </p>
+              <p className="mt-1 text-[#687468]">
+                Your name, phone, and email will be hidden from government
+                officials and public feeds. You can still track this issue under
+                &quot;My Reports&quot;.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="mt-7 flex flex-wrap gap-3 border-t border-[#dce2d8] pt-6">

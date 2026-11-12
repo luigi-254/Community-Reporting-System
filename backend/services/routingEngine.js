@@ -1,4 +1,4 @@
-import db from '../config/db.js';
+import { checkIsPrisma, getPrismaClient } from '../repositories/client.js';
 
 const specificity = (rule) =>
   [rule.category, rule.subCategory, rule.county, rule.priority, rule.departmentId, rule.officerId]
@@ -12,8 +12,11 @@ const matches = (rule, report) => {
   return true;
 };
 
-export async function applyRoutingRules(report) {
-  const rules = (await db.findRoutingRules({ isActive: true })) || [];
+export async function applyRoutingRules(report, prisma = null) {
+  const client = prisma || (checkIsPrisma() ? getPrismaClient() : null);
+  if (!client) return report;
+
+  const rules = (await client.routingRule.findMany({ where: { isActive: true } })) || [];
   const candidates = rules.filter((rule) => matches(rule, report));
   if (!candidates.length) return report;
 
@@ -27,13 +30,18 @@ export async function applyRoutingRules(report) {
     updates.status = 'ASSIGNED';
   }
 
-  const updated = await db.updateReport(report.id, updates);
+  const updated = await client.report.update({
+    where: { id: report.id },
+    data: updates,
+  });
 
   if (rule.officerId) {
-    await db.createAssignment({
-      reportId: report.id,
-      officerId: rule.officerId,
-      reason: `Auto-routed by rule "${rule.name}"`,
+    await client.assignment.create({
+      data: {
+        reportId: report.id,
+        officerId: rule.officerId,
+        reason: `Auto-routed by rule "${rule.name}"`,
+      },
     });
   }
 
